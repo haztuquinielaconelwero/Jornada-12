@@ -1,0 +1,24 @@
+{
+"name": "Quinielas El Wero",
+"short_name": "Quinielas El Wero",
+"description": "Quinielas El Wero - Liga MX",
+"start_url": "/?source=pwa",
+"display": "standalone",
+"background_color": "#0f172a",
+"theme_color": "#006847",
+"orientation": "portrait-primary",
+"icons": [
+{
+"src": "/logos/logo.png",
+"sizes": "192x192",
+"type": "image/png",
+"purpose": "any maskable"
+},
+{
+"src": "/logos/logo.png",
+"sizes": "512x512",
+"type": "image/png",
+"purpose": "any maskable"
+}
+]
+}

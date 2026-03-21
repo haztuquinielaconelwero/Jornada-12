@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel Vendedor - Quinielas El Wero</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+--verde: #006847;
+--rojo:  #dc2626;
+--fondo: #f3f4f6;
+--borde: #e5e7eb;
+--gris:  #6b7280;
+--radio: 10px;
+}
+body { font-family: system-ui, sans-serif; background: var(--fondo); color: #111; min-height: 100vh; }
+.header {
+background: var(--verde); color: #fff;
+padding: 16px 20px; display: flex;
+align-items: center; justify-content: space-between; gap: 12px;
+}
+.header h1 { font-size: 1.1rem; font-weight: 800; color: #fff; }
+.vendedor-badge {
+background: rgba(255,255,255,.18); border-radius: 20px;
+padding: 4px 12px; font-size: .8rem; font-weight: 600; color: #fff;
+}
+#loginScreen {
+display: flex; flex-direction: column; align-items: center;
+justify-content: center; min-height: 70vh; padding: 24px; gap: 12px;
+}
+.pin-box {
+background: #fff; border-radius: 16px; padding: 28px 24px;
+width: 100%; max-width: 340px;
+box-shadow: 0 4px 20px rgba(0,0,0,.1); text-align: center;
+}
+.pin-box h2 { font-size: 1.2rem; color: var(--verde); margin-bottom: 6px; }
+.pin-box p  { font-size: .85rem; color: var(--gris); margin-bottom: 20px; }
+.pin-dots { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+.pin-dot {
+width: 16px; height: 16px; border-radius: 50%;
+background: var(--borde); border: 2px solid #d1d5db; transition: background .15s;
+}
+.pin-dot.filled { background: var(--verde); border-color: var(--verde); }
+.pin-dot.error  { background: var(--rojo);  border-color: var(--rojo); }
+.pin-pad { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+.pin-btn {
+padding: 14px; font-size: 1.1rem; font-weight: 700;
+border: 2px solid var(--borde); border-radius: var(--radio);
+background: #fff; cursor: pointer; transition: background .12s;
+}
+.pin-btn:active { background: var(--fondo); }
+.pin-btn.empty  { visibility: hidden; }
+.pin-error { color: var(--rojo); font-size: .82rem; min-height: 18px; margin-top: 8px; }
+/* Panel */
+#panelScreen { display: none; padding: 16px; max-width: 900px; margin: 0 auto; }
+.stats-row { display: flex; justify-content: center; margin-bottom: 16px; }
+.stat-card {
+background: #fff; border-radius: var(--radio);
+padding: 14px 48px; box-shadow: 0 1px 4px rgba(0,0,0,.08); text-align: center;
+}
+.stat-card .num { font-size: 2rem; font-weight: 900; color: #111; line-height: 1; }
+.stat-card .lbl {
+font-size: .72rem; color: #111; margin-top: 4px;
+letter-spacing: .04em;
+}
+/* Acciones */
+.acciones { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+.btn {
+padding: 10px 18px; border-radius: var(--radio); border: none;
+cursor: pointer; font-weight: 700; font-size: .85rem;
+display: flex; align-items: center; gap: 6px; transition: opacity .15s;
+}
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn-verde { background: var(--verde); color: #fff; }
+.btn-rojo  { background: var(--rojo);  color: #fff; }
+.btn-gris  { background: #e5e7eb; color: #111; }
+.btn:not(:disabled):hover { opacity: .88; }
+#fileImport { display: none; }
+/* Tabla*/
+.tabla-wrap { overflow-x: auto; background: #fff; border-radius: var(--radio); box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+thead th { background: var(--verde); color: #fff; padding: 10px 12px; text-align: left; font-weight: 700; white-space: nowrap; }
+tbody tr:nth-child(even) { background: #f9fafb; }
+tbody td { padding: 9px 12px; border-bottom: 1px solid var(--borde); vertical-align: middle; color: #111; }
+.pick-cell {
+display: inline-block; width: 22px; height: 22px; line-height: 22px;
+text-align: center; border-radius: 4px; font-weight: 700; font-size: .75rem;
+}
+.pick-L, .pick-E, .pick-V, .pick-vacio { background: transparent; color: #111; }
+.btn-del-fila {
+background: none; border: none; cursor: pointer;
+color: var(--rojo); font-size: 1rem; padding: 2px 6px;
+border-radius: 4px; transition: background .12s;
+}
+.btn-del-fila:hover { background: #fee2e2; }
+.empty-row td { text-align: center; padding: 32px; color: var(--gris); font-style: italic; }
+.toast {
+position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+padding: 12px 22px; border-radius: 10px; color: #fff; font-weight: 600;
+font-size: .88rem; z-index: 9999; box-shadow: 0 4px 14px rgba(0,0,0,.3);
+white-space: nowrap; animation: slideUp .25s ease;
+}
+@keyframes slideUp {
+from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+}
+.modal-overlay {
+position: fixed; inset: 0; background: rgba(0,0,0,.6);
+display: flex; align-items: center; justify-content: center;
+z-index: 8000; padding: 20px;
+}
+.modal-box {
+background: #fff; border-radius: 16px; padding: 28px 24px;
+max-width: 380px; width: 100%; text-align: center;
+}
+.modal-box h3 { font-size: 1.1rem; margin-bottom: 10px; color: #111; }
+.modal-box p  { font-size: .9rem; color: var(--gris); margin-bottom: 20px; }
+.modal-btns { display: flex; flex-direction: column; gap: 10px; }
+footer {
+text-align: center; padding: 20px; font-size: .75rem;
+color: var(--gris); border-top: 1px solid var(--borde); margin-top: 24px;
+}
+</style>
+</head>
+<body>
+<!-- Header-->
+<div class="header">
+<h1>Panel vendedor &#x26BD;</h1>
+<span class="vendedor-badge" id="headerVendedor">&mdash;</span>
+</div>
+<!-- Acceso -->
+<div id="loginScreen">
+<div class="pin-box">
+<h2>&#x1F512; Acceso</h2>
+<p id="loginSubtitulo">Ingresa tu pin de 4 d&iacute;gitos</p>
+<div class="pin-dots" id="pinDots">
+<div class="pin-dot"></div><div class="pin-dot"></div>
+<div class="pin-dot"></div><div class="pin-dot"></div>
+</div>
+<div class="pin-pad" id="pinPad"></div>
+<p class="pin-error" id="pinError"></p>
+</div>
+</div>
+<!-- Panel -->
+<div id="panelScreen">
+<!-- Solo Pendientes, centrado -->
+<div class="stats-row">
+<div class="stat-card">
+<div class="num" id="statPendientes">0</div>
+<div class="lbl">Pendientes</div>
+</div>
+</div>
+<!-- Acciones -->
+<div class="acciones">
+<button class="btn btn-verde" onclick="exportarCSV()">Exportar CSV &#x1F4C4;</button>
+<button class="btn btn-rojo"  id="btnEliminar" onclick="pedirConfirmacion()">Eliminar todas &#x1F5D1;</button>
+<button class="btn btn-gris"  id="btnRecargar" onclick="recargar()">Actualizar &#x1F504;</button>
+<button class="btn btn-verde" onclick="document.getElementById('fileImport').click()">Importar quinielas &#x1F4E5;</button>
+<input type="file" id="fileImport" accept=".json,.csv" onchange="importarQuinielas(event)">
+</div>
+<!-- Tabla pendientes -->
+<div class="tabla-wrap">
+<table>
+<thead id="tablaHead"></thead>
+<tbody id="tablaBody"></tbody>
+</table>
+</div>
+</div>
+<footer>Quinielas El Wero &copy; 2026 &mdash; Panel de vendedor</footer>
+<script>
+/* ── Redes ──────────────────────────────────────────── */
+var hostname = window.location.hostname;
+var isDev    = hostname === 'localhost' || hostname === '127.0.0.1';
+var APIBASE  = isDev
+? window.location.protocol + '//' + hostname + ':8000'
+: 'https://www.quinielaselwero.com';
+var vendedor = null, jornada = null, partidos = [], listaPend = [];
+var pinIngresado = '', enviandoPin = false;
+/* ── Tokern ───────────────────────────────────────────── */
+function getToken() { return sessionStorage.getItem('panelToken') || ''; }
+function authHeaders() {
+return {
+'Content-Type': 'application/json',
+'Authorization': 'Bearer ' + getToken()
+};
+}
+/* ── Pin ────────────────────────────────────────────── */
+window.addEventListener('DOMContentLoaded', function () {
+vendedor = new URLSearchParams(location.search).get('vendedor')
+|| localStorage.getItem('vendedor');
+if (!vendedor) {
+var n = prompt('Escribe tu nombre de vendedor (ej: Memo, Checo)');
+if (!n || !n.trim()) { mostrarError('Se necesita un nombre de vendedor.'); return; }
+vendedor = n.trim().charAt(0).toUpperCase() + n.trim().slice(1);
+localStorage.setItem('vendedor', vendedor);
+}
+document.getElementById('headerVendedor').textContent = vendedor;
+document.getElementById('loginSubtitulo').textContent = 'Hola ' + vendedor + ', ingresa tu PIN';
+construirPinPad();
+Promise.all([
+fetch(APIBASE + '/jornada-actual').then(function (r) { return r.json(); }),
+fetch(APIBASE + '/api/partidos').then(function (r) { return r.json(); })
+]).then(function (res) {
+jornada  = res[0] && res[0].nombre   ? res[0].nombre   : 'Jornada actual';
+partidos = res[1] && res[1].partidos ? res[1].partidos : [];
+}).catch(function (e) { console.warn('init', e); });
+});
+function construirPinPad() {
+var pad = document.getElementById('pinPad');
+[1,2,3,4,5,6,7,8,9,null,0,'DEL'].forEach(function (n) {
+var btn = document.createElement('button');
+btn.className = n === null ? 'pin-btn empty' : 'pin-btn';
+if (n === null)      { btn.setAttribute('aria-hidden','true'); }
+else if (n === 'DEL') { btn.textContent = '\u232B'; }
+else                  { btn.textContent = n; }
+btn.addEventListener('click', function () {
+if (n === 'DEL') { pinIngresado = pinIngresado.slice(0,-1); }
+else if (typeof n === 'number' && pinIngresado.length < 4) {
+pinIngresado += String(n);
+}
+actualizarDots();
+if (pinIngresado.length === 4) verificarPin();
+});
+pad.appendChild(btn);
+});
+}
+function actualizarDots() {
+document.querySelectorAll('#pinDots .pin-dot').forEach(function (d, i) {
+d.classList.toggle('filled', i < pinIngresado.length);
+d.classList.remove('error');
+});
+}
+function verificarPin() {
+if (enviandoPin) return;
+enviandoPin = true;
+document.querySelectorAll('.pin-btn').forEach(function (b) { b.disabled = true; });
+fetch(APIBASE + '/api/verificar-pin', {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({ vendedor: vendedor, pin: pinIngresado })
+})
+.then(function (res) {
+return res.json().then(function (d) { return { ok: res.ok, data: d }; });
+})
+.then(function (r) {
+if (r.ok && r.data.token) {
+sessionStorage.setItem('panelToken', r.data.token);
+document.getElementById('loginScreen').style.display = 'none';
+document.getElementById('panelScreen').style.display = 'block';
+cargarTodo().catch(function () {});
+} else {
+document.querySelectorAll('#pinDots .pin-dot').forEach(function (d) {
+d.classList.add('error');
+});
+document.getElementById('pinError').textContent = 'PIN incorrecto';
+pinIngresado = '';
+setTimeout(function () {
+actualizarDots();
+document.getElementById('pinError').textContent = '';
+document.querySelectorAll('.pin-btn').forEach(function (b) { b.disabled = false; });
+enviandoPin = false;
+}, 800);
+}
+})
+.catch(function () {
+document.getElementById('pinError').textContent = 'Error de conexi\u00F3n';
+pinIngresado = '';
+actualizarDots();
+document.querySelectorAll('.pin-btn').forEach(function (b) { b.disabled = false; });
+enviandoPin = false;
+});
+}
+/* ── Carga de datos ──────────────────────────────────── */
+function cargarTodo() {
+var p = 'vendedor=' + encodeURIComponent(vendedor)
++ '&jornada='  + encodeURIComponent(jornada);
+return fetch(APIBASE + '/api/pendientes?' + p, { headers: authHeaders() })
+.then(function (r) { return r.json(); })
+.then(function (data) {
+listaPend = data && data.pendientes ? data.pendientes : [];
+actualizarStats();
+renderTabla();
+});
+}
+function actualizarStats() {
+document.getElementById('statPendientes').textContent = listaPend.length;
+}
+/* ──Tabla ────────────────────────────────────── */
+function renderTabla() {
+var numP = Math.max(partidos.length, 9);
+var th = '<tr><th>#</th><th>Nombre</th><th>Vendedor</th>';
+for (var i = 1; i <= numP; i++) { th += '<th>P' + i + '</th>'; }
+th += '<th>Acci\u00F3n</th></tr>';
+document.getElementById('tablaHead').innerHTML = th;
+var body = document.getElementById('tablaBody');
+if (!listaPend.length) {
+body.innerHTML = '<tr class="empty-row"><td colspan="' + (numP + 4) +
+'">Sin quinielas pendientes</td></tr>';
+return;
+}
+body.innerHTML = listaPend.map(function (q, i) {
+var picks  = Array.isArray(q.picks) ? q.picks : new Array(numP).fill('-');
+var celdas = picks.map(function (p) {
+var c = p==='L' ? 'pick-L' : p==='E' ? 'pick-E' : p==='V' ? 'pick-V' : 'pick-vacio';
+return '<td><span class="pick-cell ' + c + '">' + (p||'-') + '</span></td>';
+}).join('');
+return '<tr>' +
+'<td>' + (i+1) + '</td>' +
+'<td><strong>' + esc(q.nombre) + '</strong></td>' +
+'<td>' + esc(vendedor) + '</td>' +
+celdas +
+'<td><button class="btn-del-fila" title="Eliminar quiniela" ' +
+'onclick="eliminarFila(' + i + ')">&#x1F5D1;</button></td>' +
+'</tr>';
+}).join('');
+}
+/* ── Exportar excel───────── */
+function exportarCSV() {
+var numP = Math.max(partidos.length, 9);
+var cols = ['#','Nombre','Estado'];
+for (var i = 1; i <= numP; i++) { cols.push('P' + i); }
+var filas = [];
+listaPend.forEach(function (q, i) { filas.push(filaCSV(q,'Pendiente',i+1,numP)); });
+if (!filas.length) { toast('No hay quinielas para exportar','error'); return; }
+var bom      = String.fromCharCode(0xFEFF);
+var contenido = bom + cols.join(',') + '\n' + filas.join('\n');
+var blob = new Blob([contenido], { type: 'text/csv;charset=utf-8;' });
+var url  = URL.createObjectURL(blob);
+var a    = document.createElement('a');
+a.href   = url;
+a.download = vendedor + '_' + (jornada||'jornada').replace(/\s+/g,'-') + '_quinielas.csv';
+document.body.appendChild(a); a.click(); document.body.removeChild(a);
+URL.revokeObjectURL(url);
+toast(filas.length + ' quinielas exportadas','success');
+}
+function filaCSV(q, estado, num, numP) {
+var picks  = Array.isArray(q.picks) ? q.picks : new Array(numP).fill('-');
+var nombre = '"' + (q.nombre||'').replace(/"/g,'""') + '"';
+return [num, nombre, estado].concat(picks).join(',');
+}
+/* ── Eliminar todas ──────────────────────────────────── */
+function pedirConfirmacion() {
+if (!listaPend.length) { toast('No hay quinielas que eliminar','error'); return; }
+var ov = document.createElement('div');
+ov.className = 'modal-overlay';
+ov.innerHTML =
+'<div class="modal-box">' +
+'<h3>&#x1F5D1; Eliminar todas</h3>' +
+'<p>Se eliminar\u00E1n <strong>' + listaPend.length + ' quinielas</strong> de ' +
+'<strong>' + esc(jornada) + '</strong>.<br>Esta acci\u00F3n no se puede deshacer.</p>' +
+'<div class="modal-btns">' +
+'<button class="btn btn-rojo" id="btnConf">S\u00ED, eliminar todo</button>' +
+'<button class="btn btn-gris" id="btnCan">Cancelar</button>' +
+'</div></div>';
+document.body.appendChild(ov);
+document.getElementById('btnConf').onclick = function () { ov.remove(); eliminarTodas(); };
+document.getElementById('btnCan').onclick  = function () { ov.remove(); };
+}
+function eliminarTodas() {
+var btn = document.getElementById('btnEliminar');
+btn.disabled = true;
+btn.innerHTML = 'Eliminando\u2026';
+var total = listaPend.length;
+var ids   = listaPend.map(function (q) { return q.id; });
+var promesas = ids.map(function (id) {
+return fetch(APIBASE + '/api/quinielas/' + id, {
+method: 'DELETE',
+headers: authHeaders()
+}).then(function (res) {
+return res.json().then(function (d) { return { ok: res.ok, d: d }; });
+});
+});
+Promise.all(promesas)
+.then(function (resultados) {
+var ok     = resultados.filter(function (r) { return r.ok; }).length;
+var fallos = total - ok;
+listaPend = [];
+actualizarStats();
+renderTabla();
+if (fallos === 0) {
+toast(ok + ' quinielas eliminadas', 'success');
+} else {
+toast(ok + ' eliminadas, ' + fallos + ' con error', 'error');
+cargarTodo().catch(function () {});
+}
+})
+.catch(function () { toast('Error de conexi\u00F3n', 'error'); })
+.finally(function () {
+btn.disabled = false;
+btn.innerHTML = 'Eliminar todas &#x1F5D1;';
+});
+}
+/* ── Actualizar ──────────────────────────────────────── */
+function recargar() {
+var btn = document.getElementById('btnRecargar');
+btn.disabled = true; btn.textContent = 'Cargando\u2026';
+cargarTodo()
+.then(function ()  { toast('Datos actualizados','success'); })
+.catch(function () { toast('Error al actualizar','error'); })
+.finally(function () {
+btn.disabled = false;
+btn.innerHTML = 'Actualizar &#x1F504;';
+});
+}
+/* ──Elimiinar fila individual─────────────────── */
+function eliminarFila(index) {
+var q = listaPend[index];
+if (!q) return;
+if (!confirm('\u00BFEliminar la quiniela de "' + q.nombre + '"?')) return;
+fetch(APIBASE + '/api/quinielas/' + q.id, { 
+method: 'DELETE',
+headers: authHeaders()                        
+})
+.then(function (res) {
+return res.json().then(function (d) { return { ok: res.ok, d: d }; });
+})
+.then(function (r) {
+if (r.ok) {
+listaPend.splice(index, 1);
+actualizarStats();
+renderTabla();
+toast('Quiniela eliminada', 'success');
+} else {
+toast(r.d.detail || 'Error al eliminar', 'error');
+}
+})
+.catch(function () { toast('Error de conexi\u00F3n', 'error'); });
+}
+/* ── Importar quinielas ───────────────────────── */
+function importarQuinielas(event) {
+var file = event.target.files[0];
+if (!file) return;
+var reader = new FileReader();
+reader.onload = function (e) {
+var contenido = e.target.result;
+var datos;
+try {
+if (file.name.toLowerCase().endsWith('.json')) {
+var parsed = JSON.parse(contenido);
+datos = Array.isArray(parsed) ? parsed
+: parsed.quinielas  ? parsed.quinielas
+: parsed.pendientes ? parsed.pendientes
+: [];
+} else {
+var lineas = contenido.split('\n').filter(function (l) { return l.trim(); });
+var header = lineas[0].split(',').map(function (h) { return h.trim(); });
+datos = lineas.slice(1).map(function (linea) {
+var cols = linea.split(',');
+var obj  = {};
+header.forEach(function (h, i) { obj[h] = (cols[i]||'').trim(); });
+return obj;
+});
+}
+} catch (err) {
+toast('Archivo inv\u00E1lido','error');
+event.target.value = ''; return;
+}
+if (!datos.length) {
+toast('El archivo est\u00E1 vac\u00EDo','error');
+event.target.value = ''; return;
+}
+fetch(APIBASE + '/api/importar-quinielas', {
+method: 'POST',
+headers: authHeaders(),
+body: JSON.stringify({ jornada: jornada, vendedor: vendedor, quinielas: datos })
+})
+.then(function (res) {
+return res.json().then(function (d) { return { ok: res.ok, d: d }; });
+})
+.then(function (r) {
+if (r.ok) {
+toast((r.d.importadas || datos.length) + ' quinielas importadas','success');
+cargarTodo().catch(function () {});
+} else {
+toast(r.d.detail || 'Error al importar','error');
+}
+})
+.catch(function () { toast('Error de conexi\u00F3n','error'); })
+.finally(function () { event.target.value = ''; });
+};
+reader.readAsText(file);
+}
+/* ── UTILIDADES ──────────────────────────────────────── */
+var toastTimer = null;
+function toast(msg, tipo) {
+tipo = tipo || 'success';
+if (toastTimer) clearTimeout(toastTimer);
+var old = document.querySelector('.toast');
+if (old) old.remove();
+var el = document.createElement('div');
+el.className = 'toast';
+el.style.background = tipo === 'error'   ? '#dc2626'
+: tipo === 'warning' ? '#f59e0b' : '#10b981';
+el.textContent = msg;
+document.body.appendChild(el);
+toastTimer = setTimeout(function () { el.remove(); }, 3000);
+}
+function esc(str) {
+return String(str)
+.replace(/&/g,'&amp;')
+.replace(/</g,'&lt;')
+.replace(/>/g,'&gt;');
+}
+function mostrarError(msg) {
+document.getElementById('loginScreen').innerHTML =
+'<div style="text-align:center;padding:40px;color:#dc2626">' +
+'<p style="font-size:2rem">&#x26A0;</p>' +
+'<p style="font-weight:700;margin-top:8px">' + msg + '</p></div>';
+}
+</script>
+</body>
+</html>

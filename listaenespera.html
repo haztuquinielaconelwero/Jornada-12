@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lista en Espera ⏳</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@32.2.0/styles/ag-grid.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@32.2.0/styles/ag-theme-alpine.css">
+<script src="https://cdn.jsdelivr.net/npm/ag-grid-community@32.2.0/dist/ag-grid-community.min.js"></script>
+<style>
+:root {
+--primary: #1a73e8;
+--primary-hover: #1557b0;
+--green: #34a853;
+--green-hover: #2d8e43;
+--gray-50: #f8f9fa;
+--gray-100: #f1f3f4;
+--gray-200: #e8eaed;
+--gray-300: #dadce0;
+--gray-700: #5f6368;
+--gray-900: #202124;
+--naranja: #f59e0b;
+--naranja-light: #fffbeb;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+font-family: 'Roboto', Arial, sans-serif;
+background: #f8f9fa;
+color: var(--gray-900);
+overflow-x: hidden;
+}
+.header {
+height: 56px;
+background: white;
+border-bottom: 1px solid var(--gray-300);
+display: flex;
+align-items: center;
+padding: 0 20px;
+gap: 12px;
+box-shadow: 0 1px 3px rgba(60,64,67,.3);
+position: sticky;
+top: 0;
+z-index: 100;
+}
+.logo { display: flex; align-items: center; gap: 6px; font-size: 16px; font-weight: 500; }
+.document-title { border: none; background: transparent; font-size: 15px; font-weight: 500; padding: 6px 8px; color: var(--gray-900); }
+.header-actions { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+.btn {
+padding: 8px 14px;
+border: none;
+border-radius: 4px;
+font-size: 13px;
+font-weight: 500;
+cursor: pointer;
+display: flex;
+align-items: center;
+gap: 5px;
+transition: all 0.2s;
+color: white;
+white-space: nowrap;
+}
+.btn-azul { background: #1a73e8; }
+.btn-azul:hover { background: #1557b0; }
+.btn-rojo { background: #dc2626; }
+.btn-rojo:hover { background: #b91c1c; }
+.btn-naranja { background: #f59e0b; }
+.btn-naranja:hover { background: #d97706; }
+.toolbar {
+background: white;
+border-bottom: 1px solid var(--gray-200);
+padding: 10px 20px;
+display: flex;
+align-items: center;
+gap: 12px;
+flex-wrap: wrap;
+box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+.search-input {
+padding: 7px 12px 7px 32px;
+border: 1px solid var(--gray-300);
+border-radius: 20px;
+font-size: 13px;
+outline: none;
+width: 220px;
+background: var(--gray-50) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%235f6368' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E") no-repeat 10px center;
+transition: border-color 0.2s;
+}
+.search-input:focus { border-color: var(--primary); background-color: white; }
+.filter-select {
+padding: 7px 28px 7px 10px;
+border: 1px solid var(--gray-300);
+border-radius: 20px;
+font-size: 13px;
+outline: none;
+background: var(--gray-50);
+cursor: pointer;
+appearance: none;
+background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235f6368' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+background-repeat: no-repeat;
+background-position: right 8px center;
+}
+.filter-select:focus { border-color: var(--primary); }
+.toolbar-label { font-size: 12px; color: var(--gray-700); font-weight: 500; }
+.rows-counter { margin-left: auto; font-size: 12px; color: var(--gray-700); }
+.container { max-width: none; margin: 0 auto; padding: 20px; }
+.banner-espera {
+background: var(--naranja-light);
+border: 1px solid #f59e0b;
+border-radius: 8px;
+padding: 12px 20px;
+margin-bottom: 20px;
+display: flex;
+align-items: center;
+gap: 10px;
+font-size: 13px;
+color: #92400e;
+font-weight: 500;
+}
+.stats-bar {
+background: white;
+border-radius: 8px;
+padding: 14px 20px;
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 36px;
+box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+margin-bottom: 20px;
+flex-wrap: wrap;
+}
+.stat { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--gray-700); }
+.stat-value { font-weight: 700; color: var(--gray-900); font-size: 20px; }
+.grid-wrapper {
+border-radius: 8px;
+box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+overflow: hidden;
+background: white;
+}
+#myGrid { height: 860px; width: 100%; }
+.ag-theme-alpine {
+--ag-font-family: 'Roboto', Arial, sans-serif;
+--ag-font-size: 13px;
+--ag-header-background-color: #fff8e1;
+--ag-header-foreground-color: #202124;
+--ag-row-hover-color: #fff8e1;
+--ag-selected-row-background-color: #fef3c7;
+--ag-border-color: #e8eaed;
+--ag-cell-horizontal-border: solid #e8eaed;
+--ag-row-border-color: #e8eaed;
+--ag-odd-row-background-color: #fafafa;
+}
+.ag-theme-alpine .ag-header-cell {
+font-weight: 600 !important;
+font-size: 12px !important;
+text-transform: uppercase;
+letter-spacing: 0.4px;
+border-right: 1px solid var(--gray-300) !important;
+}
+.ag-theme-alpine .ag-cell {
+text-align: center !important;
+display: flex !important;
+align-items: center !important;
+justify-content: center !important;
+border-right: 1px solid #f0f0f0 !important;
+font-size: 13px;
+}
+.ag-theme-alpine .ag-header-cell-label { justify-content: center !important; }
+.ag-theme-alpine .ag-row { transition: background-color 0.1s; }
+.ag-theme-alpine .ag-cell.col-numero {
+font-weight: 600;
+background: #f8f9fa !important;
+color: var(--gray-700) !important;
+border-right: 2px solid var(--gray-300) !important;
+}
+.badge-espera {
+background: #fef3c7;
+color: #92400e;
+border: 1px solid #f59e0b;
+border-radius: 10px;
+padding: 2px 8px;
+font-size: 11px;
+font-weight: 600;
+}
+.btn-accion {
+padding: 3px 8px;
+border-radius: 4px;
+font-size: 12px;
+font-weight: 600;
+cursor: pointer;
+border: 1px solid;
+transition: all 0.15s;
+margin: 0 2px;
+}
+.btn-confirmar-fila {
+background: #dcfce7;
+color: #166534;
+border-color: #86efac;
+}
+.btn-confirmar-fila:hover { background: #16a34a; color: white; border-color: #16a34a; }
+.btn-rechazar-fila {
+background: #fee2e2;
+color: #dc2626;
+border-color: #fca5a5;
+}
+.btn-rechazar-fila:hover { background: #dc2626; color: white; border-color: #dc2626; }
+.loading-overlay {
+position: fixed; top: 0; left: 0;
+width: 100%; height: 100%;
+background: rgba(0,0,0,0.45);
+display: none;
+align-items: center;
+justify-content: center;
+z-index: 9999;
+}
+.loading-overlay.show { display: flex; }
+.loading-content { background: white; padding: 28px 36px; border-radius: 8px; text-align: center; }
+.spinner {
+width: 36px; height: 36px;
+border: 4px solid var(--gray-200);
+border-top-color: var(--primary);
+border-radius: 50%;
+animation: spin 0.8s linear infinite;
+margin: 0 auto 12px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="loading-overlay show" id="loadingOverlay">
+<div class="loading-content">
+<div class="spinner"></div>
+<div style="font-size:14px;color:#5f6368;">Cargando quinielas en espera...</div>
+</div>
+</div>
+<div class="header">
+<div class="logo">
+<span>⏳</span>
+<input type="text" class="document-title" value="Lista en Espera" readonly>
+</div>
+<div class="header-actions">
+<button class="btn btn-azul" onclick="recargarDatos()">Actualizar 🔄</button>
+<button class="btn btn-azul" onclick="exportarCSV()">Exportar 📥</button>
+<button class="btn btn-rojo" onclick="rechazarTodas()">Rechazar todas 🗑️</button>
+</div>
+</div>
+<div class="toolbar">
+<span class="toolbar-label">🔍</span>
+<input
+type="text"
+class="search-input"
+id="searchInput"
+placeholder="Buscar nombre o vendedor..."
+oninput="aplicarFiltros()"
+>
+<select class="filter-select" id="filterVendedor" onchange="aplicarFiltros()">
+<option value="">Todos los vendedores</option>
+</select>
+<span class="rows-counter" id="rowsCounter">0 registros</span>
+</div>
+<div class="container">
+<div class="banner-espera">
+Estas quinielas están en <strong>&nbsp;espera&nbsp;</strong> — el vendedor llegó a su límite de folios. Puedes confirmarlas individualmente (si hay espacio disponible) o rechazarlas ⚠️ .
+</div>
+<div class="stats-bar">
+<div class="stat"><span>Total en espera:</span><span class="stat-value" id="totalStat">0</span></div>
+<div class="stat"><span>Vendedores:</span><span class="stat-value" id="vendedoresStat">0</span></div>
+</div>
+<div class="grid-wrapper">
+<div id="myGrid" class="ag-theme-alpine"></div>
+</div>
+</div>
+<script>
+let datosOriginales = [];
+let partidos = [];
+let gridApi = null;
+let ultimaInteraccion = Date.now();
+document.addEventListener('mousemove', () => ultimaInteraccion = Date.now());
+document.addEventListener('keydown', () => ultimaInteraccion = Date.now());
+document.addEventListener('scroll', () => ultimaInteraccion = Date.now());
+document.addEventListener('DOMContentLoaded', async () => {
+initGrid();
+await cargarDatos();
+setInterval(async () => {
+if (Date.now() - ultimaInteraccion > 15000) await cargarDatos();
+}, 30000);
+});
+function initGrid() {
+const gridOptions = {
+columnDefs: [],
+rowData: [],
+animateRows: true,
+suppressMovableColumns: false,
+rowHeight: 36,
+headerHeight: 38,
+defaultColDef: { resizable: true, sortable: true, filter: false },
+onGridSizeChanged: () => gridApi && gridApi.sizeColumnsToFit(),
+};
+gridApi = agGrid.createGrid(document.getElementById('myGrid'), gridOptions);
+}
+async function cargarDatos() {
+try {
+mostrarLoading(true);
+const [resPartidos, resEspera] = await Promise.all([
+fetch('/api/partidos'),
+fetch('/api/espera?vendedor=ALL'),
+]);
+if (!resPartidos.ok) throw new Error(`Error partidos: ${resPartidos.status}`);
+if (!resEspera.ok) throw new Error(`Error espera: ${resEspera.status}`);
+const dataPartidos = await resPartidos.json();
+const dataEspera = await resEspera.json();
+partidos = dataPartidos.partidos || [];
+datosOriginales = (dataEspera.espera || []).map(q => ({
+...q,
+picks: q.picks || [],
+}));
+poblarFiltroVendedores();
+renderTabla();
+actualizarEstadisticas();
+} catch (error) {
+mostrarError(error.message);
+} finally {
+mostrarLoading(false);
+}
+}
+function poblarFiltroVendedores() {
+const select = document.getElementById('filterVendedor');
+const actual = select.value;
+const vendedores = [...new Set(datosOriginales.map(q => q.vendedor).filter(Boolean))].sort();
+select.innerHTML = '<option value="">Todos los vendedores</option>';
+vendedores.forEach(v => {
+const opt = document.createElement('option');
+opt.value = v;
+opt.textContent = v;
+if (v === actual) opt.selected = true;
+select.appendChild(opt);
+});
+}
+function aplicarFiltros() {
+const termino = document.getElementById('searchInput').value.trim().toLowerCase();
+const vendedor = document.getElementById('filterVendedor').value;
+if (!gridApi) return;
+const filas = buildRowData();
+const hayFiltro = termino || vendedor;
+const filtradas = hayFiltro ? filas.filter(row => {
+const matchTexto = !termino || (row.nombre || '').toLowerCase().includes(termino) || (row.vendedor || '').toLowerCase().includes(termino);
+const matchVendedor = !vendedor || row.vendedor === vendedor;
+return matchTexto && matchVendedor;
+}) : filas;
+gridApi.setGridOption('rowData', filtradas);
+document.getElementById('rowsCounter').textContent = (hayFiltro ? filtradas.length : datosOriginales.length) + ' registros';
+}
+function buildRowData() {
+return datosOriginales.map((q, index) => {
+const row = {
+'#': index + 1,
+id: q.id,
+nombre: q.nombre || '',
+vendedor: q.vendedor || '',
+_id: q.id,
+};
+(q.picks || []).forEach((pick, idx) => {
+row[`_pick_${idx}`] = pick || '-';
+});
+return row;
+});
+}
+function buildColumnDefs() {
+const pickCols = partidos.map((partido, idx) => ({
+headerName: `P${idx + 1}`,
+field: `_pick_${idx}`,
+width: 58,
+sortable: false,
+resizable: false,
+headerTooltip: `${partido.local} vs ${partido.visitante}`,
+cellRenderer: params => {
+const val = params.value;
+if (!val || val === '-') return '<span style="color:#fca5a5">-</span>';
+return `<span>${val}</span>`;
+},
+}));
+return [
+{
+field: '#', headerName: '#', width: 55,
+sortable: false, resizable: false, pinned: 'left',
+cellClass: 'col-numero',
+},
+{
+field: 'id', headerName: 'ID', width: 75,
+pinned: 'left', sortable: true,
+},
+{
+field: 'nombre', headerName: 'Nombre', width: 200,
+pinned: 'left',
+cellStyle: { justifyContent: 'flex-start', paddingLeft: '10px' },
+},
+{
+field: 'vendedor', headerName: 'Vendedor', width: 140,
+cellStyle: { justifyContent: 'flex-start', paddingLeft: '8px' },
+},
+...pickCols,
+{
+field: 'estado', headerName: 'Estado', width: 100,
+sortable: false,
+cellRenderer: () => '<span class="badge-espera">⏳ Espera</span>',
+},
+{
+field: 'acciones', headerName: 'Acciones', width: 190,
+sortable: false, resizable: false, pinned: 'right',
+cellRenderer: params => {
+const id = params.data?._id;
+if (!id) return '';
+return `
+<button class="btn-accion btn-confirmar-fila" onclick="confirmarQuiniela(${id})">Confirmar ✅</button>
+<button class="btn-accion btn-rechazar-fila" onclick="rechazarQuiniela(${id})">Rechazar ❌</button>
+`;
+},
+},
+];
+}
+function renderTabla() {
+const rows = buildRowData();
+gridApi.setGridOption('columnDefs', buildColumnDefs());
+gridApi.setGridOption('rowData', rows);
+setTimeout(() => gridApi.sizeColumnsToFit(), 50);
+document.getElementById('rowsCounter').textContent = datosOriginales.length + ' registros';
+}
+async function confirmarQuiniela(id) {
+const q = datosOriginales.find(x => x.id === id);
+const nombre = q?.nombre || `ID ${id}`;
+if (!confirm(`¿Confirmar a la lista oficial la quiniela de "${nombre}"?\n\nSolo funcionará si el vendedor tiene folios disponibles.`)) return;
+try {
+mostrarLoading(true);
+const response = await fetch(`/api/quinielas/${id}/confirmar`, {
+method: 'PATCH',
+headers: { 'Content-Type': 'application/json' },
+});
+const data = await response.json();
+if (response.ok && data.success) {
+const folio = data.quiniela?.folio;
+if (folio) {
+alert(`¡Confirmada! Folio asignado: ${folio} ✅`);
+} else {
+alert(`${data.message} ⚠️`);
+}
+await cargarDatos();
+} else {
+throw new Error(data.detail || data.message || 'Error al confirmar');
+}
+} catch (error) {
+alert('❌ Error: ' + error.message);
+} finally {
+mostrarLoading(false);
+}
+}
+async function rechazarQuiniela(id) {
+const q = datosOriginales.find(x => x.id === id);
+const nombre = q?.nombre || `ID ${id}`;
+if (!confirm(`¿Rechazar la quiniela de "${nombre}"? ⚠️`)) return;
+try {
+mostrarLoading(true);
+const response = await fetch(`/api/quinielas/${id}/rechazar`, {
+method: 'PATCH',
+headers: { 'Content-Type': 'application/json' },
+});
+const data = await response.json();
+if (response.ok && data.success) {
+await cargarDatos();
+} else {
+throw new Error(data.detail || data.mensaje || 'Error al rechazar');
+}
+} catch (error) {
+alert('❌ Error: ' + error.message);
+} finally {
+mostrarLoading(false);
+}
+}
+async function rechazarTodas() {
+if (!datosOriginales.length) { alert('No hay quinielas en espera.'); return; }
+if (!confirm(`¿Rechazar todas las ${datosOriginales.length} quinielas en espera? ⚠️`)) return;
+if (!confirm('Ultima confirmacion : Esta acción no se puede deshacer. 🚨')) return;
+try {
+mostrarLoading(true);
+const resultados = await Promise.allSettled(
+datosOriginales.map(q =>
+fetch(`/api/quinielas/${q.id}/rechazar`, {
+method: 'PATCH',
+headers: { 'Content-Type': 'application/json' },
+})
+)
+);
+const exitosas = resultados.filter(r => r.status === 'fulfilled').length;
+alert(`${exitosas} quinielas rechazadas.`);
+await cargarDatos();
+} catch (error) {
+alert('Error: ❌' + error.message);
+} finally {
+mostrarLoading(false);
+}
+}
+function exportarCSV() {
+if (!gridApi) return;
+gridApi.exportDataAsCsv({
+fileName: `espera-${Date.now()}.csv`,
+processCellCallback: params => {
+const val = params.value;
+if (typeof val === 'string') return val.replace(/<[^>]+>/g, '');
+return val ?? '';
+},
+});
+}
+function actualizarEstadisticas() {
+document.getElementById('totalStat').textContent = datosOriginales.length;
+document.getElementById('vendedoresStat').textContent = new Set(datosOriginales.map(q => q.vendedor)).size;
+}
+async function recargarDatos() { await cargarDatos(); }
+function mostrarLoading(show) {
+document.getElementById('loadingOverlay')?.classList.toggle('show', show);
+}
+function mostrarError(mensaje) {
+if (gridApi) gridApi.setGridOption('rowData', []);
+console.error('Error:', mensaje);
+alert('❌ Error al cargar datos: ' + mensaje);
+}
+</script>
+</body>
+</html>

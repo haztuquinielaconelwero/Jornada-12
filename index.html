@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+<meta name="description" content="Panel de administración - Quinielas MX">
+<title>Quinielas "El Wero"</title>
+<link rel="stylesheet" href="styles.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#006847">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Quinielas">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body>
+<!-- Esto de abajo trabaja con mi header --> <!-- Esto de abajo trabaja con mi header --> <!-- Esto de abajo trabaja con mi header -->
+<header class="admin-header">
+<div class="header-content">
+<div class="header-brand">
+<span class="brand-name">Quinielas "El Wero"</span>
+<span class="brand-ball">⚽</span>
+</div>
+<div class="header-user">
+<span class="user-name" onclick="navigateTo('quiniela')">Participa Ya</span>
+</div>
+</div>
+</header>
+<!-- Esto de abajo trabaja con Inicio , juega limpio siente tu liga--><!-- Esto de abajo trabaja con Inicio , juega limpio siente tu liga-->
+<section class="hero-admin active" id="hero">
+<div class="hero-content">
+<div class="hero-badge">
+<span class="jornada-badge">Jornada 1 Liga MX</span>
+</div>
+<h1 class="hero-title">Inicio 🏠</h1>
+<p class="hero-subtitle">Juega limpio, siente tu liga</p>
+<div class="hero-stats">
+<div class="hero-stat">
+<span class="hero-stat__number hero-stat__number--red" id="quinielasNoJugandoCount" data-count="12">0</span>
+<span class="hero-stat__label">Quinielas no jugando</span>
+</div>
+<div class="hero-stat">
+<span class="hero-stat__number hero-stat__number--green" id="quinielasJugandoCount" data-count="8">0</span>
+<span class="hero-stat__label">Quinielas jugando</span>
+</div>
+</div>
+</div>
+<div class="hero-decoration">
+<svg class="decoration-ball" viewBox="0 0 100 100" fill="none">
+<circle cx="50" cy="50" r="45" stroke="currentColor" stroke-width="1.5" opacity="0.15"/>
+<circle cx="50" cy="50" r="30" stroke="currentColor" stroke-width="1" opacity="0.1"/>
+<circle cx="50" cy="50" r="15" stroke="currentColor" stroke-width="1" opacity="0.2"/>
+</svg>
+<img src="logos/logo.png" alt="Logo" class="hero-profile-img">
+</div>
+</section>
+<!-- Esto de abajo trabaja con analisis , Fútbol explicado con datos y porcentajes--> 
+<section class="hero-admin hero-analisis" id="hero-analisis">
+<div class="hero-content">
+<div class="hero-badge">
+<span class="jornada-badge">Jornada 1 Liga MX</span>
+</div>
+<h1 class="hero-title">Análisis 📊</h1>
+<p class="hero-subtitle">Fútbol explicado con datos y porcentajes</p>
+<div class="hero-stats">
+<div class="hero-stat">
+<span class="hero-stat__number hero-stat__number--red" data-count="18">18</span>
+<span class="hero-stat__label">Equipos mexicanos</span>
+</div>
+<div class="hero-stat">
+<span class="hero-stat__number hero-stat__number--green" data-count="85">0</span>
+<span class="hero-stat__label">Equipos europeos</span>
+</div>
+</div>
+</div>
+<div class="hero-decoration">
+<svg class="decoration-ball" viewBox="0 0 100 100" fill="none">
+<circle cx="50" cy="50" r="45" stroke="currentColor" stroke-width="1.5" opacity="0.15"/>
+<circle cx="50" cy="50" r="30" stroke="currentColor" stroke-width="1" opacity="0.1"/>
+<circle cx="50" cy="50" r="15" stroke="currentColor" stroke-width="1" opacity="0.2"/>
+</svg>
+<img src="logos/logo.png" alt="Logo" class="hero-profile-img">
+</div>
+</section>
+<!-- Esto de abajo trabaja con quiniela , Cada partido es una decisión, cada acierto te acerca al premio--> 
+<section class="hero-admin hero-quiniela" id="hero-quiniela">
+<div class="hero-content">
+<div class="hero-badge">
+<span class="jornada-badge">Jornada 1 Liga MX</span>
+</div>
+<h1 class="hero-title">Quiniela 📝</h1>
+<p class="hero-subtitle">Cada partido es una decisión, cada acierto te acerca al premio</p>
+</div>
+</section>
+<!-- Esto de abajo trabaja con Resultados , Donde el instinto se convierte en victoria--> 
+<section class="hero-admin hero-resultados" id="hero-resultados">
+<div class="hero-content">
+<div class="hero-badge">
+<span class="jornada-badge">Jornada 1 Liga MX</span>
+</div>
+<h1 class="hero-title">Resultados 🏆</h1>
+<p class="hero-subtitle">Donde el instinto se convierte en victoria</p>
+<div class="hero-stats">
+<div class="hero-stat">
+<span class="hero-stat__number hero-stat__number--red" id="quinielasNoJugandoCountResultados" data-count="127">0</span>
+<span class="hero-stat__label">Quinielas no jugando</span>
+</div>
+<div class="hero-stat">
+<span class="hero-stat__number hero-stat__number--green" id="quinielasJugandoCountResultados" data-count="15">0</span>
+<span class="hero-stat__label">Quinielas jugando</span>
+</div>
+</div>
+</div>
+<div class="hero-decoration">
+<svg class="decoration-ball" viewBox="0 0 100 100" fill="none">
+<circle cx="50" cy="50" r="45" stroke="currentColor" stroke-width="1.5" opacity="0.15"/>
+<circle cx="50" cy="50" r="30" stroke="currentColor" stroke-width="1" opacity="0.1"/>
+<circle cx="50" cy="50" r="15" stroke="currentColor" stroke-width="1" opacity="0.2"/>
+</svg>
+<img src="logos/logo.png" alt="Logo" class="hero-profile-img">
+</div>
+</section>
+<!-- Esto de abajo trabaja con Ayuda , Cada partido es una decisión, cada acierto te acerca al premio--> 
+<section class="hero-admin hero-ayuda" id="hero-ayuda">
+<div class="hero-content">
+<div class="hero-badge">
+<span>Soporte 24/7</span>
+</div>
+<h1 class="hero-title">Ayuda ❓</h1>
+<p class="hero-subtitle">No juegas solo, estamos contigo en cada paso</p>
+</div>
+</section>
+<!-- Esto de abajo trabaja con la el inicio de mi pagina 1 --> <!-- Esto de abajo trabaja con la el inicio de mi pagina 1-->
+<main class="main-content" id="mainContent">
+<section class="page active" id="pageInicio">
+<div class="hero">
+<div class="hero-bg"></div>
+<div class="hero-content">
+<span class="hero-badge">Prueba tu suerte y gana</span>
+<img src="logos/mexico.png" alt="México" class="hero-logo">
+<p class="hero-text">Demuestra cuánto sabes de futbol.<br>Predice los resultados, compite contra otros y gana premios increíbles.</p>
+<div class="hero-metrics">
+<div class="metric">
+<span class="metric-icon">👥</span>
+<span class="metric-value">+4K</span>
+<span class="metric-label">jugadores</span>
+</div>
+<div class="metric">
+<span class="metric-icon">💰</span>
+<span class="metric-value">+80K</span>
+<span class="metric-label">Premios</span>
+</div>
+<div class="metric">
+<span class="metric-icon">✅</span>
+<span class="metric-value">100%</span>
+<span class="metric-label">confiable</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Esto de abajo trabaja con la el inicio de mi pagina 2 --> <!-- Esto de abajo trabaja con la el inicio de mi pagina 2-->
+<div class="section">
+<div class="steps-container">
+<div class="step-card">
+<div class="step-number">1</div>
+<div class="step-icon">📝</div>
+<h4>Llena tu quiniela</h4>
+<p>Elige tus resultados y guarda tu quiniela</p>
+</div>
+<div class="step-card">
+<div class="step-number">2</div>
+<div class="step-icon">📤</div>
+<h4>Envía tu quiniela</h4>
+<p>Regístrala fácilmente y entra al juego</p>
+</div>
+<div class="step-card">
+<div class="step-number">3</div>
+<div class="step-icon">🏆</div>
+<h4>Gana premios</h4>
+<p>Acumula puntos y llévate increíbles premios</p>
+</div>
+</div>
+</div>
+<!-- Esto de abajo trabaja con la el inicio de mi pagina 3 --> <!-- Esto de abajo trabaja con la el inicio de mi pagina 3-->
+<div class="section section-dark">
+<span class="section-badge">Comunidad</span>
+<h3 class="section-title">No te lo pierdas</h3>
+<p class="section-subtitle">Únete a la comunidad</p>
+<p class="section-text">Miles de quinieleros ya nos siguen</p>
+<div class="social-buttons">
+<a href="https://www.facebook.com/profile.php?id=61586293432281" target="_blank" class="social-btn facebook">
+<svg viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+Síguenos en Facebook
+</a>
+<a href="https://whatsapp.com/channel/0029VbBeTREDZ4LYMSgzS219" target="_blank" class="social-btn whatsapp">
+<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+Únete al canal de WhatsApp
+</a>
+<a href="https://chat.whatsapp.com/JKFSN3hDRBA91iy9T7GLPh" target="_blank" class="social-btn whatsapp-group grupo-jornada">
+<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+<span class="texto-grupo-jornada">Únete al grupo de WhatsApp</span>
+</a>
+</div>
+</div>
+<!-- Esto de abajo trabaja con la el inicio de mi pagina 4 --> <!-- Esto de abajo trabaja con la el inicio de mi pagina 4-->
+<div class="section section-cta">
+<h3 class="section-title">¿Listo para ganar?</h3>
+<p class="section-text">No te quedes fuera de la jornada</p>
+<button class="btn-primary btn-large" onclick="navigateTo('quiniela')">Registrarme ahora</button>
+</div>
+</section>
+<!-- Esto de abajo trabaja con las cosas de Analisis, Horarios , Porcentajes --> <!-- Esto de abajo trabaja con las cosas de Analisis, Horarios , Porcentajes -->
+<section class="page" id="pageAnalisis">
+<div class="tab-container">
+<button class="tab-btn active" data-tab="horarios">Horarios</button>
+<button class="tab-btn" data-tab="porcentajes">Porcentajes</button>
+</div>
+<div class="tab-content active" id="tabHorarios">
+<div class="matches-list" id="matchesHorarios"></div>
+</div>
+<div class="tab-content" id="tabPorcentajes">
+<div class="matches-list" id="matchesPorcentajes"></div>
+</div>
+</section>
+<!-- Esto de abajo trabaja con la pagina de la quiniela--> <!-- Esto de abajo trabaja con la pagina de la quiniela--> 
+<section class="page" id="pageQuiniela">
+<div class="quiniela-form">
+<div class="input-group" style="display: flex; gap: 0; align-items: stretch;">
+<input type="text" id="playerName" placeholder="Tu nombre" maxlength="15" style="flex: 1; margin: 0;">
+<button class="btn-save" onclick="saveQuiniela()">Guardar 💾</button>
+<button class="btn-reglamento" onclick="showReglamento()">📋</button>
+</div>
+<div class="quiniela-matches" id="quinielaMatches"></div>
+<div class="quiniela-actions">
+<button class="action-btn btn-delete" onclick="clearQuiniela()">Borrar<span class="action-icon">🗑️</span></button>
+<button class="action-btn" onclick="randomQuiniela()">Aleatoria<span class="action-icon">🎲</span></button>
+<button class="action-btn" type="button">Quinielas<span class="action-value quiniela-count">0</span></button>
+<button class="action-btn" type="button">Precio<span class="action-value price-display">$0</span></button>
+<button class="action-btn" data-action="show-saved" onclick="showSaved()">Guardadas<span class="action-icon">💾</span></button>
+<button class="action-btn" onclick="sendQuiniela()">Enviar<span class="action-icon">✅</span></button>
+</div>
+<button class="quiniela-help-banner" onclick="showHelpModal()">
+<span class="help-question">¿Tienes duda de cómo enviar tu quiniela?</span>
+<span class="btn-help-icon">❓</span>
+</button>
+</div>
+</section>
+<!-- Esto de abajo trabaja con la pagina de los resultados--> <!-- Esto de abajo trabaja con la pagina de los resultados-->
+<section class="page" id="pageResultados">
+<div class="tab-container">
+<button class="tab-btn active" data-tab="misQuinielas">Jugadas</button>
+<button class="tab-btn" data-tab="listaGeneral">Lista</button>
+<button class="tab-btn" data-tab="podio1">🥇</button>
+<button class="tab-btn" data-tab="podio2">🥈</button>
+<button class="tab-btn" data-tab="verificar">Verificar</button>
+<button class="tab-btn" data-tab="simulador">Simulador</button>
+</div>
+<!-- Esto de abajo trabaja con las quinielas de jugadas--> <!-- Esto de abajo trabaja con las quinielas de jugadas-->
+<div class="tab-content active" id="tabMisQuinielas">
+<div class="my-quinielas-list" id="myQuinielasList">
+<div class="empty-state">
+<span class="empty-icon">📋</span>
+<p>Aún no tienes quinielas guardadas</p>
+<button class="btn-primary" onclick="navigateTo('quiniela')">Crear mi primera quiniela</button>
+</div>
+</div>
+</div>
+<!-- Esto de abajo trabaja con la lista oficial--> <!-- Esto de abajo trabaja con la lista oficial-->
+<div class="tab-content" id="tabListaGeneral">
+<div class="table-container">
+<div class="table-wrapper">
+<table class="results-table">
+<thead>
+<tr>
+<th class="col-folio">Folio</th>
+<th class="col-name">Nombre</th>
+<th class="col-vendor">Vendedor</th>
+<th class="col-match" data-match-index="1"></th>
+<th class="col-match" data-match-index="2"></th>
+<th class="col-match" data-match-index="3"></th>
+<th class="col-match" data-match-index="4"></th>
+<th class="col-match" data-match-index="5"></th>
+<th class="col-match" data-match-index="6"></th>
+<th class="col-match" data-match-index="7"></th>
+<th class="col-match" data-match-index="8"></th>
+<th class="col-match" data-match-index="9"></th>
+<th class="col-points">Pts</th>
+</tr>
+</thead>
+<tbody id="listaOficialTableBody"></tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Esto de abajo trabaja con el contenido del 1 lugar-->
+<div class="tab-content" id="tabPodio1">
+<main class="main special-page gold-theme">
+<div class="special-header">
+<h2 class="special-title-yellow">Participantes<br>en primer Lugar</h2>
+<div class="medal-container"><span class="medal-sticker">🥇</span></div>
+</div>
+<span class="winner-count" id="firstPlaceTotal">0</span>
+<span class="winner-label" id="firstPlacePoints">cargando...</span>
+</main>
+</div>
+<!-- Esto de abajo trabaja con el contenido del 2 lugar--> 
+<div class="tab-content" id="tabPodio2">
+<main class="main special-page silver-theme">
+<div class="special-header">
+<h2 class="special-title-silver">Participantes<br>en segundo Lugar</h2>
+<div class="medal-container"><span class="medal-sticker">🥈</span></div>
+</div>
+<span class="winner-count" id="secondPlaceTotal">0</span>
+<span class="winner-label" id="secondPlacePoints">cargando...</span>
+</main>
+</div>
+<!-- Esto de abajo trabaja con el contenido del verificador--> <!-- Esto de abajo trabaja con el contenido del verificador-->
+<div class="tab-content" id="tabVerificar">
+<main class="main">
+<div class="search-container">
+<div class="search-box">
+<input type="text" id="searchInput" class="search-input" placeholder="Nombre o vendedor..." autocomplete="off">
+<button id="searchBtn" class="search-btn">Buscar</button>
+</div>
+</div>
+<div class="search-results" id="searchResults">
+<div class="no-results">
+<span class="no-results-icon">🔎</span>
+<p>Buscar quiniela</p>
+</div>
+</div>
+</main>
+</div>
+<!-- Esto de abajo trabaja con el contenido del simulador--> <!-- Esto de abajo trabaja con el contenido del simulador--> 
+<div class="tab-content" id="tabSimulador">
+<main class="main">
+<div class="teams-header">
+<h2 class="section-title">Simulador de resultados 🎮 </h2>
+<p class="text-center mb-1" style="color:var(--texto-secundario);">Ajusta los resultados y visualiza tu posición final</p>
+</div>
+<div class="simulation-shell">
+<div class="simulation-container">
+<div class="simulation-grid" id="simulationGrid"></div>
+<div class="simulation-actions">
+<button class="sim-btn sim-btn-secondary" id="resetSimulation">Reiniciar pronosticos 🔄</button>
+</div>
+</div>
+</div>
+<div class="summary-cards mb-2">
+<div class="summary-card gold">
+<span class="summary-icon">🥇</span>
+<span class="summary-label">1er Lugar</span>
+<span class="summary-count" id="simFirstPlace">0</span>
+</div>
+<div class="summary-card silver">
+<span class="summary-icon">🥈</span>
+<span class="summary-label">2do Lugar</span>
+<span class="summary-count" id="simSecondPlace">0</span>
+</div>
+<div class="summary-card total">
+<span class="summary-icon">👥</span>
+<span class="summary-label">Total</span>
+<span class="summary-count" id="simTotal">0</span>
+</div>
+</div>
+<h2 class="section-title">Tabla de posiciones (Simulada)</h2>
+<div class="table-container">
+<div class="table-wrapper">
+<table class="results-table">
+<thead>
+<tr>
+<th class="col-folio">Folio</th>
+<th class="col-name">Nombre</th>
+<th class="col-vendor">Vendedor</th>
+<th class="col-match" data-match-index="1"></th>
+<th class="col-match" data-match-index="2"></th>
+<th class="col-match" data-match-index="3"></th>
+<th class="col-match" data-match-index="4"></th>
+<th class="col-match" data-match-index="5"></th>
+<th class="col-match" data-match-index="6"></th>
+<th class="col-match" data-match-index="7"></th>
+<th class="col-match" data-match-index="8"></th>
+<th class="col-match" data-match-index="9"></th>
+<th class="col-points">Pts</th>
+</tr>
+</thead>
+<tbody id="simulationResultsBody"></tbody>
+</table>
+</div>
+</div>
+</main>
+</div>
+</section>
+<!-- Esto de abajo trabaja con la pagina de ayuda--><!-- Esto de abajo trabaja con la pagina de ayuda-->
+<section class="page" id="pageAyuda">
+<section class="quick-help" id="quick-help">
+<div class="help-section-header">
+<h2 class="help-section-title">Toca para ver más información 👇</h2>
+</div>
+<div class="help-cards">
+<article class="help-card" data-card="como-funciona">
+<div class="help-card-icon">
+<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+</div>
+<h3 class="help-card-title">¿Cómo funciona la quiniela?</h3>
+<p class="help-card-preview">Predice los resultados de los partidos</p>
+<div class="help-card-content">
+<p>La quiniela es simple: predices los resultados de los partidos de la jornada. Por cada acierto ganas 1 punto.<br>El que más puntos acumule al final, ¡gana el premio!</p>
+<ul>
+<li>Selecciona ganador local, <br>empate o visitante</li>
+<li>Guarda tu quiniela cuando estés seguro de tus predicciones</li>
+</ul>
+</div>
+<div class="help-card-arrow">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+</div>
+</article>
+<article class="help-card" data-card="como-envio">
+<div class="help-card-icon">
+<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+</div>
+<h3 class="help-card-title">¿Cómo envío mi quiniela?</h3>
+<p class="help-card-preview">Proceso simple y rápido</p>
+<div class="help-card-content">
+<p>Una vez que hayas completado todas tus predicciones:</p>
+<ul>
+<li>Revisa que todos los partidos tengan predicción</li>
+<li>Presiona el botón "Enviar quiniela"</li>
+<li>Serás redirigido a WhatsApp para enviar tu quiniela</li>
+</ul>
+</div>
+<div class="help-card-arrow">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+</div>
+</article>
+<article class="help-card" data-card="ver-puntos">
+<div class="help-card-icon">
+<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"></path><path d="M18 20V4"></path><path d="M6 20v-4"></path></svg>
+</div>
+<h3 class="help-card-title">¿Cómo veo mis puntos?</h3>
+<p class="help-card-preview">Sigue tu posición en tiempo real</p>
+<div class="help-card-content">
+<p>Puedes ver tus puntos y posición en cualquier momento:</p>
+<ul>
+<li>Entra a la sección "Resultados"</li>
+<li>Consulta el tablero de posiciones</li>
+<li>Los puntos se actualizan cada partido</li>
+<li>Compara con otros participantes</li>
+</ul>
+</div>
+<div class="help-card-arrow">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+</div>
+</article>
+<article class="help-card" data-card="si-gane">
+<div class="help-card-icon">
+<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg>
+</div>
+<h3 class="help-card-title">¿Cómo sé si gané?</h3>
+<p class="help-card-preview">Notificación y pago garantizado</p>
+<div class="help-card-content">
+<p>Si resultas ganador:</p>
+<ul>
+<li>Te notificamos por WhatsApp</li>
+<li>Tu nombre aparece en el tablero de ganadores</li>
+<li>El pago se realiza en menos de 24 horas</li>
+<li>Puedes elegir método de pago</li>
+</ul>
+</div>
+<div class="help-card-arrow">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+</div>
+</article>
+<article class="help-card" data-card="reglas">
+<div class="help-card-icon">
+<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+</div>
+<h3 class="help-card-title">Reglas generales</h3>
+<p class="help-card-preview">Todo lo que necesitas saber</p>
+<div class="help-card-content">
+<p>Reglas básicas de participación:</p>
+<ul>
+<li>Puedes participar con las quinielas que desees por jornada</li>
+<li>El cierre de la quiniela es 4 horas antes del primer partido</li>
+<li>En caso de empate en puntos, el premio se divide entre los ganadores</li>
+<li>Es responsabilidad de cada participante verificar que su quiniela haya sido subida correctamente</li>
+<li>Quiniela no enviada, no subida por algún vendedor o por cualquier error, simplemente no participa en la jornada.</li>
+<li>El Wero solo responde por la lista general de resultados</li>
+</ul>
+</div>
+<div class="help-card-arrow">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+</div>
+</article>
+</div>
+</section>
+<section class="help-deposits" id="deposits">
+<div class="help-section-header">
+<div class="help-deposits-badge">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><polyline points="9 12 11 14 15 10"></polyline></svg>
+<span>Seguro 100% 🔒</span>
+</div>
+<h2 class="help-section-title">Métodos de depósito</h2>
+<p class="help-section-subtitle">Elige tu método preferido y deposita fácilmente</p>
+</div>
+<div class="help-deposit-cards">
+<!-- ⚽ JavaScript llena esto automáticamente según el vendedor ⚽ -->
+</div>
+<div class="help-deposit-tip">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+<p>Después de depositar, envía tu comprobante por WhatsApp para activar tu jugada</p>
+</div>
+</section>
+<section class="help-contact" id="contact">
+<div class="help-contact-content">
+<div class="help-contact-icon">
+<svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+</div>
+<h2 class="help-contact-title">¿Dudas? escríbenos directo</h2>
+<p class="help-contact-subtitle">Respondemos tus dudas</p>
+<a href="https://wa.me/528281011650" class="help-whatsapp-button" target="_blank" rel="noopener">
+<span>Abrir WhatsApp</span>
+<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+</a>
+</div>
+</section>
+<section class="help-faq" id="faq">
+<div class="help-section-header">
+<h2 class="help-section-title">Preguntas frecuentes a <br>"El Wero"</h2>
+<p class="help-section-subtitle">Las dudas más comunes resueltas</p>
+</div>
+<div class="help-faq-list">
+<article class="help-faq-item">
+<button class="help-faq-question">
+<span>¿Cómo te llamas?</span>
+<svg class="help-faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+</button>
+<div class="help-faq-answer">
+<p>Irving Emilio Gonzalez Romero.</p>
+</div>
+</article>
+<article class="help-faq-item">
+<button class="help-faq-question">
+<span>¿Dónde se ubican?</span>
+<svg class="help-faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+</button>
+<div class="help-faq-answer">
+<p>Cadereyta Jiménez.</p>
+</div>
+</article>
+<article class="help-faq-item">
+<button class="help-faq-question">
+<span>¿Cuánto es el premio?</span>
+<svg class="help-faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+</button>
+<div class="help-faq-answer">
+<p>El premio se publica poco antes del primer partido.</p>
+</div>
+</article>
+<article class="help-faq-item">
+<button class="help-faq-question">
+<span>¿Qué pasa si salen varios ganadores?</span>
+<svg class="help-faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+</button>
+<div class="help-faq-answer">
+<p>El premio se reparte entre las personas que obtuvieron la mayor cantidad de puntos.</p>
+</div>
+</article>
+<article class="help-faq-item">
+<button class="help-faq-question">
+<span>¿A qué hora cierra la quiniela?</span>
+<svg class="help-faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+</button>
+<div class="help-faq-answer">
+<p>Semana a semana se postula diferente horario tras finalizar la quiniela anterior.</p>
+</div>
+</article>
+<article class="help-faq-item">
+<button class="help-faq-question">
+<span>¿Cómo es el método de pago cuando resulto ganador?</span>
+<svg class="help-faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+</button>
+<div class="help-faq-answer">
+<p>Se te pide alguna tarjeta de tu pertenencia para depositarte.</p>
+</div>
+</article>
+<article class="help-faq-item">
+<button class="help-faq-question">
+<span>¿Cuándo se publica la lista de participantes?</span>
+<svg class="help-faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+</button>
+<div class="help-faq-answer">
+<p>Poco antes del primer partido.</p>
+</div>
+</article>
+<article class="help-faq-item">
+<button class="help-faq-question">
+<span>¿Cuánto vale la quiniela?</span>
+<svg class="help-faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+</button>
+<div class="help-faq-answer">
+<p>$30 pesos.</p>
+</div>
+</article>
+</div>
+</section>
+</section>
+<!-- Esto de abajo trabaja con la pagina de administrador--><!-- Esto de abajo trabaja con la pagina de administrador-->
+<section class="page" id="pageAdmin">
+<div class="admin-root">
+<section class="admin-hero" id="admin-hero">
+<div class="hero-content">
+<h1 class="hero-title">Panel del administrador</h1>
+<p class="hero-subtitle">Control total de tus quinielas</p>
+<p class="hero-vendor" id="heroVendorText">Vendedor</p>
+</div>
+</section>
+<section class="admin-kpis" id="admin-kpis">
+<div class="section-header">
+<h2 class="section-title">Resumen general</h2>
+</div>
+</section>
+<section class="admin-alerts" id="admin-alerts">
+<div class="alert alert--danger">
+<div class="alert__icon">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+</div>
+<div class="alert__content">
+<p class="alert__title"><span id="pendingCount">0</span> Por confirmar</p>
+<p class="alert__text">Requieren confirmación</p>
+</div>
+<button class="alert__action" aria-label="Ver pendientes">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+</button>
+</div>
+<div class="alert alert--success">
+<div class="alert__icon">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+</div>
+<div class="alert__content">
+<p class="alert__title"><span id="playingCount">0</span> Jugando</p>
+<p class="alert__text">Quinielas jugando en la jornada</p>
+</div>
+<button class="alert__action" aria-label="Ver jugando">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+</button>
+</div>
+<div class="alert alert--info">
+<div class="alert__icon">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="12" x2="12" y2="16"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+</div>
+<div class="alert__content">
+<p class="alert__title"><span id="waitingCount">0</span> En espera</p>
+<p class="alert__text">Espera a que sean añadidas</p>
+</div>
+<button class="alert__action" aria-label="Ver en espera">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+</button>
+</div>
+<div class="alert alert--neutral">
+<div class="alert__icon">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+</div>
+<div class="alert__content">
+<p class="alert__title"><span id="totalCount">0</span> En la lista</p>
+<p class="alert__text">Total de quinielas esta semana</p>
+</div>
+<button class="alert__action" aria-label="Ver lista">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+</button>
+</div>
+</section>
+<section class="admin-current-week" id="admin-current-week">
+<div class="section-header">
+<h2 class="section-title">Jornada actual</h2>
+</div>
+<div class="week-card">
+<div class="week-card__header">
+<div class="week-card__jornada">
+<span class="week-card__number">Mx</span>
+</div>
+<div class="week-card__dates">
+<p class="week-card__range">Jornada 1</p>
+<p class="week-card__status">Cierra en 6 horas</p>
+</div>
+</div>
+<div class="week-card__progress">
+<div class="progress-bar">
+<div class="progress-bar__fill" style="--progress: 65%"></div>
+</div>
+<div class="progress-labels">
+<span>Inicio</span>
+<span>65% completado</span>
+<span>Cierre</span>
+</div>
+</div>
+</div>
+</section>
+<!--Esto de abajo trabaja en las seccion de la vavegacion en Admnistrador-->
+<section class="admin-filters" id="admin-filters">
+<div class="filters-bar">
+<div class="filter-buttons">
+<button class="filter-btn active" data-filter="pendientes">
+Pendientes <span class="filter-emoji">📋</span>
+</button>
+<button class="filter-btn" data-filter="espera">
+En espera <span class="filter-emoji">⏸️</span>
+</button>
+<button class="filter-btn" data-filter="jugando">
+Jugando <span class="filter-emoji">⚽</span>
+</button>
+</div>
+</div>
+</section>
+<!--Esto de abajo trabaja en la lista de pendientes en mi codigo-->
+<section class="admin-quinielas-list" id="adminPendientes">
+<div class="section-header">
+<h2 class="section-title">Pendientes</h2>
+<span class="section-count" id="totalQuinielasCount">0 En total</span>
+</div>
+<div class="table-container">
+<div class="table-wrapper">
+<table class="results-table">
+<thead>
+<tr>
+<th class="col-name">Nombre</th>
+<th class="col-match" data-match-index="1">P1</th>
+<th class="col-match" data-match-index="2">P2</th>
+<th class="col-match" data-match-index="3">P3</th>
+<th class="col-match" data-match-index="4">P4</th>
+<th class="col-match" data-match-index="5">P5</th>
+<th class="col-match" data-match-index="6">P6</th>
+<th class="col-match" data-match-index="7">P7</th>
+<th class="col-match" data-match-index="8">P8</th>
+<th class="col-match" data-match-index="9">P9</th>
+<th class="col-actions">Acción</th>
+</tr>
+</thead>
+<tbody id="pendientesTableBody">
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<!--Esto de abajo trabaja en la lista en Jugadas en mi codigo-->
+<section class="admin-quinielas-list" id="adminJugando" style="display:none;">
+<div class="section-header">
+<h2 class="section-title">Jugando</h2>
+<span class="section-count" id="jugandoCount">0 en juego</span>
+</div>
+<div class="table-container">
+<div class="table-wrapper">
+<table class="results-table">
+<thead>
+<tr>
+<th class="col-folio">Folio</th>
+<th class="col-name">Nombre</th>
+<th class="col-vendor">Vendedor</th>
+<th class="col-match" data-match-index="1"></th>
+<th class="col-match" data-match-index="2"></th>
+<th class="col-match" data-match-index="3"></th>
+<th class="col-match" data-match-index="4"></th>
+<th class="col-match" data-match-index="5"></th>
+<th class="col-match" data-match-index="6"></th>
+<th class="col-match" data-match-index="7"></th>
+<th class="col-match" data-match-index="8"></th>
+<th class="col-match" data-match-index="9"></th>
+<th class="col-points">Pts</th>
+</tr>
+</thead>
+<tbody id="jugandoTableBody"></tbody>
+</table>
+</div>
+</div>
+</section>
+<!--Esto de abajo trabaja en la lista de Espera en mi codigo-->
+<section class="admin-quinielas-list" id="adminEspera" style="display:none;">
+<div class="section-header">
+<h2 class="section-title">En espera</h2>
+<span class="section-count" id="esperaCount">0 en espera</span>
+</div>
+<div class="table-container">
+<div class="table-wrapper">
+<table class="results-table">
+<thead>
+<tr>
+<th class="col-name">Nombre</th>
+<th class="col-match" data-match-index="1">P1</th>
+<th class="col-match" data-match-index="2">P2</th>
+<th class="col-match" data-match-index="3">P3</th>
+<th class="col-match" data-match-index="4">P4</th>
+<th class="col-match" data-match-index="5">P5</th>
+<th class="col-match" data-match-index="6">P6</th>
+<th class="col-match" data-match-index="7">P7</th>
+<th class="col-match" data-match-index="8">P8</th>
+<th class="col-match" data-match-index="9">P9</th>
+<th class="col-actions">Esperando</th>
+</tr>
+</thead>
+<tbody id="esperaTableBody">
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<!-- Toast de notificaciones -->
+<div class="admin-toast" id="adminToast" role="alert" aria-live="polite">
+<div class="toast__icon">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+<polyline points="20 6 9 17 4 12"></polyline>
+</svg>
+</div>
+<span class="toast__message" id="adminToastMessage">Acción completada</span>
+</div>
+</main>
+<!-- Esto de abajo trabaja con el final de todas las paginas--><!-- Esto de abajo trabaja con el final de todas las paginas-->
+<footer class="footer">
+<p class="footer-brand">Quinielas "El Wero" © 2026</p>
+<div class="footer-links">
+<a href="#" onclick="navigateTo('inicio'); return false;">Inicio</a>
+<a href="#" onclick="navigateTo('analisis'); return false;">Análisis</a>
+<a href="#" onclick="navigateTo('quiniela'); return false;">Quiniela</a>
+<a href="#" onclick="navigateTo('resultados'); return false;">Resultados</a>
+<a href="#" onclick="navigateTo('ayuda'); return false;">Ayuda</a>
+</div>
+</footer>
+<!-- Esto de abajo trabaja con la navegacion principal de mi pagina--> <!-- Esto de abajo trabaja con la navegacion principal de mi pagina-->
+<nav class="floating-nav" id="floatingNav">
+<button class="nav-toggle" id="navToggle" aria-label="Menú de navegación">
+<span class="nav-toggle-icon">⚽</span>
+</button>
+<div class="nav-items" id="navItems">
+<button class="nav-item active" data-page="inicio" aria-label="Inicio">
+<span class="nav-icon">🏠</span>
+<span class="nav-label">Inicio</span>
+</button>
+<button class="nav-item" data-page="analisis" aria-label="Análisis">
+<span class="nav-icon">📊</span>
+<span class="nav-label">Análisis</span>
+</button>
+<button class="nav-item" data-page="quiniela" aria-label="Quiniela">
+<span class="nav-icon">📝</span>
+<span class="nav-label">Quiniela</span>
+</button>
+<button class="nav-item" data-page="resultados" aria-label="Resultados">
+<span class="nav-icon">🏆</span>
+<span class="nav-label">Resultados</span>
+</button>
+<button class="nav-item" data-page="ayuda" aria-label="Ayuda">
+<span class="nav-icon">❓</span>
+<span class="nav-label">Ayuda</span>
+</button>
+</div>
+</nav>
+<div id="pwaBanner" style="
+display:none; position:fixed; bottom:0; left:0; right:0; z-index:99999;
+background:linear-gradient(135deg,#006847,#004d35);
+color:white; padding:16px 20px 24px; border-radius:20px 20px 0 0;
+box-shadow:0 -4px 30px rgba(0,0,0,0.4); flex-direction:column; gap:12px;
+">
+<div style="display:flex; align-items:center; gap:12px;">
+<img src="/logos/logo.png" style="width:48px;height:48px;border-radius:12px;">
+<div>
+<div style="font-weight:700; font-size:1rem;">Instala Quinielas El Wero 📲 </div>
+<div style="font-size:0.78rem; opacity:0.85; margin-top:2px;">Acceso mas rápido</div>
+</div>
+</div>
+<div style="display:flex; gap:10px;">
+<button onclick="PWA.instalarPWA()" style="
+flex:1; background:white; color:#006847; border:none;
+padding:12px; border-radius:10px; font-weight:700;
+font-size:0.9rem; cursor:pointer;">Instalar gratis ✅</button>
+<button onclick="PWA.cerrarBanner()" style="
+background:rgba(255,255,255,0.15); color:white; border:none;
+padding:12px 16px; border-radius:10px; font-size:0.85rem; cursor:pointer;
+">Ahora no</button>
+</div>
+</div>
+<script src="script.js"></script>
+<!-- Esto de abajo trabaja con las alertas de confirmar-Rechazar-Enviar quiniela a whats app--> <!-- Esto de abajo trabaja con las alertas de confirmar-Rechazar-Enviar quiniela a whats app-->
+<div class="modal-overlay" id="modalConfirmar">
+<div class="modal-box modal-confirmar">
+<div class="modal-icon">
+<svg viewBox="0 0 52 52" class="checkmark">
+<circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+<path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+</svg>
+</div>
+<h2 class="modal-title">¿Confirmar esta quiniela?</h2>
+<p class="modal-message" id="confirmarMessage">Esta quiniela pasará a la "lista"</p>
+<div class="modal-actions">
+<button class="btn-modal btn-cancelar" onclick="cerrarModalConfirmar()">Cancelar</button>
+<button class="btn-modal btn-confirmar-modal" onclick="ejecutarConfirmar()">Sí, confirmar</button>
+</div>
+</div>
+</div>
+<div class="modal-overlay" id="modalRechazar">
+<div class="modal-box modal-rechazar">
+<div class="modal-icon-rechazar">
+<svg viewBox="0 0 52 52" class="xmark">
+<circle class="xmark-circle" cx="26" cy="26" r="25" fill="none"/>
+<path class="xmark-cross" fill="none" d="M16,16 L36,36 M36,16 L16,36"/>
+</svg>
+</div>
+<h2 class="modal-title">¿Rechazar esta quiniela?</h2>
+<p class="modal-message" id="rechazarMessage">Esta acción eliminará la quiniela permanentemente</p>
+<div class="modal-actions">
+<button class="btn-modal btn-cancelar-rojo" onclick="cerrarModalRechazar()">Cancelar</button>
+<button class="btn-modal btn-rechazar-modal" onclick="ejecutarRechazo()">Sí, rechazar</button>
+</div>
+</div>
+</div>
+<!-- Modal Envío Exitoso WhatsApp -->
+<div class="modal-overlay modal-whatsapp" id="modalEnvioExitoso">
+<div class="modal-box modal-success">
+<div class="whatsapp-animation">
+<div class="whatsapp-logo">
+<svg viewBox="0 0 175.216 175.552" xmlns="http://www.w3.org/2000/svg">
+<path d="M87.184 25.227c-33.733 0-61.166 27.423-61.178 61.13a60.98 60.98 0 0 0 9.349 32.535l1.455 2.313-6.179 22.558 23.146-6.069 2.235 1.324c9.387 5.571 20.15 8.517 31.126 8.523h.023c33.707 0 61.14-27.426 61.153-61.135a60.75 60.75 0 0 0-17.895-43.251 60.75 60.75 0 0 0-43.235-17.928z" fill="#25d366"/>
+<path d="M68.772 55.603c-1.378-3.061-2.828-3.123-4.137-3.176l-3.524-.043c-1.226 0-3.218.46-4.902 2.3s-6.435 6.287-6.435 15.332 6.588 17.785 7.506 19.013 12.718 20.381 31.405 27.75c15.529 6.124 18.689 4.906 22.061 4.6s10.877-4.447 12.408-8.74 1.532-7.971 1.073-8.74-1.685-1.226-3.525-2.146-10.877-5.367-12.562-5.981-2.91-.919-4.137.921-4.746 5.979-5.819 7.206-2.144 1.381-3.984.462-7.76-2.861-14.784-9.124c-5.465-4.873-9.154-10.891-10.228-12.73s-.114-2.835.808-3.751c.825-.824 1.838-2.147 2.759-3.22s1.224-1.84 1.836-3.065.307-2.301-.153-3.22-4.032-10.011-5.666-13.647" fill="#FFF" fill-rule="evenodd"/>
+</svg>
+</div>
+<div class="rocket">🚀</div>
+</div>
+<h2 class="modal-title-success">¡Quinielas enviadas!</h2>
+<div class="success-details">
+<div class="success-badge">
+<span class="success-number" id="exitosasCount">0</span>
+<span class="success-label">quinielas</span>
+</div>
+<div class="price-box">
+<div class="price-amount" id="totalPriceAmount">$0</div>
+<div class="price-label">Total a pagar</div>
+</div>
+</div>
+<p class="modal-message-success" id="mensajeEnvio">¡Ve a WhatsApp para compartir tus quinielas!</p>
+<div class="modal-actions-full">
+<button class="btn-whatsapp" id="btnIrWhatsApp">
+Ir a WhatsApp
+<svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+<path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+</svg>
+</button>
+<button class="btn-cerrar-modal" onclick="cerrarModalEnvio()">Cerrar</button>
+</div>
+</div>
+</div>
+</body>
+</html>
