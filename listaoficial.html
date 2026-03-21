@@ -86,6 +86,36 @@ background:transparent; color:#bbb; border:1px solid #555; border-radius:5px;
 padding:8px 12px; font-size:13px; cursor:pointer; margin-left:auto; transition:all 0.2s;
 }
 .btn-sel-clear:hover { color:white; border-color:#aaa; }
+.modal-overlay {
+position:fixed; top:0; left:0; width:100%; height:100%;
+background:rgba(0,0,0,0.52); display:none; align-items:center;
+justify-content:center; z-index:8000;
+}
+.modal-overlay.show { display:flex; }
+.modal {
+background:white; border-radius:12px; padding:26px;
+max-width:700px; width:94%; max-height:82vh; overflow-y:auto;
+box-shadow:0 10px 40px rgba(0,0,0,0.25);
+}
+.modal-header { display:flex; align-items:center; margin-bottom:18px; }
+.modal-title  { font-size:17px; font-weight:700; flex:1; }
+.modal-close  { background:none; border:none; font-size:24px; cursor:pointer; color:var(--gray-700); line-height:1; padding:0 4px; }
+.modal-close:hover { color:var(--gray-900); }
+.modal-subtitle { font-size:12px; color:var(--gray-700); margin-bottom:14px; }
+.modal-footer { margin-top:20px; padding-top:16px; border-top:1px solid var(--gray-200); display:flex; justify-content:flex-end; }
+.vf-table { width:100%; border-collapse:collapse; font-size:13px; }
+.vf-table th {
+background:var(--gray-100); padding:9px 12px; text-align:left;
+font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:0.5px;
+border-bottom:2px solid var(--gray-200);
+}
+.vf-table td { padding:10px 12px; border-bottom:1px solid var(--gray-200); vertical-align:top; }
+.vf-table tr:last-child td { border-bottom:none; }
+.vf-table tr:hover td { background:#f8f9fa; }
+.badge-siguiente { display:inline-block; background:#dbeafe; color:#1e40af; font-weight:700; padding:3px 10px; border-radius:5px; font-size:13px; }
+.badge-hueco     { display:inline-block; background:#fee2e2; color:#dc2626; font-weight:700; padding:1px 7px; border-radius:3px; font-size:11px; margin:2px 1px; }
+.no-gaps         { font-size:12px; color:#6b7280; font-style:italic; }
+.vendedor-nombre { font-weight:600; }
 #toastContainer {
 position:fixed; bottom:24px; right:24px; z-index:10000;
 display:flex; flex-direction:column; gap:8px; pointer-events:none;
@@ -103,9 +133,9 @@ transition:opacity 0.25s, transform 0.25s; max-width:360px; pointer-events:auto;
 .container { padding:20px; }
 .section-title { font-size:16px; font-weight:600; color:var(--gray-900); margin-bottom:12px; text-align:center; }
 .resultados-section { background:white; border-radius:8px; padding:20px; box-shadow:0 1px 3px rgba(0,0,0,0.1); margin-bottom:20px; }
-.resultados-grid    { display:flex; justify-content:center; gap:14px; margin-bottom:16px; flex-wrap:wrap; }
+.resultados-grid    { display:flex; justify-content:center; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
 .resultado-input-group { display:flex; flex-direction:column; gap:5px; align-items:center; }
-.resultado-input-group label { font-size:10px; font-weight:600; color:var(--gray-700); display:flex; align-items:center; gap:3px; min-height:22px; }
+.resultado-input-group label { font-size:10px; font-weight:600; color:var(--gray-700); text-transform:uppercase; letter-spacing:0.5px; }
 .resultado-buttons { display:flex; gap:3px; }
 .resultado-btn { padding:7px 11px; border:2px solid var(--gray-300); border-radius:4px; font-size:13px; font-weight:700; background:white; cursor:pointer; transition:all 0.15s; }
 .resultado-btn:hover  { border-color:var(--primary); color:var(--primary); }
@@ -131,7 +161,6 @@ box-shadow:0 1px 3px rgba(0,0,0,0.1); margin-top:20px; flex-wrap:wrap;
 }
 .ag-theme-alpine .ag-header-cell { font-weight:600 !important; font-size:12px !important; text-transform:uppercase; letter-spacing:0.4px; border-right:1px solid var(--gray-300) !important; }
 .ag-theme-alpine .ag-cell { text-align:center !important; display:flex !important; align-items:center !important; justify-content:center !important; border-right:1px solid #f0f0f0 !important; font-size:13px; }
-.ag-theme-alpine .ag-cell .ag-selection-checkbox { margin-right:6px; flex-shrink:0; }
 .ag-theme-alpine .ag-header-cell-label { justify-content:center !important; }
 .ag-theme-alpine .ag-row { transition:background-color 0.1s; }
 .pick-correct   { background:var(--verde-mexicano); color:white; font-weight:700; padding:2px 7px; border-radius:3px; display:inline-block; font-size:12px; }
@@ -172,6 +201,31 @@ Las nuevas quinielas van a en espera automáticamente ⏳
 <button class="btn-sel-delete" onclick="eliminarSeleccionadas()">Eliminar seleccionadas 🗑️</button>
 <button class="btn-sel-clear"  onclick="limpiarSeleccion()">Cancelar ✕</button>
 </div>
+<div class="modal-overlay" id="modalFolios">
+<div class="modal">
+<div class="modal-header">
+<div class="modal-title">Folios por Vendedor 📋 </div>
+<button class="modal-close" onclick="cerrarModalFolios()">✕</button>
+</div>
+<p class="modal-subtitle">
+Solo aparecen vendedores con huecos pendientes. El <strong>Próximo Folio</strong>
+siempre llena el primer hueco disponible.
+</p>
+<table class="vf-table">
+<thead>
+<tr>
+<th>Vendedor · Rango</th>
+<th>Huecos detectados</th>
+<th style="text-align:center">Próximo folio</th>
+</tr>
+</thead>
+<tbody id="foliosTableBody"></tbody>
+</table>
+<div class="modal-footer">
+<button class="btn btn-rojo" onclick="eliminarTodasLasQuinielas()">Eliminar todas las quinielas 🗑️</button>
+</div>
+</div>
+</div>
 <div class="header">
 <div class="logo">
 <span>🏆</span>
@@ -180,8 +234,9 @@ Las nuevas quinielas van a en espera automáticamente ⏳
 <div class="header-actions">
 <button class="btn btn-azul"    onclick="recargarDatos()">Actualizar 🔄</button>
 <button class="btn btn-azul"    onclick="document.getElementById('fileInput').click()">Importar 📤</button>
+<button class="btn btn-verde"   onclick="descargarPlantilla()">Plantilla 📄</button>
 <button class="btn btn-azul"    onclick="exportarExcel()">Exportar 📥</button>
-<button class="btn btn-rojo"    onclick="eliminarTodasLasQuinielas()">Eliminar Todas las quinielas 🗑️</button>
+<button class="btn btn-naranja" onclick="abrirModalFolios()">Folios 📋</button>
 <button class="btn btn-bloquear" id="btnBloquear" onclick="toggleBloqueo()">Bloquear🔓</button>
 <input type="file" id="fileInput" accept=".csv" onchange="importarCSV(event)">
 </div>
@@ -217,11 +272,9 @@ Las nuevas quinielas van a en espera automáticamente ⏳
 const API_BASE = window.location.hostname === 'localhost'
 ? 'http://localhost:8000'
 : 'https://www.quinielaselwero.com';
-
 function getAuthHeaders() {
 return { 'Content-Type': 'application/json' };
 }
-
 const state = {
 datosOriginales: [],
 partidos:        [],
@@ -233,9 +286,7 @@ enProceso:       false,
 refreshCtrl:     null,
 bloqueado:       false,
 };
-
 let gridApi = null;
-
 function toast(msg, tipo = 'success', ms = 4500) {
 const container = document.getElementById('toastContainer');
 const iconos = { success:'✅', error:'❌', warn:'⚠️' };
@@ -251,9 +302,7 @@ function debounce(fn, delay) {
 let t;
 return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), delay); };
 }
-
 const debouncedFiltros = debounce(aplicarFiltros, 250);
-
 async function conGuard(fn, btnIds = []) {
 if (state.enProceso) return;
 state.enProceso = true;
@@ -265,13 +314,102 @@ state.enProceso = false;
 btnIds.forEach(id => { const b = document.getElementById(id); if (b) b.disabled = false; });
 }
 }
-
 function escHtml(str) {
 return String(str ?? '')
 .replace(/&/g,'&amp;').replace(/</g,'&lt;')
 .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-
+// ─── Folios ───────────────────────────────────────────────────────────────────
+function obtenerHuecos(vendedor) {
+const folios = state.datosOriginales
+.filter(q => q.vendedor === vendedor)
+.map(q => parseInt(q.folio))
+.filter(f => !isNaN(f) && f > 0)
+.sort((a, b) => a - b);
+if (folios.length < 1) return [];
+const min = folios[0];
+const max = folios[folios.length - 1];
+const set = new Set(folios);
+const huecos = [];
+for (let h = min; h <= max; h++) {
+if (!set.has(h)) huecos.push(h);
+}
+return huecos;
+}
+function calcularSiguienteFolio(vendedor) {
+const huecos = obtenerHuecos(vendedor);
+if (huecos.length > 0) return huecos[0];
+const folios = state.datosOriginales
+.filter(q => q.vendedor === vendedor)
+.map(q => parseInt(q.folio))
+.filter(f => !isNaN(f) && f > 0)
+.sort((a, b) => a - b);
+if (!folios.length) return null;
+return folios[folios.length - 1] + 1;
+}
+function abrirModalFolios() {
+const tbody = document.getElementById('foliosTableBody');
+tbody.innerHTML = '';
+const vendedores = [...new Set(state.datosOriginales.map(q => q.vendedor).filter(Boolean))].sort();
+if (!vendedores.length) {
+const tr = document.createElement('tr');
+const td = document.createElement('td');
+td.colSpan = 3;
+td.textContent = 'No hay vendedores registrados.';
+td.style.cssText = 'text-align:center;color:#9ca3af;padding:16px';
+tr.appendChild(td);
+tbody.appendChild(tr);
+document.getElementById('modalFolios').classList.add('show');
+return;
+}
+let hayPendientes = false;
+vendedores.forEach(v => {
+const folios = state.datosOriginales
+.filter(q => q.vendedor === v)
+.map(q => parseInt(q.folio))
+.filter(f => !isNaN(f) && f > 0)
+.sort((a, b) => a - b);
+if (folios.length === 0) return;
+const min          = folios[0];
+const max          = folios[folios.length - 1];
+const totalEsperado = max - min + 1;
+const huecos       = obtenerHuecos(v);
+if (huecos.length === 0) return;
+hayPendientes = true;
+const siguiente = huecos[0];
+const mostrar   = huecos.slice(0, 8);
+const extra     = huecos.length - mostrar.length;
+const tr  = document.createElement('tr');
+const tdV = document.createElement('td');
+tdV.innerHTML = `<span class="vendedor-nombre">${escHtml(v)}</span><br>
+<span style="font-size:11px;color:#6b7280">
+Rango: ${min}–${max} &nbsp;·&nbsp; ${folios.length}/${totalEsperado} asignados
+</span>`;
+const tdH = document.createElement('td');
+tdH.innerHTML = mostrar.map(h => `<span class="badge-hueco">${h}</span>`).join(' ') +
+(extra > 0 ? ` <span style="font-size:11px;color:#9ca3af">+${extra} más</span>` : '');
+const tdS = document.createElement('td');
+tdS.style.textAlign = 'center';
+tdS.innerHTML = `<span class="badge-siguiente">${siguiente}</span><br>
+<span style="font-size:10px;color:#dc2626;font-weight:600">llena hueco</span>`;
+tr.append(tdV, tdH, tdS);
+tbody.appendChild(tr);
+});
+if (!hayPendientes) {
+const tr = document.createElement('tr');
+const td = document.createElement('td');
+td.colSpan = 3;
+td.innerHTML = '<span style="color:#34a853;font-weight:600">Todos los vendedores tienen sus rangos completos ✅ </span>';
+td.style.cssText = 'text-align:center;padding:16px';
+tr.appendChild(td);
+tbody.appendChild(tr);
+}
+document.getElementById('modalFolios').classList.add('show');
+}
+function cerrarModalFolios() {
+document.getElementById('modalFolios').classList.remove('show');
+}
+// ─── BARRA DE SELECCIÓN ───────────────────────────────────────────────────────
 function actualizarBarraSeleccion() {
 if (!gridApi) return;
 const sel = gridApi.getSelectedRows().filter(r => r.folio);
@@ -284,13 +422,11 @@ bar.classList.add('visible');
 bar.classList.remove('visible');
 }
 }
-
 function limpiarSeleccion() {
 if (gridApi) gridApi.deselectAll();
 document.getElementById('selectionBar').classList.remove('visible');
 }
-
-// ── CORRECCIÓN v32: rowSelection como objeto, selectionColumnDef dedicada ──
+// ─── GRID ─────────────────────────────────────────────────────────────────────
 function initGrid() {
 const gridOptions = {
 columnDefs: [],
@@ -298,17 +434,16 @@ rowData:    [],
 animateRows: true,
 suppressMovableColumns: false,
 rowHeight:   36,
-headerHeight: 65,
+headerHeight: 38,
 defaultColDef: { resizable: true, sortable: true, filter: false },
 rowSelection: {
 mode: 'multiRow',
+checkboxes: true,
+headerCheckbox: true,
 enableClickSelection: false,
+isRowSelectable: (params) => !!(params.data && params.data.folio),
 },
-selectionColumnDef: {
-pinned: 'left',
-width:  52,
-},
-isRowSelectable: (rowNode) => !!(rowNode.data && rowNode.data.folio),
+selectionColumnDef: { pinned: 'left', width: 48 },
 onSelectionChanged: actualizarBarraSeleccion,
 onGridSizeChanged:  () => { if (gridApi) gridApi.sizeColumnsToFit(); },
 getRowClass: params => {
@@ -320,14 +455,13 @@ return '';
 };
 gridApi = agGrid.createGrid(document.getElementById('myGrid'), gridOptions);
 }
-
+// ─── CARGA DE DATOS ───────────────────────────────────────────────────────────
 async function cargarDatos() {
 try {
 mostrarLoading(true);
 const resJornada = await fetch(`${API_BASE}/jornada-actual`);
 if (!resJornada.ok) throw new Error('No se pudo obtener la jornada actual');
 const { nombre: jornada } = await resJornada.json();
-state.jornadaActual = jornada;
 const jornadaParam = encodeURIComponent(jornada);
 const [resP, resL, resR, resBloq] = await Promise.all([
 fetch(`${API_BASE}/api/partidos`),
@@ -359,29 +493,21 @@ mostrarError(err.message);
 mostrarLoading(false);
 }
 }
-
 document.addEventListener('DOMContentLoaded', async () => {
 initGrid();
 await cargarDatos();
 setInterval(async () => {
 if (state.enProceso) return;
-if (!state.jornadaActual) {
-await cargarDatos();
-return;
-}
 if (state.refreshCtrl) state.refreshCtrl.abort();
 state.refreshCtrl = new AbortController();
 const { signal } = state.refreshCtrl;
 try {
-const jornadaActual = encodeURIComponent(state.jornadaActual);
 const [r1, r2] = await Promise.all([
-fetch(`${API_BASE}/api/lista-oficial?jornada=${jornadaActual}`, { signal }),
-fetch(`${API_BASE}/api/resultados-oficiales?jornada=${jornadaActual}`, { signal }),
+fetch(`${API_BASE}/api/lista-oficial`,        { signal }),
+fetch(`${API_BASE}/api/resultados-oficiales`, { signal }),
 ]);
-if (!r1.ok || !r2.ok) return;
-const { quinielas: nuevas = []    } = await r1.json();
+const { quinielas: nuevas = []     } = await r1.json();
 const { resultados: nuevosRes = {} } = await r2.json();
-if (nuevas.length === 0 && state.datosOriginales.length > 0) return;
 const sinCambios =
 nuevas.length === state.datosOriginales.length &&
 JSON.stringify(nuevosRes) === JSON.stringify(state.resultados);
@@ -397,7 +523,7 @@ if (err.name !== 'AbortError') console.warn('Auto-refresh:', err.message);
 }
 }, 30000);
 });
-
+// ─── FILTROS ──────────────────────────────────────────────────────────────────
 function poblarFiltroVendedores() {
 const select = document.getElementById('filterVendedor');
 const actual = select.value;
@@ -410,7 +536,6 @@ if (v === actual) opt.selected = true;
 select.appendChild(opt);
 });
 }
-
 function aplicarFiltros() {
 if (!gridApi) return;
 const termino  = document.getElementById('searchInput').value.trim().toLowerCase();
@@ -419,8 +544,8 @@ const base = buildRowData();
 const filtradas = (termino || vendedor)
 ? base.filter(row => {
 if (!row.folio) return false;
-const matchTexto    = !termino  || (row.nombre||'').toLowerCase().includes(termino) || (row.vendedor||'').toLowerCase().includes(termino);
-const matchVendedor = !vendedor || row.vendedor === vendedor;
+const matchTexto    = !termino   || (row.nombre||'').toLowerCase().includes(termino) || (row.vendedor||'').toLowerCase().includes(termino);
+const matchVendedor = !vendedor  || row.vendedor === vendedor;
 return matchTexto && matchVendedor;
 })
 : base;
@@ -428,7 +553,6 @@ gridApi.setGridOption('rowData', filtradas);
 document.getElementById('rowsCounter').textContent =
 (termino || vendedor ? filtradas.length : state.datosOriginales.length) + ' registros';
 }
-
 function procesarDatos() {
 const hayResultados = Object.values(state.resultados).some(Boolean);
 state.datosOriginales = state.datosOriginales.map(q => {
@@ -450,33 +574,12 @@ const puntosUnicos  = [...new Set(state.datosOriginales.map(q => q.puntos))].sor
 state.segundoPuntos = puntosUnicos.length > 1 ? puntosUnicos[1] : -1;
 state.rowDataCache  = null;
 }
-
-function makeLogoHeader(partido, idx) {
-const ll = partido?.local_logo || partido?.localLogo || partido?.logo_local || '';
-const vl = partido?.visitante_logo || partido?.visitanteLogo || partido?.logo_visitante || '';
-const ln = escHtml(partido?.local || partido?.equipo_local || '');
-const vn = escHtml(partido?.visitante || partido?.equipo_visitante || '');
-return class {
-agInit(params) {
-this.eGui = document.createElement('div');
-this.eGui.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px 2px;width:100%;height:100%;overflow:hidden;';
-if (ll && vl) {
-this.eGui.innerHTML = `<img src="/logos/${ll}" title="${ln}" style="width:22px;height:22px;object-fit:contain;flex-shrink:0;"><span style="font-size:8px;color:#999;line-height:1;">vs</span><img src="/logos/${vl}" title="${vn}" style="width:22px;height:22px;object-fit:contain;flex-shrink:0;">`;
-} else {
-this.eGui.innerHTML = `<span style="font-weight:700;font-size:13px;color:#5f6368;">P${idx+1}</span>`;
-}
-}
-getGui() { return this.eGui; }
-refresh(params) { return false; }
-};
-}
-
-// ── CORRECCIÓN v32: columna # sin checkboxSelection ni headerCheckboxSelection ──
+// ─── COLUMNAS ─────────────────────────────────────────────────────────────────
 function buildColumnDefs() {
-const pickCols = state.partidos.map((partido, idx) => ({
-headerComponent: makeLogoHeader(partido, idx),
+const pickCols = state.partidos.map((_, idx) => ({
+headerName: `P${idx + 1}`,
 field:       `_pick_${idx}`,
-width:       72,
+width:       62,
 sortable:    false,
 resizable:   false,
 cellClass: params => {
@@ -493,10 +596,7 @@ return `<span>${escHtml(v)}</span>`;
 },
 }));
 return [
-{
-field:'#', headerName:'#', width:60,
-sortable:false, resizable:false, pinned:'left', cellClass:'col-numero',
-},
+{ field:'#', headerName:'#', width:58, sortable:false, resizable:false, pinned:'left', cellClass:'col-numero' },
 {
 field:'nombre', headerName:'Nombre', width:200, pinned:'left', filter:'agTextColumnFilter',
 cellStyle: { justifyContent:'flex-start', paddingLeft:'10px' },
@@ -529,7 +629,6 @@ return `<button class="btn-eliminar-fila" onclick="eliminarQuiniela('${f}')">�
 },
 ];
 }
-
 function buildRowData() {
 if (state.rowDataCache) return state.rowDataCache;
 const rows = [];
@@ -562,7 +661,6 @@ rows.push(empty);
 state.rowDataCache = rows;
 return rows;
 }
-
 function renderTabla() {
 const rows = buildRowData();
 gridApi.setGridOption('columnDefs', buildColumnDefs());
@@ -570,24 +668,15 @@ gridApi.setGridOption('rowData', rows);
 setTimeout(() => gridApi.sizeColumnsToFit(), 50);
 document.getElementById('rowsCounter').textContent = state.datosOriginales.length + ' registros';
 }
-
 function renderResultadosInputs() {
 const container = document.getElementById('resultadosGrid');
 container.innerHTML = '';
-state.partidos.forEach((partido, idx) => {
+state.partidos.forEach((_, idx) => {
 const cur   = state.resultados[String(idx)] || '';
 const grupo = document.createElement('div');
 grupo.className = 'resultado-input-group';
 const lbl = document.createElement('label');
-const ll = partido?.local_logo || partido?.localLogo || partido?.logo_local || '';
-const vl = partido?.visitante_logo || partido?.visitanteLogo || partido?.logo_visitante || '';
-const ln = partido?.local || partido?.equipo_local || '';
-const vn = partido?.visitante || partido?.equipo_visitante || '';
-if (ll && vl) {
-lbl.innerHTML = `<img src="/logos/${ll}" title="${escHtml(ln)}" style="width:18px;height:18px;object-fit:contain;"><span style="font-size:9px;color:#aaa;">vs</span><img src="/logos/${vl}" title="${escHtml(vn)}" style="width:18px;height:18px;object-fit:contain;">`;
-} else {
 lbl.textContent = `P${idx + 1}`;
-}
 grupo.appendChild(lbl);
 const btns = document.createElement('div');
 btns.className       = 'resultado-buttons';
@@ -608,7 +697,7 @@ grupo.appendChild(btns);
 container.appendChild(grupo);
 });
 }
-
+// ─── RESULTADOS ───────────────────────────────────────────────────────────────
 async function guardarResultados() {
 await conGuard(async () => {
 const nuevos = {};
@@ -629,7 +718,6 @@ await cargarDatos();
 toast('Resultados guardados correctamente', 'success');
 }, ['btnGuardar']);
 }
-
 async function limpiarResultados() {
 if (!confirm('⚠️ ¿Limpiar todos los resultados? Los puntos se reiniciarán a 0.')) return;
 await conGuard(async () => {
@@ -646,7 +734,7 @@ await cargarDatos();
 toast('Resultados limpiados correctamente', 'success');
 }, ['btnLimpiar']);
 }
-
+// ─── ELIMINAR QUINIELA (individual) ──────────────────────────────────────────
 async function eliminarQuiniela(folio) {
 if (!confirm(`¿Eliminar la quiniela con folio ${folio}?`)) return;
 const quiniela = state.datosOriginales.find(q => String(q.folio) === String(folio));
@@ -664,7 +752,7 @@ await cargarDatos();
 toast(`Folio ${folio} eliminado`, 'success');
 });
 }
-
+// ─── SELECCIÓN MÚLTIPLE ───────────────────────────────────────────────────────
 async function eliminarSeleccionadas() {
 if (!gridApi) return;
 const seleccionadas = gridApi.getSelectedRows().filter(r => r.folio);
@@ -696,15 +784,11 @@ toast(`${ok} eliminadas, ${fallos} con error. Ver consola.`, 'warn');
 }
 }, []);
 }
-
 async function eliminarTodasLasQuinielas() {
+cerrarModalFolios();
 if (!confirm('¿Eliminar todas las quinielas? Esta acción no se puede deshacer. ⚠️')) return;
 if (!confirm('Ultima confirmacion: ¿Eliminar todo? 🚨')) return;
-const jornada = state.jornadaActual || state.datosOriginales?.[0]?.jornada;
-if (!jornada) {
-toast('No se pudo determinar la jornada. Recarga la página.', 'error');
-return;
-}
+const jornada = state.datosOriginales?.[0]?.jornada || 'Jornada actual';
 await conGuard(async () => {
 mostrarLoading(true);
 const res = await fetch(`${API_BASE}/api/eliminar-todas`, {
@@ -719,7 +803,7 @@ await cargarDatos();
 toast(`${data.eliminadas} quinielas eliminadas`, 'success');
 }, []);
 }
-
+// ─── BLOQUEAR / MODO ESPERA ───────────────────────────────────────────────────
 function actualizarUIBloqueo() {
 const btn    = document.getElementById('btnBloquear');
 const banner = document.getElementById('bloqueoBanner');
@@ -733,7 +817,6 @@ btn.classList.remove('bloqueado');
 banner.classList.remove('visible');
 }
 }
-
 async function toggleBloqueo() {
 const nuevoBloqueado = !state.bloqueado;
 const accion = nuevoBloqueado ? 'Activar modo en espera' : 'Desactivar modo en espera';
@@ -754,9 +837,8 @@ nuevoBloqueado ? 'warn' : 'success'
 );
 }, ['btnBloquear']);
 }
-
+// ─── IMPORTAR / EXPORTAR ─────────────────────────────────────────────────────
 async function recargarDatos() { await cargarDatos(); }
-
 async function importarCSV(event) {
 const file = event.target.files[0];
 if (!file) return;
@@ -791,7 +873,13 @@ mostrarLoading(false);
 event.target.value = '';
 }
 }
-
+function descargarPlantilla() {
+const cols   = state.partidos.length || 9;
+const header = 'Folio,Nombre,Vendedor,' + Array.from({ length: cols }, (_, i) => `P${i+1}`).join(',');
+const picks1 = Array.from({ length: cols }, (_, i) => ['L','E','V'][i % 3]).join(',');
+const picks2 = Array.from({ length: cols }, (_, i) => ['V','V','E','L'][i % 4]).join(',');
+descargarCSVBlob(`${header}\n451,Juan Pérez,Checo,${picks1}\n452,María López,Checo,${picks2}\n`, 'plantilla-quiniela.csv');
+}
 function exportarExcel() {
 const numPartidos = state.partidos.length || 9;
 const pickHeaders = Array.from({ length: numPartidos }, (_, i) => `P${i + 1}`);
@@ -822,7 +910,6 @@ csvLines.join('\n'),
 `lista-oficial-${new Date().toISOString().split('T')[0]}.csv`
 );
 }
-
 function descargarCSVBlob(csv, filename) {
 const bom  = '\uFEFF';
 const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8;' });
@@ -834,7 +921,7 @@ a.click();
 document.body.removeChild(a);
 setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-
+// ─── ESTADÍSTICAS ─────────────────────────────────────────────────────────────
 function actualizarEstadisticas() {
 const { datosOriginales: datos, primerPuntos: p1, segundoPuntos: p2 } = state;
 if (!datos.length) {
@@ -851,15 +938,18 @@ document.getElementById('firstStat').textContent      = c1;
 document.getElementById('secondStat').textContent     = c2;
 document.getElementById('vendedoresStat').textContent = cv;
 }
-
+// ─── LOADING / ERROR ──────────────────────────────────────────────────────────
 function mostrarLoading(show) {
 document.getElementById('loadingOverlay')?.classList.toggle('show', show);
 }
-
 function mostrarError(mensaje) {
+if (gridApi) gridApi.setGridOption('rowData', []);
 console.error('Error:', mensaje);
-toast(`Error al cargar datos: ${mensaje}`, 'error', 7000);
+toast('Error al cargar datos: ' + mensaje, 'error', 7000);
 }
+document.getElementById('modalFolios').addEventListener('click', function(e) {
+if (e.target === this) cerrarModalFolios();
+});
 </script>
 </body>
 </html>
