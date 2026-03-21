@@ -217,9 +217,11 @@ Las nuevas quinielas van a en espera automáticamente ⏳
 const API_BASE = window.location.hostname === 'localhost'
 ? 'http://localhost:8000'
 : 'https://www.quinielaselwero.com';
+
 function getAuthHeaders() {
 return { 'Content-Type': 'application/json' };
 }
+
 const state = {
 datosOriginales: [],
 partidos:        [],
@@ -231,7 +233,9 @@ enProceso:       false,
 refreshCtrl:     null,
 bloqueado:       false,
 };
+
 let gridApi = null;
+
 function toast(msg, tipo = 'success', ms = 4500) {
 const container = document.getElementById('toastContainer');
 const iconos = { success:'✅', error:'❌', warn:'⚠️' };
@@ -242,11 +246,14 @@ container.appendChild(el);
 requestAnimationFrame(() => el.classList.add('show'));
 setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 300); }, ms);
 }
+
 function debounce(fn, delay) {
 let t;
 return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), delay); };
 }
+
 const debouncedFiltros = debounce(aplicarFiltros, 250);
+
 async function conGuard(fn, btnIds = []) {
 if (state.enProceso) return;
 state.enProceso = true;
@@ -258,12 +265,13 @@ state.enProceso = false;
 btnIds.forEach(id => { const b = document.getElementById(id); if (b) b.disabled = false; });
 }
 }
+
 function escHtml(str) {
 return String(str ?? '')
 .replace(/&/g,'&amp;').replace(/</g,'&lt;')
 .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-// ─── BARRA DE SELECCIÓN ───────────────────────────────────────────────────────
+
 function actualizarBarraSeleccion() {
 if (!gridApi) return;
 const sel = gridApi.getSelectedRows().filter(r => r.folio);
@@ -276,11 +284,13 @@ bar.classList.add('visible');
 bar.classList.remove('visible');
 }
 }
+
 function limpiarSeleccion() {
 if (gridApi) gridApi.deselectAll();
 document.getElementById('selectionBar').classList.remove('visible');
 }
-// ─── GRID ─────────────────────────────────────────────────────────────────────
+
+// ── CORRECCIÓN v32: rowSelection como objeto, selectionColumnDef dedicada ──
 function initGrid() {
 const gridOptions = {
 columnDefs: [],
@@ -290,8 +300,14 @@ suppressMovableColumns: false,
 rowHeight:   36,
 headerHeight: 65,
 defaultColDef: { resizable: true, sortable: true, filter: false },
-rowSelection: 'multiple',
-rowMultiSelectWithClick: false,
+rowSelection: {
+mode: 'multiRow',
+enableClickSelection: false,
+},
+selectionColumnDef: {
+pinned: 'left',
+width:  52,
+},
 isRowSelectable: (rowNode) => !!(rowNode.data && rowNode.data.folio),
 onSelectionChanged: actualizarBarraSeleccion,
 onGridSizeChanged:  () => { if (gridApi) gridApi.sizeColumnsToFit(); },
@@ -304,7 +320,7 @@ return '';
 };
 gridApi = agGrid.createGrid(document.getElementById('myGrid'), gridOptions);
 }
-// ─── Carga de datos ───────────────────────────────────────────────────────────
+
 async function cargarDatos() {
 try {
 mostrarLoading(true);
@@ -343,6 +359,7 @@ mostrarError(err.message);
 mostrarLoading(false);
 }
 }
+
 document.addEventListener('DOMContentLoaded', async () => {
 initGrid();
 await cargarDatos();
@@ -380,7 +397,7 @@ if (err.name !== 'AbortError') console.warn('Auto-refresh:', err.message);
 }
 }, 30000);
 });
-// ─── FILTROS ──────────────────────────────────────────────────────────────────
+
 function poblarFiltroVendedores() {
 const select = document.getElementById('filterVendedor');
 const actual = select.value;
@@ -393,6 +410,7 @@ if (v === actual) opt.selected = true;
 select.appendChild(opt);
 });
 }
+
 function aplicarFiltros() {
 if (!gridApi) return;
 const termino  = document.getElementById('searchInput').value.trim().toLowerCase();
@@ -401,8 +419,8 @@ const base = buildRowData();
 const filtradas = (termino || vendedor)
 ? base.filter(row => {
 if (!row.folio) return false;
-const matchTexto    = !termino   || (row.nombre||'').toLowerCase().includes(termino) || (row.vendedor||'').toLowerCase().includes(termino);
-const matchVendedor = !vendedor  || row.vendedor === vendedor;
+const matchTexto    = !termino  || (row.nombre||'').toLowerCase().includes(termino) || (row.vendedor||'').toLowerCase().includes(termino);
+const matchVendedor = !vendedor || row.vendedor === vendedor;
 return matchTexto && matchVendedor;
 })
 : base;
@@ -410,6 +428,7 @@ gridApi.setGridOption('rowData', filtradas);
 document.getElementById('rowsCounter').textContent =
 (termino || vendedor ? filtradas.length : state.datosOriginales.length) + ' registros';
 }
+
 function procesarDatos() {
 const hayResultados = Object.values(state.resultados).some(Boolean);
 state.datosOriginales = state.datosOriginales.map(q => {
@@ -431,8 +450,7 @@ const puntosUnicos  = [...new Set(state.datosOriginales.map(q => q.puntos))].sor
 state.segundoPuntos = puntosUnicos.length > 1 ? puntosUnicos[1] : -1;
 state.rowDataCache  = null;
 }
-// ─── COLUMNAS ─────────────────────────────────────────────────────────────────
-// NOTA: ag-grid v32 requiere agInit(params) y refresh(), NO init()
+
 function makeLogoHeader(partido, idx) {
 const ll = partido?.local_logo || partido?.localLogo || partido?.logo_local || '';
 const vl = partido?.visitante_logo || partido?.visitanteLogo || partido?.logo_visitante || '';
@@ -452,6 +470,8 @@ getGui() { return this.eGui; }
 refresh(params) { return false; }
 };
 }
+
+// ── CORRECCIÓN v32: columna # sin checkboxSelection ni headerCheckboxSelection ──
 function buildColumnDefs() {
 const pickCols = state.partidos.map((partido, idx) => ({
 headerComponent: makeLogoHeader(partido, idx),
@@ -473,7 +493,10 @@ return `<span>${escHtml(v)}</span>`;
 },
 }));
 return [
-{ field:'#', headerName:'', width:90, sortable:false, resizable:false, pinned:'left', cellClass:'col-numero', checkboxSelection:true, headerCheckboxSelection:true, headerCheckboxSelectionFilteredOnly:true },
+{
+field:'#', headerName:'#', width:60,
+sortable:false, resizable:false, pinned:'left', cellClass:'col-numero',
+},
 {
 field:'nombre', headerName:'Nombre', width:200, pinned:'left', filter:'agTextColumnFilter',
 cellStyle: { justifyContent:'flex-start', paddingLeft:'10px' },
@@ -506,6 +529,7 @@ return `<button class="btn-eliminar-fila" onclick="eliminarQuiniela('${f}')">�
 },
 ];
 }
+
 function buildRowData() {
 if (state.rowDataCache) return state.rowDataCache;
 const rows = [];
@@ -538,6 +562,7 @@ rows.push(empty);
 state.rowDataCache = rows;
 return rows;
 }
+
 function renderTabla() {
 const rows = buildRowData();
 gridApi.setGridOption('columnDefs', buildColumnDefs());
@@ -545,6 +570,7 @@ gridApi.setGridOption('rowData', rows);
 setTimeout(() => gridApi.sizeColumnsToFit(), 50);
 document.getElementById('rowsCounter').textContent = state.datosOriginales.length + ' registros';
 }
+
 function renderResultadosInputs() {
 const container = document.getElementById('resultadosGrid');
 container.innerHTML = '';
@@ -582,7 +608,7 @@ grupo.appendChild(btns);
 container.appendChild(grupo);
 });
 }
-// ─── RESULTADOS ───────────────────────────────────────────────────────────────
+
 async function guardarResultados() {
 await conGuard(async () => {
 const nuevos = {};
@@ -603,6 +629,7 @@ await cargarDatos();
 toast('Resultados guardados correctamente', 'success');
 }, ['btnGuardar']);
 }
+
 async function limpiarResultados() {
 if (!confirm('⚠️ ¿Limpiar todos los resultados? Los puntos se reiniciarán a 0.')) return;
 await conGuard(async () => {
@@ -619,7 +646,7 @@ await cargarDatos();
 toast('Resultados limpiados correctamente', 'success');
 }, ['btnLimpiar']);
 }
-// ─── Esto de abajo trabaja en eliminar una quiniela ───────────────────────────
+
 async function eliminarQuiniela(folio) {
 if (!confirm(`¿Eliminar la quiniela con folio ${folio}?`)) return;
 const quiniela = state.datosOriginales.find(q => String(q.folio) === String(folio));
@@ -637,7 +664,7 @@ await cargarDatos();
 toast(`Folio ${folio} eliminado`, 'success');
 });
 }
-// ─── Esto de abajo trabaja en eliminar multiples quinielas ────────────────────
+
 async function eliminarSeleccionadas() {
 if (!gridApi) return;
 const seleccionadas = gridApi.getSelectedRows().filter(r => r.folio);
@@ -669,7 +696,7 @@ toast(`${ok} eliminadas, ${fallos} con error. Ver consola.`, 'warn');
 }
 }, []);
 }
-// ─── Esto de abajo trabaja en la eliminacion de todas las quinielas ───────────
+
 async function eliminarTodasLasQuinielas() {
 if (!confirm('¿Eliminar todas las quinielas? Esta acción no se puede deshacer. ⚠️')) return;
 if (!confirm('Ultima confirmacion: ¿Eliminar todo? 🚨')) return;
@@ -692,7 +719,7 @@ await cargarDatos();
 toast(`${data.eliminadas} quinielas eliminadas`, 'success');
 }, []);
 }
-// ─── BLOQUEAR / MODO ESPERA ───────────────────────────────────────────────────
+
 function actualizarUIBloqueo() {
 const btn    = document.getElementById('btnBloquear');
 const banner = document.getElementById('bloqueoBanner');
@@ -706,6 +733,7 @@ btn.classList.remove('bloqueado');
 banner.classList.remove('visible');
 }
 }
+
 async function toggleBloqueo() {
 const nuevoBloqueado = !state.bloqueado;
 const accion = nuevoBloqueado ? 'Activar modo en espera' : 'Desactivar modo en espera';
@@ -726,8 +754,9 @@ nuevoBloqueado ? 'warn' : 'success'
 );
 }, ['btnBloquear']);
 }
-// ─── IMPORTAR / EXPORTAR ─────────────────────────────────────────────────────
+
 async function recargarDatos() { await cargarDatos(); }
+
 async function importarCSV(event) {
 const file = event.target.files[0];
 if (!file) return;
@@ -762,6 +791,7 @@ mostrarLoading(false);
 event.target.value = '';
 }
 }
+
 function exportarExcel() {
 const numPartidos = state.partidos.length || 9;
 const pickHeaders = Array.from({ length: numPartidos }, (_, i) => `P${i + 1}`);
@@ -792,6 +822,7 @@ csvLines.join('\n'),
 `lista-oficial-${new Date().toISOString().split('T')[0]}.csv`
 );
 }
+
 function descargarCSVBlob(csv, filename) {
 const bom  = '\uFEFF';
 const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8;' });
@@ -803,7 +834,7 @@ a.click();
 document.body.removeChild(a);
 setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-// ─── ESTADÍSTICAS ─────────────────────────────────────────────────────────────
+
 function actualizarEstadisticas() {
 const { datosOriginales: datos, primerPuntos: p1, segundoPuntos: p2 } = state;
 if (!datos.length) {
@@ -820,10 +851,11 @@ document.getElementById('firstStat').textContent      = c1;
 document.getElementById('secondStat').textContent     = c2;
 document.getElementById('vendedoresStat').textContent = cv;
 }
-// ─── LOADING / ERROR ──────────────────────────────────────────────────────────
+
 function mostrarLoading(show) {
 document.getElementById('loadingOverlay')?.classList.toggle('show', show);
 }
+
 function mostrarError(mensaje) {
 console.error('Error:', mensaje);
 toast(`Error al cargar datos: ${mensaje}`, 'error', 7000);
