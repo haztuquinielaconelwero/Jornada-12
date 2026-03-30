@@ -285,6 +285,7 @@ rowDataCache:    null,
 enProceso:       false,
 refreshCtrl:     null,
 bloqueado:       false,
+jornada: null 
 };
 let gridApi = null;
 function toast(msg, tipo = 'success', ms = 4500) {
@@ -426,42 +427,38 @@ function limpiarSeleccion() {
 if (gridApi) gridApi.deselectAll();
 document.getElementById('selectionBar').classList.remove('visible');
 }
-// ─── GRID ─────────────────────────────────────────────────────────────────────
+// ─── Esto de abajo trabaja en la tabla para poder seleccionar─────────────────────────────────────────────────────────────────────
 function initGrid() {
 const gridOptions = {
 columnDefs: [],
-rowData:    [],
+rowData: [],
 animateRows: true,
 suppressMovableColumns: false,
-rowHeight:   36,
+rowHeight: 36,
 headerHeight: 38,
 defaultColDef: { resizable: true, sortable: true, filter: false },
-rowSelection: {
-mode: 'multiRow',
-checkboxes: true,
-headerCheckbox: true,
-enableClickSelection: false,
+rowSelection: 'multiple',
+suppressRowClickSelection: true,
 isRowSelectable: (params) => !!(params.data && params.data.folio),
-},
-selectionColumnDef: { pinned: 'left', width: 48 },
 onSelectionChanged: actualizarBarraSeleccion,
-onGridSizeChanged:  () => { if (gridApi) gridApi.sizeColumnsToFit(); },
+onGridSizeChanged: () => { if (gridApi) gridApi.sizeColumnsToFit(); },
 getRowClass: params => {
 if (!params.data) return '';
-if (params.data._esPrimero) return 'ag-row-rank-first';
-if (params.data._esSegundo) return 'ag-row-rank-second';
+if (params.data.esPrimero) return 'ag-row-rank-first';
+if (params.data.esSegundo) return 'ag-row-rank-second';
 return '';
 },
 };
 gridApi = agGrid.createGrid(document.getElementById('myGrid'), gridOptions);
 }
-// ─── CARGA DE DATOS ───────────────────────────────────────────────────────────
+// ─── Esto de abajo trabaja en la carga de datos ───────────────────────────────────────────────────────────
 async function cargarDatos() {
 try {
 mostrarLoading(true);
 const resJornada = await fetch(`${API_BASE}/jornada-actual`);
 if (!resJornada.ok) throw new Error('No se pudo obtener la jornada actual');
 const { nombre: jornada } = await resJornada.json();
+state.jornada = jornada;
 const jornadaParam = encodeURIComponent(jornada);
 const [resP, resL, resR, resBloq] = await Promise.all([
 fetch(`${API_BASE}/api/partidos`),
@@ -574,14 +571,14 @@ const puntosUnicos  = [...new Set(state.datosOriginales.map(q => q.puntos))].sor
 state.segundoPuntos = puntosUnicos.length > 1 ? puntosUnicos[1] : -1;
 state.rowDataCache  = null;
 }
-// ─── COLUMNAS ─────────────────────────────────────────────────────────────────
+// ───Columnas de la tabla────────────────────────────────────────────────────
 function buildColumnDefs() {
 const pickCols = state.partidos.map((_, idx) => ({
 headerName: `P${idx + 1}`,
-field:       `_pick_${idx}`,
-width:       62,
-sortable:    false,
-resizable:   false,
+field: `_pick_${idx}`,
+width: 62,
+sortable: false,
+resizable: false,
 cellClass: params => {
 const v = params.value;
 return (!v || v === '-' || v === '') ? 'cell-empty' : '';
@@ -591,35 +588,46 @@ const v = params.value;
 if (!v || v === '-' || v === '') return '<span style="color:#fca5a5">—</span>';
 const r = state.resultados[String(idx)];
 if (r && v === r) return `<span class="pick-correct">${escHtml(v)}</span>`;
-if (r)            return `<span class="pick-incorrect">${escHtml(v)}</span>`;
+if (r) return `<span class="pick-incorrect">${escHtml(v)}</span>`;
 return `<span>${escHtml(v)}</span>`;
 },
 }));
 return [
-{ field:'#', headerName:'#', width:58, sortable:false, resizable:false, pinned:'left', cellClass:'col-numero' },
 {
-field:'nombre', headerName:'Nombre', width:200, pinned:'left', filter:'agTextColumnFilter',
-cellStyle: { justifyContent:'flex-start', paddingLeft:'10px' },
-cellClass:  params => (!params.value || params.value === '') ? 'cell-empty' : '',
+field: '#',
+headerName: '#',
+width: 70,
+sortable: false,
+resizable: false,
+pinned: 'left',
+cellClass: 'col-numero',
+checkboxSelection: params => !!(params.data && params.data.folio),
+headerCheckboxSelection: true,
+headerCheckboxSelectionFilteredOnly: true,
 },
 {
-field:'vendedor', headerName:'Vendedor', width:140, filter:'agTextColumnFilter',
-cellStyle: { justifyContent:'flex-start', paddingLeft:'8px' },
-cellClass:  params => (!params.value || params.value === '') ? 'cell-empty' : '',
+field: 'nombre', headerName: 'Nombre', width: 200, pinned: 'left', filter: 'agTextColumnFilter',
+cellStyle: { justifyContent: 'flex-start', paddingLeft: '10px' },
+cellClass: params => (!params.value || params.value === '') ? 'cell-empty' : '',
+},
+{
+field: 'vendedor', headerName: 'Vendedor', width: 140, filter: 'agTextColumnFilter',
+cellStyle: { justifyContent: 'flex-start', paddingLeft: '8px' },
+cellClass: params => (!params.value || params.value === '') ? 'cell-empty' : '',
 },
 ...pickCols,
 {
-field:'puntos', headerName:'Pts', width:72,
+field: 'puntos', headerName: 'Pts', width: 72,
 cellClass: params => (params.value === '' || params.value === null || params.value === undefined) ? 'cell-empty' : '',
 cellStyle: params => {
-if (params.data?._esPrimero) return { fontWeight:'700', color:'#92400e' };
-if (params.data?._esSegundo) return { fontWeight:'600', color:'#1e40af' };
+if (params.data?.esPrimero) return { fontWeight: '700', color: '#92400e' };
+if (params.data?.esSegundo) return { fontWeight: '600', color: '#1e40af' };
 return {};
 },
 valueFormatter: params => (params.value === '' || params.value === null || params.value === undefined) ? '—' : params.value,
 },
 {
-field:'_acciones', headerName:'', width:88, sortable:false, resizable:false, pinned:'right',
+field: '_acciones', headerName: '', width: 88, sortable: false, resizable: false, pinned: 'right',
 cellRenderer: params => {
 const folio = params.data?.folio;
 if (!folio) return '';
@@ -629,6 +637,7 @@ return `<button class="btn-eliminar-fila" onclick="eliminarQuiniela('${f}')">�
 },
 ];
 }
+// ─── CONSTRUIR FILAS ─────────────────────────────────────────────────────────
 function buildRowData() {
 if (state.rowDataCache) return state.rowDataCache;
 const rows = [];
@@ -641,19 +650,19 @@ for (let i = 1; i <= 5000; i++) {
 const q = porFolio[i];
 if (q) {
 const row = {
-'#':       i,
-folio:     q.folio,
-nombre:    q.nombre   || '',
-vendedor:  q.vendedor || '',
-puntos:    q.puntos   ?? 0,
-_id:       q.id,
-_esPrimero: state.primerPuntos  >= 0 && q.puntos === state.primerPuntos,
-_esSegundo: state.segundoPuntos >= 0 && q.puntos !== state.primerPuntos && q.puntos === state.segundoPuntos,
+'#': i,
+folio: q.folio,
+nombre: q.nombre || '',
+vendedor: q.vendedor || '',
+puntos: q.puntos ?? 0,
+_id: q.id,
+esPrimero: state.primerPuntos >= 0 && q.puntos === state.primerPuntos,
+esSegundo: state.segundoPuntos >= 0 && q.puntos !== state.primerPuntos && q.puntos === state.segundoPuntos,
 };
 (q.picks || []).forEach((pick, idx) => { row[`_pick_${idx}`] = pick || ''; });
 rows.push(row);
 } else {
-const empty = { '#':i, folio:'', nombre:'', vendedor:'', puntos:'' };
+const empty = { '#': i, folio: '', nombre: '', vendedor: '', puntos: '' };
 state.partidos.forEach((_, idx) => { empty[`_pick_${idx}`] = ''; });
 rows.push(empty);
 }
@@ -661,6 +670,7 @@ rows.push(empty);
 state.rowDataCache = rows;
 return rows;
 }
+// ─── RENDER TABLA ────────────────────────────────────────────────────────────
 function renderTabla() {
 const rows = buildRowData();
 gridApi.setGridOption('columnDefs', buildColumnDefs());
@@ -668,22 +678,23 @@ gridApi.setGridOption('rowData', rows);
 setTimeout(() => gridApi.sizeColumnsToFit(), 50);
 document.getElementById('rowsCounter').textContent = state.datosOriginales.length + ' registros';
 }
+// ─── RENDER INPUTS RESULTADOS ────────────────────────────────────────────────
 function renderResultadosInputs() {
 const container = document.getElementById('resultadosGrid');
 container.innerHTML = '';
 state.partidos.forEach((_, idx) => {
-const cur   = state.resultados[String(idx)] || '';
+const cur = state.resultados[String(idx)] || '';
 const grupo = document.createElement('div');
 grupo.className = 'resultado-input-group';
 const lbl = document.createElement('label');
 lbl.textContent = `P${idx + 1}`;
 grupo.appendChild(lbl);
 const btns = document.createElement('div');
-btns.className       = 'resultado-buttons';
+btns.className = 'resultado-buttons';
 btns.dataset.partido = idx;
 ['L', 'E', 'V'].forEach(val => {
 const btn = document.createElement('button');
-btn.className   = 'resultado-btn' + (cur === val ? ' active' : '');
+btn.className = 'resultado-btn' + (cur === val ? ' active' : '');
 btn.dataset.val = val;
 btn.textContent = val;
 btn.addEventListener('click', () => {
@@ -736,21 +747,24 @@ toast('Resultados limpiados correctamente', 'success');
 }
 // ─── ELIMINAR QUINIELA (individual) ──────────────────────────────────────────
 async function eliminarQuiniela(folio) {
-if (!confirm(`¿Eliminar la quiniela con folio ${folio}?`)) return;
+if (!confirm(`Eliminar la quiniela con folio ${folio}?`)) return;
 const quiniela = state.datosOriginales.find(q => String(q.folio) === String(folio));
 if (!quiniela) { toast('No se encontró la quiniela', 'error'); return; }
 await conGuard(async () => {
 mostrarLoading(true);
 const res = await fetch(`${API_BASE}/api/quinielas/${quiniela.id}`, {
-method:  'DELETE',
-headers: getAuthHeaders(),
+method: 'DELETE', headers: getAuthHeaders()
 });
 const data = await res.json();
 if (!res.ok || !data.success) throw new Error(data.detail || data.message || 'Error al eliminar');
+state.datosOriginales = state.datosOriginales.filter(q => q.id !== quiniela.id);
 state.rowDataCache = null;
-await cargarDatos();
+procesarDatos();
+renderTabla();
+actualizarEstadisticas();
 toast(`Folio ${folio} eliminado`, 'success');
 });
+mostrarLoading(false);
 }
 // ─── SELECCIÓN MÚLTIPLE ───────────────────────────────────────────────────────
 async function eliminarSeleccionadas() {
@@ -784,11 +798,12 @@ toast(`${ok} eliminadas, ${fallos} con error. Ver consola.`, 'warn');
 }
 }, []);
 }
+// ─── SELECCIÓN MÚLTIPLE ───────────────────────────────────────────────────────
 async function eliminarTodasLasQuinielas() {
 cerrarModalFolios();
 if (!confirm('¿Eliminar todas las quinielas? Esta acción no se puede deshacer. ⚠️')) return;
 if (!confirm('Ultima confirmacion: ¿Eliminar todo? 🚨')) return;
-const jornada = state.datosOriginales?.[0]?.jornada || 'Jornada actual';
+const jornada = state.jornada;
 await conGuard(async () => {
 mostrarLoading(true);
 const res = await fetch(`${API_BASE}/api/eliminar-todas`, {
@@ -803,7 +818,7 @@ await cargarDatos();
 toast(`${data.eliminadas} quinielas eliminadas`, 'success');
 }, []);
 }
-// ─── BLOQUEAR / MODO ESPERA ───────────────────────────────────────────────────
+// ───Esto de abajo trabaja con el modo espera───────────────────────────────────────────────────
 function actualizarUIBloqueo() {
 const btn    = document.getElementById('btnBloquear');
 const banner = document.getElementById('bloqueoBanner');
@@ -837,7 +852,7 @@ nuevoBloqueado ? 'warn' : 'success'
 );
 }, ['btnBloquear']);
 }
-// ─── IMPORTAR / EXPORTAR ─────────────────────────────────────────────────────
+// ───Esto de abajo trabaja con la importacion y exportacion del archivo─────────────────────────────────────────────────────
 async function recargarDatos() { await cargarDatos(); }
 async function importarCSV(event) {
 const file = event.target.files[0];
@@ -921,7 +936,7 @@ a.click();
 document.body.removeChild(a);
 setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-// ─── ESTADÍSTICAS ─────────────────────────────────────────────────────────────
+// ───Esto de abajo trabaja con las estadisticas─────────────────────────────────────────────────────────────
 function actualizarEstadisticas() {
 const { datosOriginales: datos, primerPuntos: p1, segundoPuntos: p2 } = state;
 if (!datos.length) {
@@ -938,7 +953,7 @@ document.getElementById('firstStat').textContent      = c1;
 document.getElementById('secondStat').textContent     = c2;
 document.getElementById('vendedoresStat').textContent = cv;
 }
-// ─── LOADING / ERROR ──────────────────────────────────────────────────────────
+// ─── Esto de abajo trabaja en el loading de la pagina con el error──────────────────────────────────────────────────────────
 function mostrarLoading(show) {
 document.getElementById('loadingOverlay')?.classList.toggle('show', show);
 }

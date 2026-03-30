@@ -209,7 +209,7 @@ app.add_middleware(
     max_age=3600,
 )
 # ║     ⚽ Configuracion semanal ⚽       ║ # ║     ⚽ Configuracion semanal ⚽       ║ # ║     ⚽ Configuracion semanal ⚽       ║
-JORNADA_ACTUAL     = "Jornada 12"
+JORNADA_ACTUAL     = "Jornada 13"
 MAX_DOBLES         = 4
 MAX_TRIPLES        = 3
 PRECIO_NORMAL      = 30
@@ -223,12 +223,12 @@ if PRECIO_DESCUENTO >= PRECIO_NORMAL:
     )
 
 JORNADA_CONFIG = {
-    "numero":        12,
-    "nombre":        "Jornada 12",
-    "codigo_grupo":  "J12",
-    "link_grupo":    "https://chat.whatsapp.com/IOiY1UPpO3rLdwdY8ca6jY",
-    "inicio":        "2026-03-16T15:30:00-06:00",
-    "fin":           "2026-03-20T16:40:00-06:00",
+    "numero":        13,
+    "nombre":        "Jornada 13",
+    "codigo_grupo":  "J13",
+    "link_grupo":    "https://chat.whatsapp.com/GYA0xS5KuD911J9thQtIDe",
+    "inicio":        "2026-03-30T11:59:00-06:00",
+    "fin":           "2026-04-03T16:30:00-06:00",
 }
 
 _inicio_dt = datetime.fromisoformat(JORNADA_CONFIG["inicio"])
@@ -242,69 +242,68 @@ if _fin_dt <= _inicio_dt:
 PARTIDOS = [
     {
         "id": 0,
-        "local": "Necaxa",        "localLogo": "logos/necaxa.png",
-        "visitante": "Tijuana",   "visitanteLogo": "logos/tijuana.png",
+        "local": "Puebla",         "localLogo": "logos/puebla.png",
+        "visitante": "Juárez",     "visitanteLogo": "logos/juarez.png",
         "horario": "Viernes 7 PM",
         "televisora": "TV Azteca", "televisionLogo": "logos/tv-azteca.png",
     },
     {
         "id": 1,
-        "local": "Mazatlán",       "localLogo": "logos/mazatlan.png",
-        "visitante": "Cruz Azul",  "visitanteLogo": "logos/cruz-azul.png",
+        "local": "Necaxa",         "localLogo": "logos/necaxa.png",
+        "visitante": "Mazatlán",   "visitanteLogo": "logos/mazatlan.png",
+        "horario": "Viernes 9 PM",
+        "televisora": "TV Azteca", "televisionLogo": "logos/tv-azteca.png",
+    },
+    {
+        "id": 2,
+        "local": "Tijuana",        "localLogo": "logos/tijuana.png",
+        "visitante": "Tigres",     "visitanteLogo": "logos/tigres.png",
         "horario": "Viernes 9 PM",
         "televisora": "Fox Sports", "televisionLogo": "logos/fox-sports.png",
     },
     {
-        "id": 2,
-        "local": "Atlas",          "localLogo": "logos/atlas.png",
-        "visitante": "Querétaro",  "visitanteLogo": "logos/queretaro.png",
+        "id": 3,
+        "local": "Monterrey",      "localLogo": "logos/monterrey.png",
+        "visitante": "San Luis",   "visitanteLogo": "logos/san-luis.png",
         "horario": "Sábado 5 PM",
         "televisora": "TUDN",      "televisionLogo": "logos/tudn.png",
     },
     {
-        "id": 3,
-        "local": "Pachuca",        "localLogo": "logos/pachuca.png",
-        "visitante": "Toluca",     "visitanteLogo": "logos/toluca.png",
-        "horario": "Domingo 5 PM",
-        "televisora": "TUDN",      "televisionLogo": "logos/tudn.png",
-    },
-    {
         "id": 4,
-        "local": "San Luis",       "localLogo": "logos/san-luis.png",
-        "visitante": "León",       "visitanteLogo": "logos/leon.png",
+        "local": "León",           "localLogo": "logos/leon.png",
+        "visitante": "Atlas",      "visitanteLogo": "logos/atlas.png",
         "horario": "Sábado 7 PM",
         "televisora": "Fox Sports", "televisionLogo": "logos/fox-sports.png",
     },
     {
         "id": 5,
-        "local": "Monterrey",      "localLogo": "logos/monterrey.png",
-        "visitante": "Chivas",     "visitanteLogo": "logos/chivas.png",
+        "local": "Cruz Azul",      "localLogo": "logos/cruz-azul.png",
+        "visitante": "Pachuca",    "visitanteLogo": "logos/pachuca.png",
         "horario": "Sábado 7 PM",
-        "televisora": "Canal 5",   "televisionLogo": "logos/canal-5.png",
+        "televisora": "TUDN",      "televisionLogo": "logos/tudn.png",
     },
     {
         "id": 6,
-        "local": "Pumas",          "localLogo": "logos/pumas.png",
+        "local": "Santos",         "localLogo": "logos/santos.png",
         "visitante": "América",    "visitanteLogo": "logos/america.png",
         "horario": "Sábado 9 PM",
-        "televisora": "Canal 5",   "televisionLogo": "logos/canal-5.png",
+        "televisora": "TUDN",      "televisionLogo": "logos/tudn.png",
     },
     {
         "id": 7,
-        "local": "Santos",         "localLogo": "logos/santos.png",
-        "visitante": "Puebla",     "visitanteLogo": "logos/puebla.png",
-        "horario": "Domingo 5 PM",
+        "local": "Querétaro",      "localLogo": "logos/queretaro.png",
+        "visitante": "Toluca",     "visitanteLogo": "logos/toluca.png",
+        "horario": "Sábado 5 PM",
         "televisora": "Fox Sports", "televisionLogo": "logos/fox-sports.png",
     },
-    {
-        "id": 8,
-        "local": "Juárez",         "localLogo": "logos/juarez.png",
-        "visitante": "Tigres",     "visitanteLogo": "logos/tigres.png",
-        "horario": "Domingo 7 PM",
-        "televisora": "Fox Sports", "televisionLogo": "logos/fox-sports.png",
-    },
+{
+    "id": 8,
+    "local": "Chivas",         "localLogo": "logos/chivas.png",
+    "visitante": "Pumas",      "visitanteLogo": "logos/pumas.png",
+    "horario": "Domingo 8 PM",
+    "televisora": "ESPN",      "televisionLogo": "logos/espn.png",
+},
 ]
-
 _total_especiales = MAX_DOBLES + MAX_TRIPLES
 if _total_especiales > len(PARTIDOS):
     raise RuntimeError(
