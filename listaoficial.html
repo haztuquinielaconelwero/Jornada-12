@@ -688,29 +688,41 @@ toast(`${ok} eliminadas, ${fallos} con error. Ver consola.`, 'warn');
 }
 // ───Esto de abajo trabaja con la eliminacion de todas las quinielas───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 async function eliminarTodasLasQuinielas() {
+const LOTE = 50;
+const PAUSA_MS = 300;
 const targets = state.datosOriginales.filter(q => q.id);
 if (!targets.length) { toast('No hay quinielas en la lista para eliminar', 'warn'); return; }
 if (!confirm(`¿Eliminar las ${targets.length} quinielas de la lista actual? Las quinielas en espera o pendientes NO se eliminarán. ⚠️`)) return;
 if (!confirm(`Última confirmación: ¿Eliminar ${targets.length} quinielas jugando? 🚨`)) return;
 await conGuard(async () => {
 mostrarLoading(true);
+let okTotal = 0;
+let fallosTotal = 0;
+for (let i = 0; i < targets.length; i += LOTE) {
+const lote = targets.slice(i, i + LOTE);
+const loteNum = Math.floor(i / LOTE) + 1;
+const totalLotes = Math.ceil(targets.length / LOTE);
+const loadingMsg = document.getElementById('loadingText');
+if (loadingMsg) loadingMsg.textContent = `Eliminando... lote ${loteNum}/${totalLotes} (${Math.min(i + LOTE, targets.length)}/${targets.length})`;
 const resultados = await Promise.allSettled(
-targets.map(q =>
+lote.map(q =>
 fetch(`${API_BASE}/api/quinielas/${q.id}`, {
 method:  'DELETE',
 headers: getAuthHeaders(),
 }).then(r => r.json())
 )
 );
-const ok     = resultados.filter(r => r.status === 'fulfilled' && r.value?.success).length;
-const fallos = resultados.length - ok;
+okTotal     += resultados.filter(r => r.status === 'fulfilled' && r.value?.success).length;
+fallosTotal += resultados.filter(r => r.status === 'rejected' || !r.value?.success).length;
+if (i + LOTE < targets.length) await new Promise(res => setTimeout(res, PAUSA_MS));
+}
 state.rowDataCache = null;
 await cargarDatos();
 limpiarSeleccion();
-if (fallos === 0) {
-toast(`${ok} quiniela${ok !== 1 ? 's' : ''} eliminada${ok !== 1 ? 's' : ''} de la lista ✅`, 'success');
+if (fallosTotal === 0) {
+toast(`${okTotal} quiniela${okTotal !== 1 ? 's' : ''} eliminada${okTotal !== 1 ? 's' : ''} de la lista ✅`, 'success');
 } else {
-toast(`${ok} eliminadas, ${fallos} con error. Ver consola.`, 'warn');
+toast(`${okTotal} eliminadas, ${fallosTotal} con error. Intenta de nuevo.`, 'warn');
 }
 }, ['btnEliminarTodas']);
 }
