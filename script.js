@@ -2853,7 +2853,7 @@ return parsed.protocol === 'https:' || parsed.protocol === 'http:';
 return !/^(javascript|data|vbscript):/i.test(url.trim());
 }
 }
-/* = Porcentajes en tiempo real basados en Lista Oficial = */ /* = Porcentajes en tiempo real basados en Lista Oficial = */
+/* = Porcentajes en tiempo real basados en Lista Oficial = */                                     /* = Porcentajes en tiempo real basados en Lista Oficial = */
 const PorcentajesManager = (() => {
 async function cargar() {
 const container = document.getElementById('matchesPorcentajes');
@@ -3029,7 +3029,7 @@ return PorcentajesManager.cargar();
 function renderMatchesPorcentajes() {
 PorcentajesManager.renderPorcentajes();
 }
-/* Funciones de Quiniela - Quiniela Guardada */ /* Funciones de Quiniela - Quiniela Guardada */
+/* Funciones de Quiniela - Quiniela Guardada */ /* Funciones de Quiniela - Quiniela Guardada */                     /* Funciones de Quiniela - Quiniela Guardada */
 function _buildMiniQuinielaEl(q) {
 const partidos = AppState.getPartidos();
 const wrapper = document.createElement('div');
@@ -3247,15 +3247,15 @@ if (typeof updateQuinielaCount === 'function') updateQuinielaCount();
 if (typeof updatePrice === 'function') updatePrice();
 if (typeof updateSavedBadge === 'function') updateSavedBadge();
 }
-/* Quinielas Enviadas - Sección Jugadas  */
+/* Quinielas Enviadas - Sección Jugadas */ /* Quinielas Enviadas - Sección Jugadas */ /* Quinielas Enviadas - Sección Jugadas */ /* Quinielas Enviadas - Sección Jugadas */
 let officialResults = {};
 function calcularPuntosQuiniela(predictionsObj) {
 if (!officialResults || Object.keys(officialResults).length === 0) return 0;
 const partidos = AppState.getPartidos();
 let puntos = 0;
 partidos.forEach(partido => {
-const pickArr = predictionsObj?.[String(partido.id)];
-const pick = Array.isArray(pickArr) ? pickArr[0] : pickArr;
+const pickArr  = predictionsObj?.[String(partido.id)];
+const pick     = Array.isArray(pickArr) ? pickArr[0] : pickArr;
 const resultado = officialResults[String(partido.id)];
 if (resultado && pick && resultado === pick) puntos++;
 });
@@ -3272,7 +3272,7 @@ if (!jornadaNombre) {
 if (ENV?.isDev) console.warn('⚠️ actualizarEstadosDesdeBackend: sin jornada');
 return;
 }
-const params = new URLSearchParams({ vendedor, jornada: jornadaNombre });
+const params   = new URLSearchParams({ vendedor, jornada: jornadaNombre });
 const buildUrl = (ep) => apiUrl(ep.replace(/^\//, '')) + '?' + params;
 let resPend, resEsp, resJug;
 try {
@@ -3290,34 +3290,43 @@ function normalizarQuiniela(q, estado) {
 const preds = {};
 if (Array.isArray(q.picks)) {
 q.picks.forEach((pick, idx) => {
-const p = partidos[idx];
+const p   = partidos[idx];
 const key = p ? String(p.id) : String(idx);
-preds[key] = pick && pick !== '-' ? [pick] : [];
+preds[key] = (pick && pick !== '-') ? [pick] : [];
 });
 }
-return { id: q.id, nombre: q.nombre, vendedor: q.vendedor, folio: q.folio, predictions: preds, estado, jornada: jornadaNombre };
+return {
+id:          q.id,
+nombre:      q.nombre,
+vendedor:    q.vendedor,
+folio:       q.folio,
+predictions: preds,
+estado,
+jornada:     jornadaNombre,
+};
 }
 const allQuinielas = [];
 if (resPend?.pendientes) resPend.pendientes.forEach(q => allQuinielas.push(normalizarQuiniela(q, 'pendiente')));
-if (resEsp?.espera)      resEsp.espera.forEach(q => allQuinielas.push(normalizarQuiniela(q, 'espera')));
-if (resJug?.jugando)     resJug.jugando.forEach(q => allQuinielas.push(normalizarQuiniela(q, 'jugando')));
+if (resEsp?.espera)      resEsp.espera.forEach(q =>      allQuinielas.push(normalizarQuiniela(q, 'espera')));
+if (resJug?.jugando)     resJug.jugando.forEach(q =>     allQuinielas.push(normalizarQuiniela(q, 'jugando')));
 if (allQuinielas.length === 0 && ENV?.isDev) {
 console.warn('⚠️ actualizarEstadosDesdeBackend: 0 quinielas desde backend');
 }
 let sent = AppState.getSent();
 allQuinielas.forEach(qBackend => {
-let local = sent.find(q => q.pythonId === qBackend.id);
-if (!local && qBackend.folio) {
-local = sent.find(q => q.folio == qBackend.folio);
+let local = sent.find(q => q.pythonId != null && String(q.pythonId) === String(qBackend.id));
+if (!local && qBackend.folio != null) {
+local = sent.find(q => q.folio != null && String(q.folio) === String(qBackend.folio));
 }
 if (!local) {
-local = sent.find(q => {
-if ((q.name || '') !== (qBackend.nombre || '')) return false;
-if ((q.vendedor || '') !== (qBackend.vendedor || '')) return false;
 const toKey = (preds) => partidos.map(p => {
 const pred = preds?.[String(p.id)];
-return Array.isArray(pred) ? [...pred].sort().join('') : (pred || '-');
+if (!pred || (Array.isArray(pred) && pred.length === 0)) return '-';
+return Array.isArray(pred) ? [...pred].sort().join('') : String(pred);
 }).join('|');
+local = sent.find(q => {
+if ((q.name    || '') !== (qBackend.nombre   || '')) return false;
+if ((q.vendedor || '') !== (qBackend.vendedor || '')) return false;
 return toKey(q.predictions) === toKey(qBackend.predictions);
 });
 }
@@ -3326,11 +3335,17 @@ local.estado   = qBackend.estado;
 local.folio    = qBackend.folio;
 local.pythonId = qBackend.id;
 if (ENV?.isDev) console.log(`✅ Actualizada: ${local.name} → ${local.estado} (${local.folio ?? 'sin folio'})`);
+} else {
+if (ENV?.isDev) console.warn(`⚠️ No se encontró local para backend id=${qBackend.id} nombre="${qBackend.nombre}"`);
 }
 });
-const idsEnBackend = allQuinielas.map(q => q.id);
+const idsEnBackend = allQuinielas.map(q => String(q.id));
 sent = sent.map(q => {
-if (q.jornada === jornadaNombre && q.pythonId && !idsEnBackend.includes(q.pythonId)) {
+if (
+q.jornada === jornadaNombre &&
+q.pythonId != null &&
+!idsEnBackend.includes(String(q.pythonId))
+) {
 if (ENV?.isDev) console.log(`🔄 Regresa a pendiente: ${q.name}`);
 return { ...q, estado: 'pendiente', folio: null, pythonId: null };
 }
@@ -3374,7 +3389,7 @@ puntos:  hayResultados ? calcularPuntosQuiniela(q.predictions) : 0,
 }))
 .sort((a, b) => {
 if (a.jugando !== b.jugando) return a.jugando ? -1 : 1;
-if (b.puntos !== a.puntos) return b.puntos - a.puntos;
+if (b.puntos  !== a.puntos)  return b.puntos - a.puntos;
 const folioA = parseInt(a.q.folio) || 0;
 const folioB = parseInt(b.q.folio) || 0;
 return folioA - folioB;
@@ -3384,7 +3399,8 @@ const cardClass    = jugando ? 'jugando' : 'no-jugando';
 const folioHtml    = (jugando && q.folio) ? `<div class="jugada-folio">Folio: ${escapeHtml(String(q.folio))}</div>` : '';
 const vendedorName = escapeHtml(q.vendedor || VendedorManager.current || 'Sin vendedor');
 const miniQuiniela = partidos.map(partido => {
-const predArr   = q.predictions?.[partido.id];
+// FIX #4 — usar String(partido.id) explícitamente para máxima consistencia
+const predArr   = q.predictions?.[String(partido.id)];
 const pick      = Array.isArray(predArr) ? (predArr[0] || '-') : (predArr || '-');
 const resultado = officialResults[String(partido.id)];
 const pickSan   = pick.trim().toUpperCase();
@@ -3421,7 +3437,7 @@ ${miniQuiniela}
 }).join('');
 if (ENV?.isDev) console.log(`✅ renderMyQuinielas: ${deJornada.length} quinielas renderizadas`);
 }
-/* Anti-duplicados en Jugadas (sentQuinielas) */ /* Anti-duplicados en Jugadas (sentQuinielas) */
+/* Anti-duplicados en Jugadas (sentQuinielas) */ /* Anti-duplicados en Jugadas (sentQuinielas) */                    /* Anti-duplicados en Jugadas (sentQuinielas) */
 function deduplicarSentQuinielas() {
 const current = AppState.getSent();
 if (current.length === 0) {
@@ -3483,7 +3499,7 @@ return { removed, total: limpias.length, errors };
 function limpiarDuplicados() {
 return deduplicarSentQuinielas();
 }
-/*Sistema para envío de quinielas por WhatsApp */ /*Sistema para envío de quinielas por WhatsApp */
+/*Sistema para envío de quinielas por WhatsApp */ /*Sistema para envío de quinielas por WhatsApp */                 /*Sistema para envío de quinielas por WhatsApp */
 const WhatsAppSender = (() => {
 let sending = false;
 const REQUEST_TIMEOUT_MS = 12000;
@@ -3904,7 +3920,7 @@ if (exitosasEl)   exitosasEl.textContent   = '';
 if (totalPriceEl) totalPriceEl.textContent = '';
 if (mensajeEl)    mensajeEl.textContent    = '';
 }
-/* = Esto de abajo trabaja el reglamento de nuestra quiniela = */ /* = Esto de abajo trabaja el reglamento de nuestra quiniela = */
+/* = Esto de abajo trabaja el reglamento de nuestra quiniela = */                                    /* = Esto de abajo trabaja el reglamento de nuestra quiniela = */
 function showReglamento() {
 openModal(`
 <h3>📋 Reglamento</h3>
@@ -3980,7 +3996,7 @@ Rápido, fácil y desde tu celular 📲
 </p>
 `);
 }
-/* = Se usa para: reglamento, ayuda, errores, quinielas guardadas = */ /* = Se usa para: reglamento, ayuda, errores, quinielas guardadas = */
+/* = Se usa para: reglamento, ayuda, errores, quinielas guardadas = */                       /* = Se usa para: reglamento, ayuda, errores, quinielas guardadas = */
 function openModal(content) {
 const existingModal = document.getElementById('customModal');
 if (existingModal) existingModal.remove();
@@ -4051,7 +4067,7 @@ function closeModal() {
 const modal = document.getElementById('customModal');
 if (modal) modal.remove();
 }
-/* = Esto de abajo trabaja para mi seccion de ayuda = */ /* = Esto de abajo trabaja para mi seccion de ayuda = */
+/* = Esto de abajo trabaja para mi seccion de ayuda = */ /* = Esto de abajo trabaja para mi seccion de ayuda = */ /* = Esto de abajo trabaja para mi seccion de ayuda = */
 function debounce(func, wait) {
 if (typeof func !== 'function') {
 throw new TypeError(`debounce: se esperaba una función, recibido ${typeof func}`);
@@ -4819,25 +4835,9 @@ santander_rolando:   { key:"santander_rolando",   clase:"help-deposit-card--sant
 bancoppel_rolando:   { key:"bancoppel_rolando",   clase:"help-deposit-card--bancoppel",   logoClase:"help-bank-logo--bancoppel",   banco:"Bancoppel",     titular:"", numero:"", numeroCopy:"" },
 // 7️⃣ Spin by Oxxo
 spin_rolando:        { key:"spin_rolando",        clase:"help-deposit-card--spin",        logoClase:"help-bank-logo--spin",        banco:"Spin by Oxxo",  titular:"", numero:"", numeroCopy:"" },
-
 // ╔══════════════════════════════════════╗
-// ║             TALIBAN                  ║
+// ║             El Wero              ║
 // ╚══════════════════════════════════════╝
-// 1️⃣ Banorte
-banorte_taliban:     { key:"banorte_taliban",     clase:"help-deposit-card--banorte",     logoClase:"help-bank-logo--banorte",     banco:"Banorte",       titular:"", numero:"", numeroCopy:"" },
-// 2️⃣ Bancomer
-bbva_taliban:        { key:"bbva_taliban",        clase:"help-deposit-card--bbva",        logoClase:"help-bank-logo--bbva",        banco:"Bancomer",      titular:"", numero:"", numeroCopy:"" },
-// 3️⃣ Mercado Pago
-mercadopago_taliban: { key:"mercadopago_taliban", clase:"help-deposit-card--mercadopago", logoClase:"help-bank-logo--mercadopago", banco:"Mercado Pago",  titular:"", numero:"", numeroCopy:"" },
-// 4️⃣ Banco Azteca
-azteca_taliban:      { key:"azteca_taliban",      clase:"help-deposit-card--azteca",      logoClase:"help-bank-logo--azteca",      banco:"Banco Azteca",  titular:"", numero:"", numeroCopy:"" },
-// 5️⃣ Santander
-santander_taliban:   { key:"santander_taliban",   clase:"help-deposit-card--santander",   logoClase:"help-bank-logo--santander",   banco:"Santander",     titular:"", numero:"", numeroCopy:"" },
-// 6️⃣ Bancoppel
-bancoppel_taliban:   { key:"bancoppel_taliban",   clase:"help-deposit-card--bancoppel",   logoClase:"help-bank-logo--bancoppel",   banco:"Bancoppel",     titular:"", numero:"", numeroCopy:"" },
-// 7️⃣ Spin by Oxxo
-spin_taliban:        { key:"spin_taliban",        clase:"help-deposit-card--spin",        logoClase:"help-bank-logo--spin",        banco:"Spin by Oxxo",  titular:"", numero:"", numeroCopy:"" },
-// ║ Punto (El Wero) ║
 banorte_punto:       { key:"banorte_punto",       clase:"help-deposit-card--banorte",     logoClase:"help-bank-logo--banorte",     banco:"Banorte",      titular:"Irving Emilio Gonzalez Romero", numero:"4189 1430 7518 4476", numeroCopy:"4189143075184476" },
 bbva_punto_1:        { key:"bbva_punto_1",        clase:"help-deposit-card--bbva",        logoClase:"help-bank-logo--bbva",        banco:"Bancomer",     titular:"Irving Emilio Gonzalez Romero", numero:"4152 3137 2949 5908", numeroCopy:"4152313729495908" },
 bbva_punto_2:        { key:"bbva_punto_2",        clase:"help-deposit-card--bbva",        logoClase:"help-bank-logo--bbva",        banco:"Bancomer",     titular:"Irving Emilio Gonzalez Romero", numero:"4152 3137 2949 5916", numeroCopy:"4152313729495916" },
@@ -4881,7 +4881,6 @@ const VENDEDOR_CUENTAS = {
 "PolloGol":      ["banorte_pollogol","bbva_pollogol","mercadopago_pollogol","azteca_pollogol","santander_pollogol","bancoppel_pollogol","spin_pollogol"],
 "Ranita":        ["banorte_ranita","bbva_ranita","mercadopago_ranita","azteca_ranita","santander_ranita","bancoppel_ranita","spin_ranita"],
 "Rolando":       ["banorte_rolando","bbva_rolando","mercadopago_rolando","azteca_rolando","santander_rolando","bancoppel_rolando","spin_rolando"],
-"Taliban":       ["banorte_taliban","bbva_taliban","mercadopago_taliban","azteca_taliban","santander_taliban","bancoppel_taliban","spin_taliban"],
 "•":             ['banorte_punto', 'bbva_punto_1', 'bbva_punto_2', 'spin_punto_1', 'spin_punto_2', 'spin_punto_3'],
 };
 const DepositCards = {
@@ -5022,7 +5021,7 @@ if (document.visibilityState === "visible" && !ScrollAnimations.observer) {
 ScrollAnimations.init();
 }
 });
-/* = Inicialización - Cuando la página carga completamente = */ /* = Inicialización - Cuando la página carga completamente = */
+/* = Inicialización - Cuando la página carga completamente = */                                         /* = Inicialización - Cuando la página carga completamente = */
 const AppInit = (() => {
 let _pollingId     = null; 
 let _pageController = null; 
@@ -5208,7 +5207,7 @@ if (ENV?.isDev) console.log('🧹 AppInit destruido');
 return Object.freeze({ init, destroy });
 })();
 document.addEventListener('DOMContentLoaded', () => AppInit.init(), { once: true });
-/* = Activación del panel Admin - Modo secreto = */ /* = Activación del panel Admin - Modo secreto = */
+/* = Activación del panel Admin - Modo secreto = */   /* = Activación del panel Admin - Modo secreto = */              /* = Activación del panel Admin - Modo secreto = */
 const AdminPanel = (() => {
 let _activated = false;
 let _clickCount = 0;
@@ -6038,7 +6037,7 @@ return minutos > 0
 ? `Cierra en ${horas}h ${minutos}m`
 : `Cierra en ${horas}h`;
 }
-/* = Sistema de confirmación/rechazo de quinielas = */ /* = Sistema de confirmación/rechazo de quinielas = */
+/* = Sistema de confirmación/rechazo de quinielas = */ /* = Sistema de confirmación/rechazo de quinielas = */ /* = Sistema de confirmación/rechazo de quinielas = */
 const QuinielasAdmin = (() => {
 const _state = {
 quinielaId:   null,
@@ -6612,7 +6611,7 @@ const desdeURL = getQueryParam('vendedor');
 const desdeStorage = localStorage.getItem('vendedor');
 return desdeURL ?? desdeStorage ?? '';
 }
-/* = Tabla que trabaja en las quinielas jugando = */ /* = Tabla que trabaja en las quinielas jugando = */
+/* = Tabla que trabaja en las quinielas jugando = */ /* = Tabla que trabaja en las quinielas jugando = */ /* = Tabla que trabaja en las quinielas jugando = */
 async function cargarJugandoTabla() {
 const tbody = document.getElementById('jugandoTableBody');
 const countElement = document.getElementById('jugandoCount');
@@ -6786,7 +6785,7 @@ tdPuntos.appendChild(spanPuntos);
 tr.appendChild(tdPuntos);
 return tr;
 }
-/* = Tabla que trabaja la lista oficial = */ /* = Tabla que trabaja la lista oficial = */
+/* = Tabla que trabaja la lista oficial = */ /* = Tabla que trabaja la lista oficial = */ /* = Tabla que trabaja la lista oficial = */
 async function cargarListaOficialTabla() {
 const tbody = document.getElementById('listaOficialTableBody');
 const countElement = document.getElementById('listaOficialCount');
@@ -7003,7 +7002,7 @@ controllerResultados.signal
 return { controllerAnalisis, controllerResultados };
 }
 document.addEventListener('DOMContentLoaded', initNavegacionTabs, { once: true });
-/* Aplicacion= */                               /* Aplicacion= */
+/* Aplicacion= */                               /* Aplicacion= */                                     /* Aplicacion= */                               /* Aplicacion= */
 const PWA = (() => {
 let _prompt = null;
 let _bannerTimer = null; 
