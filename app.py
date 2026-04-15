@@ -270,17 +270,17 @@ PARTIDOS = [
     },
     {
         "id": 4,
-        "local": "Monterrey",      "localLogo": "logos/monterrey.png",
-        "visitante": "Pachuca",    "visitanteLogo": "logos/pachuca.png",
-        "horario": "Sábado 7 PM",
-        "televisora": "TUDN",      "televisionLogo": "logos/tudn.png",
-    },
-    {
-        "id": 5,
         "local": "Chivas",         "localLogo": "logos/chivas.png",
         "visitante": "Puebla",     "visitanteLogo": "logos/puebla.png",
         "horario": "Sábado 7 PM",
         "televisora": "TV Azteca", "televisionLogo": "logos/tv-azteca.png",
+    },
+    {
+        "id": 5,
+        "local": "Monterrey",      "localLogo": "logos/monterrey.png",
+        "visitante": "Pachuca",    "visitanteLogo": "logos/pachuca.png",
+        "horario": "Sábado 7:05 PM",
+        "televisora": "TUDN",      "televisionLogo": "logos/tudn.png",
     },
     {
         "id": 6,
