@@ -208,13 +208,16 @@ app.add_middleware(
     expose_headers=EXPOSED_HEADERS,
     max_age=3600,
 )
-# ║     ⚽ Configuracion semanal ⚽       ║ # ║     ⚽ Configuracion semanal ⚽       ║ # ║     ⚽ Configuracion semanal ⚽       ║
-JORNADA_ACTUAL     = "Jornada 15"
+# ║     ⚽ Configuracion semanal ⚽       ║
+# ║     ⚽ Configuracion semanal ⚽       ║
+# ║     ⚽ Configuracion semanal ⚽       ║
+JORNADA_ACTUAL     = "Jornada 16"
 MAX_DOBLES         = 4
 MAX_TRIPLES        = 3
 PRECIO_NORMAL      = 30
 PRECIO_DESCUENTO   = 25
 CANTIDAD_DESCUENTO = 10
+
 
 if PRECIO_DESCUENTO >= PRECIO_NORMAL:
     raise RuntimeError(
@@ -222,14 +225,16 @@ if PRECIO_DESCUENTO >= PRECIO_NORMAL:
         f"PRECIO_NORMAL ({PRECIO_NORMAL})"
     )
 
+
 JORNADA_CONFIG = {
-    "numero":       15,
-    "nombre":       "Jornada 15",
-    "codigo_grupo": "J15",
-    "link_grupo":   "https://chat.whatsapp.com/I6FE9D06ooKFQrtR3WpVAo",
-    "inicio":       "2026-04-14T18:00:00-06:00",
-    "fin":          "2026-04-19T19:00:00-06:00",
+    "numero":        16,
+    "nombre":        "Jornada 16",
+    "codigo_grupo":  "J16",
+    "link_grupo":    "https://chat.whatsapp.com/DoJV8MSlnSCBhbEJNiXA8r",
+    "inicio":        "2026-04-20T17:00:00-06:00",
+    "fin":           "2026-04-21T17:00:00-06:00",
 }
+
 
 _inicio_dt = datetime.fromisoformat(JORNADA_CONFIG["inicio"])
 _fin_dt    = datetime.fromisoformat(JORNADA_CONFIG["fin"])
@@ -239,68 +244,69 @@ if _fin_dt <= _inicio_dt:
         f"posterior a 'inicio' ({JORNADA_CONFIG['inicio']})"
     )
 
+
 PARTIDOS = [
     {
         "id": 0,
-        "local": "San Luis",       "localLogo": "logos/san-luis.png",
-        "visitante": "Pumas",      "visitanteLogo": "logos/pumas.png",
-        "horario": "Viernes 7 PM",
-        "televisora": "TUDN",      "televisionLogo": "logos/tudn.png",
+        "local": "Querétaro",      "localLogo": "logos/queretaro.png",
+        "visitante": "Cruz Azul",  "visitanteLogo": "logos/cruz-azul.png",
+        "horario": "Martes 7 PM",
+        "televisora": "Fox Sports", "televisionLogo": "logos/fox-sports.png",
     },
     {
         "id": 1,
-        "local": "Mazatlán",       "localLogo": "logos/mazatlan.png",
-        "visitante": "Querétaro",  "visitanteLogo": "logos/queretaro.png",
-        "horario": "Viernes 7 PM",
-        "televisora": "TV Azteca", "televisionLogo": "logos/tv-azteca.png",
+        "local": "Pumas",          "localLogo": "logos/pumas.png",
+        "visitante": "Juárez",     "visitanteLogo": "logos/juarez.png",
+        "horario": "Martes 7 PM",
+        "televisora": "Canal 5 / TUDN", "televisionLogo": "logos/tudn.png",
     },
     {
         "id": 2,
-        "local": "Necaxa",         "localLogo": "logos/necaxa.png",
-        "visitante": "Tigres",     "visitanteLogo": "logos/tigres.png",
-        "horario": "Sábado 5 PM",
+        "local": "León",           "localLogo": "logos/leon.png",
+        "visitante": "América",    "visitanteLogo": "logos/america.png",
+        "horario": "Martes 9 PM",
         "televisora": "Fox Sports", "televisionLogo": "logos/fox-sports.png",
     },
     {
         "id": 3,
-        "local": "Cruz Azul",      "localLogo": "logos/cruz-azul.png",
-        "visitante": "Tijuana",    "visitanteLogo": "logos/tijuana.png",
-        "horario": "Sábado 5 PM",
-        "televisora": "TUDN",      "televisionLogo": "logos/tudn.png",
+        "local": "Monterrey",      "localLogo": "logos/monterrey.png",
+        "visitante": "Puebla",     "visitanteLogo": "logos/puebla.png",
+        "horario": "Martes 9 PM",
+        "televisora": "Canal 5 / TUDN", "televisionLogo": "logos/tudn.png",
     },
     {
         "id": 4,
-        "local": "Chivas",         "localLogo": "logos/chivas.png",
-        "visitante": "Puebla",     "visitanteLogo": "logos/puebla.png",
-        "horario": "Sábado 7 PM",
-        "televisora": "TV Azteca", "televisionLogo": "logos/tv-azteca.png",
+        "local": "Atlas",          "localLogo": "logos/atlas.png",
+        "visitante": "Tigres",     "visitanteLogo": "logos/tigres.png",
+        "horario": "Miércoles 7 PM",
+        "televisora": "Fox Sports", "televisionLogo": "logos/fox-sports.png",
     },
     {
         "id": 5,
-        "local": "Monterrey",      "localLogo": "logos/monterrey.png",
-        "visitante": "Pachuca",    "visitanteLogo": "logos/pachuca.png",
-        "horario": "Sábado 7:05 PM",
+        "local": "San Luis",       "localLogo": "logos/san-luis.png",
+        "visitante": "Santos",     "visitanteLogo": "logos/santos.png",
+        "horario": "Miércoles 7 PM",
         "televisora": "TUDN",      "televisionLogo": "logos/tudn.png",
     },
     {
         "id": 6,
-        "local": "León",           "localLogo": "logos/leon.png",
-        "visitante": "Juárez",     "visitanteLogo": "logos/juarez.png",
-        "horario": "Sábado 9 PM",
-        "televisora": "Fox Sports", "televisionLogo": "logos/fox-sports.png",
-    },
-    {
-        "id": 7,
-        "local": "América",        "localLogo": "logos/america.png",
+        "local": "Mazatlán",       "localLogo": "logos/mazatlan.png",
         "visitante": "Toluca",     "visitanteLogo": "logos/toluca.png",
-        "horario": "Sábado 9 PM",
+        "horario": "Miércoles 7 PM",
         "televisora": "TUDN",      "televisionLogo": "logos/tudn.png",
     },
     {
+        "id": 7,
+        "local": "Necaxa",         "localLogo": "logos/necaxa.png",
+        "visitante": "Chivas",     "visitanteLogo": "logos/chivas.png",
+        "horario": "Miércoles 9 PM",
+        "televisora": "Canal 5 / TUDN", "televisionLogo": "logos/tudn.png",
+    },
+    {
         "id": 8,
-        "local": "Santos",         "localLogo": "logos/santos.png",
-        "visitante": "Atlas",      "visitanteLogo": "logos/atlas.png",
-        "horario": "Domingo 5 PM",
+        "local": "Tijuana",        "localLogo": "logos/tijuana.png",
+        "visitante": "Pachuca",    "visitanteLogo": "logos/pachuca.png",
+        "horario": "Miércoles 9 PM",
         "televisora": "TUDN",      "televisionLogo": "logos/tudn.png",
     },
 ]
