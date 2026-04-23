@@ -211,7 +211,7 @@ app.add_middleware(
 # ║     ⚽ Configuracion semanal ⚽       ║
 # ║     ⚽ Configuracion semanal ⚽       ║
 # ║     ⚽ Configuracion semanal ⚽       ║
-JORNADA_ACTUAL     = "Jornada 16"
+JORNADA_ACTUAL     = "Jornada 17"
 MAX_DOBLES         = 4
 MAX_TRIPLES        = 3
 PRECIO_NORMAL      = 30
@@ -227,12 +227,12 @@ if PRECIO_DESCUENTO >= PRECIO_NORMAL:
 
 
 JORNADA_CONFIG = {
-    "numero":        16,
-    "nombre":        "Jornada 16",
-    "codigo_grupo":  "J16",
-    "link_grupo":    "https://chat.whatsapp.com/DoJV8MSlnSCBhbEJNiXA8r",
-    "inicio":        "2026-04-20T17:00:00-06:00",
-    "fin":           "2026-04-21T17:00:00-06:00",
+    "numero":        17,
+    "nombre":        "Jornada 17",
+    "codigo_grupo":  "J17",
+    "link_grupo":    "https://chat.whatsapp.com/IAIAXMFkWqnCnIlOCWz8Cb",
+    "inicio":        "2026-04-23T16:00:00-06:00",
+    "fin":           "2026-04-24T16:30:00-06:00",
 }
 
 
@@ -248,66 +248,75 @@ if _fin_dt <= _inicio_dt:
 PARTIDOS = [
     {
         "id": 0,
-        "local": "Querétaro",      "localLogo": "logos/queretaro.png",
-        "visitante": "Cruz Azul",  "visitanteLogo": "logos/cruz-azul.png",
-        "horario": "Martes 7 PM",
-        "televisora": "Fox Sports", "televisionLogo": "logos/fox-sports.png",
+        "local": "Puebla",         "localLogo": "logos/puebla.png",
+        "visitante": "Querétaro",  "visitanteLogo": "logos/queretaro.png",
+        "horario": "Viernes 9 PM",
+        "televisora": "Azteca 7 / Azteca Deportes Network / FOX One",
+        "televisionLogo": "logos/azteca-7.png",
     },
     {
         "id": 1,
-        "local": "Pumas",          "localLogo": "logos/pumas.png",
-        "visitante": "Juárez",     "visitanteLogo": "logos/juarez.png",
-        "horario": "Martes 7 PM",
-        "televisora": "Canal 5 / TUDN", "televisionLogo": "logos/tudn.png",
+        "local": "Pachuca",        "localLogo": "logos/pachuca.png",
+        "visitante": "Pumas",      "visitanteLogo": "logos/pumas.png",
+        "horario": "Sábado 5 PM",
+        "televisora": "FOX One",
+        "televisionLogo": "logos/fox-sports.png",
     },
     {
         "id": 2,
-        "local": "León",           "localLogo": "logos/leon.png",
-        "visitante": "América",    "visitanteLogo": "logos/america.png",
-        "horario": "Martes 9 PM",
-        "televisora": "Fox Sports", "televisionLogo": "logos/fox-sports.png",
+        "local": "Tigres",         "localLogo": "logos/tigres.png",
+        "visitante": "Mazatlán",   "visitanteLogo": "logos/mazatlan.png",
+        "horario": "Sábado 5 PM",
+        "televisora": "Azteca 7 / Azteca Deportes Network / Tubi / FOX One",
+        "televisionLogo": "logos/azteca-7.png",
     },
     {
         "id": 3,
-        "local": "Monterrey",      "localLogo": "logos/monterrey.png",
-        "visitante": "Puebla",     "visitanteLogo": "logos/puebla.png",
-        "horario": "Martes 9 PM",
-        "televisora": "Canal 5 / TUDN", "televisionLogo": "logos/tudn.png",
+        "local": "Chivas",         "localLogo": "logos/chivas.png",
+        "visitante": "Tijuana",    "visitanteLogo": "logos/tijuana.png",
+        "horario": "Sábado 7:07 PM",
+        "televisora": "Amazon Prime Video",
+        "televisionLogo": "logos/prime-video.png",
     },
     {
         "id": 4,
-        "local": "Atlas",          "localLogo": "logos/atlas.png",
-        "visitante": "Tigres",     "visitanteLogo": "logos/tigres.png",
-        "horario": "Miércoles 7 PM",
-        "televisora": "Fox Sports", "televisionLogo": "logos/fox-sports.png",
+        "local": "Toluca",         "localLogo": "logos/toluca.png",
+        "visitante": "León",       "visitanteLogo": "logos/leon.png",
+        "horario": "Sábado 7 PM",
+        "televisora": "Azteca 7 / Azteca Deportes Network / FOX One",
+        "televisionLogo": "logos/azteca-7.png",
     },
     {
         "id": 5,
-        "local": "San Luis",       "localLogo": "logos/san-luis.png",
-        "visitante": "Santos",     "visitanteLogo": "logos/santos.png",
-        "horario": "Miércoles 7 PM",
-        "televisora": "TUDN",      "televisionLogo": "logos/tudn.png",
+        "local": "América",        "localLogo": "logos/america.png",
+        "visitante": "Atlas",      "visitanteLogo": "logos/atlas.png",
+        "horario": "Sábado 9 PM",
+        "televisora": "TUDN / ViX Premium / Canal 5 / Layvtime",
+        "televisionLogo": "logos/tudn.png",
     },
     {
         "id": 6,
-        "local": "Mazatlán",       "localLogo": "logos/mazatlan.png",
-        "visitante": "Toluca",     "visitanteLogo": "logos/toluca.png",
-        "horario": "Miércoles 7 PM",
-        "televisora": "TUDN",      "televisionLogo": "logos/tudn.png",
+        "local": "Juárez",         "localLogo": "logos/juarez.png",
+        "visitante": "San Luis",   "visitanteLogo": "logos/san-luis.png",
+        "horario": "Sábado 9 PM",
+        "televisora": "Azteca 7 / Azteca Deportes Network / FOX One",
+        "televisionLogo": "logos/azteca-7.png",
     },
     {
         "id": 7,
-        "local": "Necaxa",         "localLogo": "logos/necaxa.png",
-        "visitante": "Chivas",     "visitanteLogo": "logos/chivas.png",
-        "horario": "Miércoles 9 PM",
-        "televisora": "Canal 5 / TUDN", "televisionLogo": "logos/tudn.png",
+        "local": "Santos",         "localLogo": "logos/santos.png",
+        "visitante": "Monterrey",  "visitanteLogo": "logos/monterrey.png",
+        "horario": "Domingo 5 PM",
+        "televisora": "TUDN / Canal 5 / ESPN 2 / Disney+ Premium / Layvtime",
+        "televisionLogo": "logos/tudn.png",
     },
     {
         "id": 8,
-        "local": "Tijuana",        "localLogo": "logos/tijuana.png",
-        "visitante": "Pachuca",    "visitanteLogo": "logos/pachuca.png",
-        "horario": "Miércoles 9 PM",
-        "televisora": "TUDN",      "televisionLogo": "logos/tudn.png",
+        "local": "Cruz Azul",      "localLogo": "logos/cruz-azul.png",
+        "visitante": "Necaxa",     "visitanteLogo": "logos/necaxa.png",
+        "horario": "Domingo 7 PM",
+        "televisora": "TUDN / Canal 5 / ViX Premium / Layvtime",
+        "televisionLogo": "logos/tudn.png",
     },
 ]
 _total_especiales = MAX_DOBLES + MAX_TRIPLES
