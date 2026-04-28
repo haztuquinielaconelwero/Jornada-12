@@ -2939,13 +2939,18 @@ div.appendChild(img);
 div.appendChild(span);
 return div;
 }
-function renderMatchesHorarios() {
+async function renderMatchesHorarios() {
 const container = document.getElementById('matchesHorarios');
 if (!container) return;
-const partidos = AppState.getPartidos();
+let partidos = AppState.getPartidos();
+if (partidos.length === 0) {
+container.innerHTML = '<p class="empty-state-msg" style="padding:1rem;text-align:center">Cargando partidos...</p>';
+await cargarPartidos(2, 8000, false);
+partidos = AppState.getPartidos();
+}
 if (partidos.length === 0) {
 container.innerHTML = '<p class="empty-state-msg">No hay partidos configurados para esta jornada.</p>';
-if (ENV?.isDev) console.warn('⚠️ renderMatchesHorarios: AppState sin partidos');
+if (ENV?.isDev) console.warn('renderMatchesHorarios AppState sin partidos');
 return;
 }
 container.innerHTML = partidos.map(partido => {
