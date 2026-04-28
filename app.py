@@ -28,6 +28,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, Field, field_validator, ConfigDict, model_validator
 from datetime import datetime, timezone
+import httpx
 
 load_dotenv(override=False)
 
@@ -123,6 +124,14 @@ def init_db() -> None:
                 TIMESTAMP NOT NULL DEFAULT NOW()
             """)
             cur.execute("""
+                ALTER TABLE resultados
+                ADD COLUMN IF NOT EXISTS marcador_local SMALLINT
+            """)
+            cur.execute("""
+                ALTER TABLE resultados
+                ADD COLUMN IF NOT EXISTS marcador_visita SMALLINT
+            """)
+            cur.execute("""
                 ALTER TABLE quinielas
                 ADD COLUMN IF NOT EXISTS idempotency_key TEXT
             """)
@@ -155,6 +164,122 @@ def init_db() -> None:
 
     logger.info("Base de datos PostgreSQL inicializada correctamente")
 
+# ── Mapeo nombre BD → nombre TheSportsDB ────────────────────────────
+NOMBRE_A_SPORTSDB: dict[str, str] = {
+    "San Luis":  "Atletico San Luis",
+    "Pumas":     "Pumas UNAM",
+    "Mazatlán":  "Mazatlan FC",
+    "Querétaro": "Queretaro FC",
+    "Necaxa":    "Necaxa",
+    "Tigres":    "Tigres UANL",
+    "Cruz Azul": "Cruz Azul",
+    "Tijuana":   "Club Tijuana",
+    "Chivas":    "Guadalajara",
+    "Puebla":    "Puebla FC",
+    "Monterrey": "Monterrey",
+    "Pachuca":   "Pachuca",
+    "León":      "Leon",
+    "Juárez":    "FC Juarez",
+    "América":   "America",
+    "Toluca":    "Toluca",
+    "Santos":    "Santos Laguna",
+    "Atlas":     "Atlas FC",
+}
+SPORTSDB_LIGA_MX = "4403"
+
+async def auto_sync_loop() -> None:
+    """Consulta TheSportsDB cada 10 min tras el fin de jornada y llena marcadores."""
+    await asyncio.sleep(15)   # Espera a que la app arranque
+    logger.info("auto_sync_loop iniciado")
+
+    while True:
+        try:
+            now = datetime.now(timezone.utc)
+            fin_jornada = JORNADA_CONFIG["findt"]
+
+            # Aún no terminó la jornada → esperar
+            if now < fin_jornada:
+                secs = min((fin_jornada - now).total_seconds() + 120, 600)
+                await asyncio.sleep(secs)
+                continue
+
+            # Ya terminó → ¿faltan resultados?
+            resultados, _ = get_resultados_db(JORNADA_ACTUAL)
+            if all(r is not None for r in resultados):
+                await asyncio.sleep(3600)  # Todo completo, revisar cada hora
+                continue
+
+            # Construir lookup local→partido_id
+            local_lookup: dict[str, int] = {}
+            for p in PARTIDOS:
+                sdb_nombre = NOMBRE_A_SPORTSDB.get(p["local"], p["local"])
+                local_lookup[sdb_nombre.lower()] = p["id"]
+
+            jornada_num = JORNADA_CONFIG["numero"]
+            season = "2025-2026"
+            url = (
+                f"https://www.thesportsdb.com/api/v1/json/3/eventsround.php"
+                f"?id={SPORTSDB_LIGA_MX}&r={jornada_num}&s={season}"
+            )
+
+            async with httpx.AsyncClient(timeout=10) as client:
+                resp = await client.get(url)
+                if resp.status_code != 200:
+                    logger.warning("TheSportsDB devolvió %s", resp.status_code)
+                    await asyncio.sleep(600)
+                    continue
+                data = resp.json()
+
+            events = data.get("events") or []
+            actualizados = 0
+
+            for ev in events:
+                home = (ev.get("strHomeTeam") or "").lower()
+                score_h = ev.get("intHomeScore")
+                score_a = ev.get("intAwayScore")
+
+                if score_h is None or score_a is None:
+                    continue  # Partido aún sin resultado
+
+                pid = local_lookup.get(home)
+                if pid is None:
+                    logger.warning("auto_sync: equipo no mapeado '%s'", home)
+                    continue
+
+                gh, ga = int(score_h), int(score_a)
+                resultado = "L" if gh > ga else ("E" if gh == ga else "V")
+
+                try:
+                    with get_db() as conn:
+                        with conn.cursor() as cur:
+                            cur.execute(
+                                """
+                                INSERT INTO resultados
+                                    (partido_id, jornada, resultado, marcador_local, marcador_visita)
+                                VALUES (%s, %s, %s, %s, %s)
+                                ON CONFLICT (partido_id, jornada) DO UPDATE SET
+                                    resultado        = EXCLUDED.resultado,
+                                    marcador_local   = EXCLUDED.marcador_local,
+                                    marcador_visita  = EXCLUDED.marcador_visita,
+                                    fecha_actualizacion = NOW()
+                                """,
+                                (pid, JORNADA_ACTUAL, resultado, gh, ga),
+                            )
+                    actualizados += 1
+                except Exception as e:
+                    logger.error("auto_sync DB error partido %s: %s", pid, e)
+
+            if actualizados:
+                logger.info("auto_sync: %s partidos actualizados", actualizados)
+
+        except asyncio.CancelledError:
+            logger.info("auto_sync_loop detenido")
+            return
+        except Exception as e:
+            logger.error("auto_sync_loop error inesperado: %s", e)
+
+        await asyncio.sleep(600)   # Revisar cada 10 minutos
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
@@ -162,7 +287,13 @@ async def lifespan(app: FastAPI):
         init_db()
     except Exception as e:
         raise RuntimeError(f"❌ No se pudo conectar a la BD: {e}") from e
+    sync_task = asyncio.create_task(auto_sync_loop())   # ← Cambio E
     yield
+    sync_task.cancel()                                  # ← Cambio E
+    try:
+        await sync_task
+    except asyncio.CancelledError:
+        pass
     close_pool()
 
 app = FastAPI(
@@ -238,6 +369,7 @@ if _fin_dt <= _inicio_dt:
         f"❌ JORNADA_CONFIG: 'fin' ({JORNADA_CONFIG['fin']}) debe ser "
         f"posterior a 'inicio' ({JORNADA_CONFIG['inicio']})"
     )
+JORNADA_CONFIG["findt"] = _fin_dt
 
 PARTIDOS = [
     {
@@ -246,6 +378,7 @@ PARTIDOS = [
         "visitante": "Pumas",      "visitanteLogo": "logos/pumas.png",
         "horario": "Viernes 7 PM",
         "televisora": "TUDN",      "televisionLogo": "logos/tudn.png",
+        "kickoff": "2026-04-17T19:00:00-06:00",
     },
     {
         "id": 1,
@@ -253,6 +386,7 @@ PARTIDOS = [
         "visitante": "Querétaro",  "visitanteLogo": "logos/queretaro.png",
         "horario": "Viernes 7 PM",
         "televisora": "TV Azteca", "televisionLogo": "logos/tv-azteca.png",
+        "kickoff": "2026-04-17T19:00:00-06:00",
     },
     {
         "id": 2,
@@ -260,6 +394,7 @@ PARTIDOS = [
         "visitante": "Tigres",     "visitanteLogo": "logos/tigres.png",
         "horario": "Sábado 5 PM",
         "televisora": "Fox Sports", "televisionLogo": "logos/fox-sports.png",
+        "kickoff": "2026-04-18T17:00:00-06:00",
     },
     {
         "id": 3,
@@ -267,6 +402,7 @@ PARTIDOS = [
         "visitante": "Tijuana",    "visitanteLogo": "logos/tijuana.png",
         "horario": "Sábado 5 PM",
         "televisora": "TUDN",      "televisionLogo": "logos/tudn.png",
+        "kickoff": "2026-04-18T17:00:00-06:00",
     },
     {
         "id": 4,
@@ -274,6 +410,7 @@ PARTIDOS = [
         "visitante": "Puebla",     "visitanteLogo": "logos/puebla.png",
         "horario": "Sábado 7 PM",
         "televisora": "TV Azteca", "televisionLogo": "logos/tv-azteca.png",
+        "kickoff": "2026-04-18T19:00:00-06:00",
     },
     {
         "id": 5,
@@ -281,6 +418,7 @@ PARTIDOS = [
         "visitante": "Pachuca",    "visitanteLogo": "logos/pachuca.png",
         "horario": "Sábado 7:05 PM",
         "televisora": "TUDN",      "televisionLogo": "logos/tudn.png",
+        "kickoff": "2026-04-18T19:05:00-06:00",
     },
     {
         "id": 6,
@@ -288,6 +426,7 @@ PARTIDOS = [
         "visitante": "Juárez",     "visitanteLogo": "logos/juarez.png",
         "horario": "Sábado 9 PM",
         "televisora": "Fox Sports", "televisionLogo": "logos/fox-sports.png",
+        "kickoff": "2026-04-18T21:00:00-06:00",
     },
     {
         "id": 7,
@@ -295,6 +434,7 @@ PARTIDOS = [
         "visitante": "Toluca",     "visitanteLogo": "logos/toluca.png",
         "horario": "Sábado 9 PM",
         "televisora": "TUDN",      "televisionLogo": "logos/tudn.png",
+        "kickoff": "2026-04-18T21:00:00-06:00",
     },
     {
         "id": 8,
@@ -302,6 +442,7 @@ PARTIDOS = [
         "visitante": "Atlas",      "visitanteLogo": "logos/atlas.png",
         "horario": "Domingo 5 PM",
         "televisora": "TUDN",      "televisionLogo": "logos/tudn.png",
+        "kickoff": "2026-04-19T17:00:00-06:00",
     },
 ]
 _total_especiales = MAX_DOBLES + MAX_TRIPLES
@@ -379,22 +520,29 @@ ESTADOS_VALIDOS  = {ESTADO_PENDIENTE, ESTADO_JUGANDO, ESTADO_ESPERA}
 # ║     ⚽ Esto de abajo trabaja con los resultados finales⚽       ║ # ║     ⚽ Esto de abajo trabaja con los resultados finales⚽       ║
 NUM_PARTIDOS = len(PARTIDOS)
 
-def get_resultados_db(jornada: str) -> list[str | None]:
+def get_resultados_db(jornada: str):
     with get_db() as conn:
         with conn.cursor() as cur:
             cur.execute(
-                "SELECT partido_id, resultado FROM resultados WHERE jornada = %s",
-                (jornada,),
+                "SELECT partido_id, resultado, marcador_local, marcador_visita "
+                "FROM resultados WHERE jornada = %s",
+                (jornada,)
             )
             rows = cur.fetchall()
-    resultado_list: list[str | None] = [None] * NUM_PARTIDOS
+    resultado_list: list = [None] * NUM_PARTIDOS
+    marcador_dict: dict = {}
     for row in rows:
         pid = row["partido_id"]
         if 0 <= pid < NUM_PARTIDOS:
             resultado_list[pid] = row["resultado"]
+            if row["marcador_local"] is not None or row["marcador_visita"] is not None:
+                marcador_dict[str(pid)] = {
+                    "local":  str(row["marcador_local"])  if row["marcador_local"]  is not None else "",
+                    "visita": str(row["marcador_visita"]) if row["marcador_visita"] is not None else "",
+                }
         else:
             logger.warning("partido_id fuera de rango en BD: %s (jornada=%s)", pid, jornada)
-    return resultado_list
+    return resultado_list, marcador_dict
 
 def set_resultado_db(partido_id: int, resultado: str | None, jornada: str) -> None:
     with get_db() as conn:
@@ -414,18 +562,19 @@ def set_resultado_db(partido_id: int, resultado: str | None, jornada: str) -> No
                         fecha_actualizacion = NOW()
                 """, (partido_id, jornada, resultado))
 
-def _resultados_a_dict(resultados: list[str | None]) -> dict[str, str | None]:
+def resultados_a_dict(resultados: list[str | None]) -> dict[str, str | None]:
     return {str(i): resultados[i] for i in range(NUM_PARTIDOS)}
 
 @app.get("/api/resultados-oficiales")
 async def obtener_resultados_oficiales(
     jornada: str = Query(default=JORNADA_ACTUAL),
 ):
-    resultados = get_resultados_db(jornada)
+    resultados, marcadores = get_resultados_db(jornada)
     return {
         "success":    True,
         "jornada":    jornada,
-        "resultados": _resultados_a_dict(resultados),
+        "resultados": resultados_a_dict(resultados),
+        "marcadores": marcadores,
     }
 
 class ResultadoBody(BaseModel):
@@ -448,7 +597,7 @@ async def actualizar_resultado_oficial(
         raise HTTPException(400, detail=f"partido_id debe estar entre 0 y {NUM_PARTIDOS - 1}")
     try:
         set_resultado_db(partido_id, body.resultado, jornada)
-        resultados = get_resultados_db(jornada)
+        resultados, _ = get_resultados_db(jornada)
     except Exception as e:
         logger.error("Error actualizando resultado partido %s: %s", partido_id, e)
         raise HTTPException(500, detail="Error interno al actualizar resultado")
@@ -457,11 +606,12 @@ async def actualizar_resultado_oficial(
         "success":    True,
         "partido_id": partido_id,
         "resultado":  resultados[partido_id],
-        "resultados": _resultados_a_dict(resultados),
+        "resultados": resultados_a_dict(resultados),
     }
 
 class GuardarResultadosBody(BaseModel):
     resultados: dict[str, str]
+    marcadores: dict[str, dict] = {}   # {"0": {"local": "2", "visita": "1"}, ...}
 
 @app.post("/api/guardar-resultados")
 async def guardar_todos_los_resultados(
@@ -469,43 +619,58 @@ async def guardar_todos_los_resultados(
     jornada: str = Query(default=JORNADA_ACTUAL),
 ):
     errores: list[str] = []
-    partidos_validos: list[tuple[int, str]] = []
+    partidos_validos: list = []
+
     for idx_str, resultado in body.resultados.items():
         try:
             idx = int(idx_str)
         except ValueError:
-            errores.append(f"Índice inválido: '{idx_str}' no es un número")
+            errores.append(f"Índice inválido: {idx_str}")
             continue
         if not (0 <= idx < NUM_PARTIDOS):
             errores.append(f"Partido {idx}: índice fuera de rango")
             continue
-        if resultado not in {"L", "E", "V"}:
-            errores.append(f"Partido {idx}: resultado inválido '{resultado}'")
+        if resultado not in ("L", "E", "V"):
+            errores.append(f"Partido {idx}: resultado inválido {resultado}")
             continue
-        partidos_validos.append((idx, resultado))
+        marc = body.marcadores.get(str(idx), {})
+        try:
+            ml = int(marc.get("local",  "")) if marc.get("local",  "") != "" else None
+            mv = int(marc.get("visita", "")) if marc.get("visita", "") != "" else None
+        except (ValueError, TypeError):
+            ml = mv = None
+        partidos_validos.append((idx, resultado, ml, mv))
+
     try:
         with get_db() as conn:
             with conn.cursor() as cur:
-                for idx, resultado in partidos_validos:
-                    cur.execute("""
-                        INSERT INTO resultados (partido_id, jornada, resultado)
-                        VALUES (%s, %s, %s)
-                        ON CONFLICT (partido_id, jornada)
-                        DO UPDATE SET
-                            resultado           = EXCLUDED.resultado,
+                for idx, resultado, ml, mv in partidos_validos:
+                    cur.execute(
+                        """
+                        INSERT INTO resultados
+                            (partido_id, jornada, resultado, marcador_local, marcador_visita)
+                        VALUES (%s, %s, %s, %s, %s)
+                        ON CONFLICT (partido_id, jornada) DO UPDATE SET
+                            resultado        = EXCLUDED.resultado,
+                            marcador_local   = EXCLUDED.marcador_local,
+                            marcador_visita  = EXCLUDED.marcador_visita,
                             fecha_actualizacion = NOW()
-                    """, (idx, jornada, resultado))
-        resultados = get_resultados_db(jornada)
+                        """,
+                        (idx, jornada, resultado, ml, mv),
+                    )
     except Exception as e:
         logger.error("Error guardando resultados en lote: %s", e)
         raise HTTPException(500, detail="Error interno al guardar resultados")
+
+    resultados, marcadores = get_resultados_db(jornada)
     logger.info("Guardados %s resultados para %s", len(partidos_validos), jornada)
     return {
-        "success":    True,
-        "mensaje":    f"{len(partidos_validos)} resultados guardados",
-        "resultados": _resultados_a_dict(resultados),
-        "jornada":    jornada,
-        "errores":    errores,
+        "success":   True,
+        "mensaje":   f"{len(partidos_validos)} resultados guardados",
+        "resultados": resultados_a_dict(resultados),
+        "marcadores": marcadores,
+        "jornada":   jornada,
+        "errores":   errores,
     }
 
 @app.delete("/api/resultados-oficiales/{partido_id}")
@@ -517,7 +682,7 @@ async def borrar_resultado_partido(
         raise HTTPException(400, detail=f"partido_id debe estar entre 0 y {NUM_PARTIDOS - 1}")
     try:
         set_resultado_db(partido_id, None, jornada)
-        resultados = get_resultados_db(jornada)
+        resultados, _ = get_resultados_db(jornada)
     except Exception as e:
         logger.error("Error borrando resultado partido %s: %s", partido_id, e)
         raise HTTPException(500, detail="Error interno al borrar resultado")
@@ -525,7 +690,7 @@ async def borrar_resultado_partido(
     return {
         "success":    True,
         "mensaje":    f"Resultado del partido {partido_id} borrado",
-        "resultados": _resultados_a_dict(resultados),
+        "resultados": resultados_a_dict(resultados),
     }
 
 @app.delete("/api/resultados-oficiales")
@@ -693,9 +858,10 @@ VENDEDOR_WHATSAPP = {
     "Pantoja":      "5218117027387",
     "Patty":        "5218281016489",
     "PolloGol":     "5218125728071",
+    "Piny":         "5218282941357",
     "Ranita":       "5218281432398",
     "Rolando":      "5214891009110",
-    "Taliban":      "52181XXXXXXX",
+    "Taliban":      "5218287685754",
     "•":            "5218281011650",
 }
 
@@ -965,7 +1131,7 @@ async def crear_quiniela(data: QuinielaInput, request: Request):
             status_code=423,
             detail="El registro de nuevas quinielas está temporalmente bloqueado.",
         )
-    estado_inicial = ESTADO_ESPERA if _modo_espera_activo else ESTADO_PENDIENTE
+    estado_inicial = ESTADO_PENDIENTE
 
     raw_idem = request.headers.get("X-Idempotency-Key", "").strip()
     idempotency_key = raw_idem[:64] if raw_idem else None
@@ -1128,6 +1294,36 @@ async def confirmar_quiniela(quiniela_id: int):
                             f"Estados válidos: {sorted(_ESTADOS_CONFIRMABLES)}"
                         ),
                     )
+                if _modo_espera_activo:
+                    cur.execute("""
+                        UPDATE quinielas
+                        SET estado = %s, folio = NULL
+                        WHERE id = %s
+                    """, (ESTADO_ESPERA, quiniela_id))
+                    nuevo_estado = ESTADO_ESPERA
+                    nuevo_folio  = None
+                    mensaje      = f"Quiniela en espera — modo espera activo por administrador"
+                    logger.info("Quiniela %s → espera por modo espera activo", quiniela_id)
+                    _fc = row["fecha_creacion"]
+                    fecha_str = (
+                        _fc.isoformat() if hasattr(_fc, 'isoformat')
+                        else str(_fc) if _fc else None
+                    )
+                    return {
+                        "success": True,
+                        "message": mensaje,
+                        "estado":  nuevo_estado,
+                        "quiniela": {
+                            "id":             quiniela_id,
+                            "nombre":         row["nombre"],
+                            "vendedor":       row["vendedor"],
+                            "predictions":    row["predictions"],
+                            "estado":         nuevo_estado,
+                            "folio":          None,
+                            "jornada":        row["jornada"],
+                            "fecha_creacion": fecha_str,
+                        },
+                    }
                 limite_vendedor = obtener_limite_vendedor(vendedor)
                 if limite_vendedor == 0:
                     raise HTTPException(400, detail=f"Vendedor '{vendedor}' no existe en el sistema")
@@ -1559,9 +1755,10 @@ async def get_lista():
         raise HTTPException(status_code=404, detail="Archivo listaoficial.html no encontrado")
     return FileResponse("listaoficial.html", media_type="text/html")
 
-# ║     ⚽ Esto de abajo trabaja en la importacion de las quinielas    ║# ║     ⚽ Esto de abajo trabaja en la importacion de las quinielas    ║
+# ║     ⚽ Esto de abajo trabaja en la importacion de las quinielas    ║
 _MAX_CSV_BYTES = 5 * 1024 * 1024
 _LOTE_COMMIT   = 50
+
 
 @app.post("/api/importar-quinielas-csv")
 async def importar_quinielas_csv(
@@ -1586,7 +1783,8 @@ async def importar_quinielas_csv(
 
     reader = csv.DictReader(io.StringIO(decoded))
 
-    columnas_requeridas = {"Folio", "Nombre", "Vendedor"} | {f"P{i}" for i in range(1, NUM_PARTIDOS + 1)}
+    # ID, Folio y Estado son opcionales — ID permite reimportar con el mismo PK
+    columnas_requeridas = {"Nombre", "Vendedor"} | {f"P{i}" for i in range(1, NUM_PARTIDOS + 1)}
     if reader.fieldnames:
         columnas_csv = {c.strip() for c in reader.fieldnames if c}
         faltantes = columnas_requeridas - columnas_csv
@@ -1607,28 +1805,42 @@ async def importar_quinielas_csv(
                 filas_en_lote = 0
                 for row_num, row in enumerate(reader, start=2):
                     try:
-                        folio    = row.get("Folio",    "").strip()
-                        nombre   = row.get("Nombre",   "").strip()
-                        vendedor = row.get("Vendedor", "").strip()
-                        if not folio or not nombre:
+                        # ── Leer campos base ──────────────────────────────
+                        folio      = row.get("Folio",    "").strip() or None
+                        nombre     = row.get("Nombre",   "").strip()
+                        vendedor   = row.get("Vendedor", "").strip()
+                        id_csv_raw = row.get("ID",       "").strip()
+                        id_csv     = int(id_csv_raw) if id_csv_raw.isdigit() else None
+
+                        if not nombre:
                             continue
-                        try:
-                            folio_int = int(folio)
-                        except ValueError:
-                            _errores.append(f"Fila {row_num}: Folio '{folio}' no es número válido")
-                            continue
-                        if not vendedor:
-                            vendedor_inferido = get_vendedor_por_folio(folio_int)
-                            if not vendedor_inferido:
-                                _errores.append(
-                                    f"Fila {row_num}: Folio {folio} no pertenece a ningún vendedor"
-                                )
+
+                        folio_int = None
+                        if folio:
+                            try:
+                                folio_int = int(folio)
+                            except ValueError:
+                                _errores.append(f"Fila {row_num}: Folio '{folio}' no es número válido")
                                 continue
-                            vendedor = vendedor_inferido
+
+                        if not vendedor:
+                            if folio_int:
+                                vendedor_inferido = get_vendedor_por_folio(folio_int)
+                                if not vendedor_inferido:
+                                    _errores.append(
+                                        f"Fila {row_num}: Folio {folio} no pertenece a ningún vendedor"
+                                    )
+                                    continue
+                                vendedor = vendedor_inferido
+                            else:
+                                _errores.append(f"Fila {row_num}: Vendedor vacío y sin Folio para inferirlo")
+                                continue
                         elif not vendedor_es_valido(vendedor):
                             _errores.append(f"Fila {row_num}: Vendedor '{vendedor}' no reconocido")
                             continue
-                        picks: list[str] = []
+
+                        # ── Parsear picks (acepta simples y dobles L/E) ───
+                        picks: list = []
                         picks_validos = True
                         for i in range(1, NUM_PARTIDOS + 1):
                             pick = row.get(f"P{i}", "").strip().upper()
@@ -1641,29 +1853,55 @@ async def importar_quinielas_csv(
                                 picks.append(pick)
                         if not picks_validos or len(picks) != NUM_PARTIDOS:
                             continue
+
                         predictions = {str(i): [pick] for i, pick in enumerate(picks)}
 
+                        # ── INSERT respetando ID si viene en el CSV ───────
                         cur.execute("SAVEPOINT fila_import")
                         try:
-                            cur.execute("""
-                                INSERT INTO quinielas
-                                    (nombre, vendedor, predictions, estado, folio, jornada)
-                                VALUES (%s, %s, %s, %s, %s, %s)
-                                ON CONFLICT (folio, jornada) WHERE folio IS NOT NULL
-                                DO UPDATE SET
-                                    nombre      = EXCLUDED.nombre,
-                                    vendedor    = EXCLUDED.vendedor,
-                                    predictions = EXCLUDED.predictions,
-                                    estado      = EXCLUDED.estado
-                                RETURNING (xmax = 0) AS es_nueva
-                            """, (
-                                nombre,
-                                vendedor,
-                                PgJson(predictions),
-                                ESTADO_JUGANDO,
-                                folio,
-                                JORNADA_ACTUAL,
-                            ))
+                            if id_csv:
+                                cur.execute("""
+                                    INSERT INTO quinielas
+                                        (id, nombre, vendedor, predictions, estado, folio, jornada)
+                                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                                    ON CONFLICT (id) DO UPDATE SET
+                                        nombre      = EXCLUDED.nombre,
+                                        vendedor    = EXCLUDED.vendedor,
+                                        predictions = EXCLUDED.predictions,
+                                        estado      = EXCLUDED.estado,
+                                        folio       = EXCLUDED.folio,
+                                        jornada     = EXCLUDED.jornada
+                                    RETURNING (xmax = 0) AS es_nueva
+                                """, (
+                                    id_csv,
+                                    nombre,
+                                    vendedor,
+                                    PgJson(predictions),
+                                    ESTADO_JUGANDO,
+                                    folio,
+                                    JORNADA_ACTUAL,
+                                ))
+                            else:
+                                cur.execute("""
+                                    INSERT INTO quinielas
+                                        (nombre, vendedor, predictions, estado, folio, jornada)
+                                    VALUES (%s, %s, %s, %s, %s, %s)
+                                    ON CONFLICT (folio, jornada) WHERE folio IS NOT NULL
+                                    DO UPDATE SET
+                                        nombre      = EXCLUDED.nombre,
+                                        vendedor    = EXCLUDED.vendedor,
+                                        predictions = EXCLUDED.predictions,
+                                        estado      = EXCLUDED.estado
+                                    RETURNING (xmax = 0) AS es_nueva
+                                """, (
+                                    nombre,
+                                    vendedor,
+                                    PgJson(predictions),
+                                    ESTADO_JUGANDO,
+                                    folio,
+                                    JORNADA_ACTUAL,
+                                ))
+
                             es_nueva = cur.fetchone()["es_nueva"]
                             cur.execute("RELEASE SAVEPOINT fila_import")
                             if es_nueva:
@@ -1683,6 +1921,11 @@ async def importar_quinielas_csv(
                         logger.error("Error inesperado en fila %s del CSV: %s", row_num, e)
                         _errores.append(f"Fila {row_num}: Error inesperado — {e}")
                         continue
+
+                # ── Sincronizar secuencia para nuevas quinielas ───────────
+                cur.execute(
+                    "SELECT setval('quinielas_id_seq', COALESCE(MAX(id), 1)) FROM quinielas"
+                )
                 conn.commit()
         return _importadas, _actualizadas, _errores
 
@@ -1710,14 +1953,15 @@ async def importar_quinielas_csv(
         "errores":      errores,
     }
 
+
 @app.get("/api/plantilla-importar")
 async def descargar_plantilla_importar():
     csv_content = "\n".join([
-        "Folio,Nombre,Vendedor,P1,P2,P3,P4,P5,P6,P7,P8,P9",
-        "451,Juan Pérez,Checo,L,E,V,L,E,V,L,E,V",
-        "452,María López,Checo,V,V,V,E,E,E,L,L,L",
-        "1,Pedro García,Alexander,L,L,L,V,V,V,E,E,E",
-        "201,Ana Sánchez,Alfonso,E,E,E,L,L,L,V,V,V",
+        "ID,Folio,Nombre,Vendedor,P1,P2,P3,P4,P5,P6,P7,P8,P9",
+        "451,451,Juan Pérez,Checo,L,E,V,L,E,V,L,E,V",
+        "452,452,María López,Checo,V,V,V,E,E,E,L,L,L",
+        "1,1,Pedro García,Alexander,L,L,L,V,V,V,E,E,E",
+        "201,201,Ana Sánchez,Alfonso,E,E,E,L,L,L,V,V,V",
     ]) + "\n"
     return StreamingResponse(
         iter([csv_content]),
@@ -1727,7 +1971,6 @@ async def descargar_plantilla_importar():
             "Content-Length": str(len(csv_content.encode("utf-8"))),
         },
     )
-
 # ║     ⚽ Esto de abajo trabaja en la eliminacion de todo   ║ # ║     ⚽ Esto de abajo trabaja en la eliminacion de todo   ║
 class EliminarTodasInput(BaseModel):
     jornada:      str = Field(..., min_length=1, max_length=50)

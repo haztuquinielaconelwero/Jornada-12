@@ -288,14 +288,13 @@ document.getElementById('statPendientes').textContent = listaPend.length;
 /* ──Tabla ────────────────────────────────────── */
 function renderTabla() {
 var numP = Math.max(partidos.length, 9);
-var th = '<tr><th>#</th><th>Nombre</th><th>Vendedor</th>';
+var th = '<tr><th>ID</th><th>#</th><th>Nombre</th><th>Vendedor</th>';
 for (var i = 1; i <= numP; i++) { th += '<th>P' + i + '</th>'; }
 th += '<th>Acci\u00F3n</th></tr>';
 document.getElementById('tablaHead').innerHTML = th;
 var body = document.getElementById('tablaBody');
 if (!listaPend.length) {
-body.innerHTML = '<tr class="empty-row"><td colspan="' + (numP + 4) +
-'">Sin quinielas pendientes</td></tr>';
+body.innerHTML = '<tr class="empty-row"><td colspan="' + (numP + 5) + '">Sin quinielas pendientes</td></tr>';
 return;
 }
 body.innerHTML = listaPend.map(function (q, i) {
@@ -305,6 +304,7 @@ var c = p==='L' ? 'pick-L' : p==='E' ? 'pick-E' : p==='V' ? 'pick-V' : 'pick-vac
 return '<td><span class="pick-cell ' + c + '">' + (p||'-') + '</span></td>';
 }).join('');
 return '<tr>' +
+'<td>' + (q.id || '-') + '</td>' +
 '<td>' + (i+1) + '</td>' +
 '<td><strong>' + esc(q.nombre) + '</strong></td>' +
 '<td>' + esc(vendedor) + '</td>' +
@@ -317,7 +317,7 @@ celdas +
 /* ── Exportar excel───────── */
 function exportarCSV() {
 var numP = Math.max(partidos.length, 9);
-var cols = ['#','Nombre','Estado'];
+var cols = ['ID', '#', 'Nombre', 'Estado'];
 for (var i = 1; i <= numP; i++) { cols.push('P' + i); }
 var filas = [];
 listaPend.forEach(function (q, i) { filas.push(filaCSV(q,'Pendiente',i+1,numP)); });
@@ -336,7 +336,7 @@ toast(filas.length + ' quinielas exportadas','success');
 function filaCSV(q, estado, num, numP) {
 var picks  = Array.isArray(q.picks) ? q.picks : new Array(numP).fill('-');
 var nombre = '"' + (q.nombre||'').replace(/"/g,'""') + '"';
-return [num, nombre, estado].concat(picks).join(',');
+return [q.id || '', num, nombre, estado].concat(picks).join(',');
 }
 /* ── Eliminar todas ──────────────────────────────────── */
 function pedirConfirmacion() {

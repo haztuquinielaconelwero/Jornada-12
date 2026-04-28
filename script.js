@@ -1,4 +1,4 @@
-/* = Conexión con Python (API) = */ /* = Conexión con Python (API) = */
+/*-------------------------Esto de abajo se encarga de trabajar en nuestro archivo y se enfoca con la Conexión con Python (API)--------------------------------------*/
 const ENV = (() => {
 const { hostname, port, protocol } = window.location;
 const isLocalhost =
@@ -13,7 +13,7 @@ const isDev = isLocalhost || isLanIP;
 const isProd = !isDev && !isStaging;
 let base;
 if (isDev) {
-const currentPort = port || '8000'; 
+const currentPort = port || '8000';
 base = `${protocol}//${hostname}:${currentPort}`;
 } else if (isStaging) {
 base = `${protocol}//${hostname}`;
@@ -26,7 +26,7 @@ const API_BASE = ENV.base;
 function apiUrl(path, params = {}) {
 if (typeof path !== 'string' || !path.trim()) {
 console.error('❌ apiUrl: path inválido recibido:', path);
-return API_BASE; 
+return null;
 }
 const cleanPath = '/' + path.replace(/^\/+/, '').replace(/\/+/g, '/');
 let url;
@@ -34,7 +34,7 @@ try {
 url = new URL(cleanPath, API_BASE);
 } catch (e) {
 console.error('❌ apiUrl: no se pudo construir URL para path:', path, e);
-return API_BASE;
+return null;
 }
 Object.entries(params).forEach(([key, value]) => {
 if (value !== null && value !== undefined && value !== '') {
@@ -47,7 +47,6 @@ if (ENV.isDev) {
 console.log(`%c🔧 Entorno DEV detectado`, 'color: #facc15; font-weight: bold');
 console.log(`📡 API_BASE → ${API_BASE}`);
 }
-/* = Utilidad de localStorage compartida = */
 const _ls = Object.freeze({
 get(key) {
 try { return localStorage.getItem(key); } catch { return null; }
@@ -63,7 +62,7 @@ remove(key) {
 try { localStorage.removeItem(key); } catch { /* sin acceso */ }
 },
 });
-/* = Esto de abajo trabaja en identificar el vendedor = */ /* = Esto de abajo trabaja en identificar el vendedor = */
+/*-------------------------Esto de abajo se encarga de trabajar en nuestro archivo y se enfoca en la identificacion del vendedor-------------------------------------*/
 const VendedorManager = (() => {
 const VENDEDORES_VALIDOS = new Set([
 'Alexander', 'Alfonso', 'Arturo', 'Azael', 'Boosters', 'Checo',
@@ -72,12 +71,26 @@ const VENDEDORES_VALIDOS = new Set([
 'Javier Garcia', 'JJ', 'Jose Luis', 'Juan de Dios', 'Juanillo',
 'Kany', 'Manu', 'Marchan', 'Marcos', 'Mazatan', 'Memo', 'Pantoja',
 'Patty', 'Piny', 'PolloGol', 'Ranita', 'Rolando', 'Taliban', 'Tienda',
-'Dinamica', 'Rifa',
-'•',
+'Vender 1', 'Rifa', 'Dinamica Final', '•',
 ]);
 const STORAGE_KEY = 'vendedor';
-const MAX_LENGTH   = 20;
-
+const MAX_LENGTH = 20;
+function setCookie(value) {
+try {
+document.cookie = `vendedor=${encodeURIComponent(value)};max-age=31536000;path=/;SameSite=Lax`;
+} catch (e) {
+if (ENV?.isDev) console.warn('⚠️ VendedorManager: no se pudo guardar cookie', e);
+}
+}
+function getCookie() {
+try {
+const match = document.cookie.match(/(?:^|;\s*)vendedor=([^;]+)/);
+return match ? decodeURIComponent(match[1]) : null;
+} catch (e) {
+if (ENV?.isDev) console.warn('⚠️ VendedorManager: no se pudo leer cookie', e);
+return null;
+}
+}
 function getFromURL() {
 try {
 const raw = new URLSearchParams(window.location.search).get(STORAGE_KEY);
@@ -101,22 +114,30 @@ function resolve() {
 const fromURL = getFromURL();
 if (fromURL) {
 _ls.set(STORAGE_KEY, fromURL);
+setCookie(fromURL);
 return fromURL;
 }
 const fromStorage = _ls.get(STORAGE_KEY);
 if (fromStorage && VENDEDORES_VALIDOS.has(fromStorage.trim())) {
+setCookie(fromStorage.trim());
 return fromStorage.trim();
 }
 if (fromStorage && !VENDEDORES_VALIDOS.has(fromStorage.trim())) {
 console.warn(`⚠️ VendedorManager: limpiando vendedor inválido en storage → "${fromStorage}"`);
 _ls.remove(STORAGE_KEY);
 }
+const fromCookie = getCookie();
+if (fromCookie && VENDEDORES_VALIDOS.has(fromCookie.trim())) {
+_ls.set(STORAGE_KEY, fromCookie.trim());
+if (ENV?.isDev) console.log(`🍪 VendedorManager: vendedor recuperado desde cookie → "${fromCookie.trim()}"`);
+return fromCookie.trim();
+}
 return null;
 }
 function updateDOM(vendedor) {
 const apply = () => {
 const el = document.getElementById('heroVendorText');
-if (!el) return; 
+if (!el) return;
 el.textContent = vendedor ?? 'Vendedor';
 };
 if (document.readyState === 'loading') {
@@ -127,12 +148,21 @@ apply();
 }
 const current = resolve();
 if (current) {
-if (ENV?.isDev) {
-console.log(`✅ VendedorManager: vendedor activo → "${current}"`);
-}
+if (ENV?.isDev) console.log(`✅ VendedorManager: vendedor activo → "${current}"`);
 } else {
 if (new URLSearchParams(window.location.search).has(STORAGE_KEY)) {
 console.warn('⚠️ VendedorManager: param "vendedor" en URL es inválido o no reconocido');
+}
+if (document.readyState === 'loading') {
+document.addEventListener('DOMContentLoaded', () => {
+if (typeof showToast === 'function') {
+showToast('Abre la app desde el link de tu vendedor para registrarte correctamente. 🔗', 'warning');
+}
+}, { once: true });
+} else {
+if (typeof showToast === 'function') {
+showToast('Abre la app desde el link de tu vendedor para registrarte correctamente. 🔗', 'warning');
+}
 }
 }
 updateDOM(current);
@@ -144,7 +174,7 @@ isKnown: (name) => typeof name === 'string' && VENDEDORES_VALIDOS.has(name.trim(
 });
 })();
 const currentVendedor = VendedorManager.current;
-/* = Funciones globales = */ /* = Funciones globales = */
+/*-------------------------Esto de abajo se encarga de trabajar en nuestro archivo y se enfoca en las Funciones globales -------------------------------------*/
 const AppState = (() => {
 const SCHEMA_VERSION = 2;
 const STORAGE_KEY = 'quinielasData';
@@ -357,14 +387,36 @@ return [..._sentQuinielas];
 }
 function markAsSent(quinielas) {
 const items = Array.isArray(quinielas) ? quinielas : [quinielas];
-if (_sentQuinielas.length + items.length > MAX_SENT) {
-const overflow = (_sentQuinielas.length + items.length) - MAX_SENT;
+const norm = s => (typeof s === 'string' ? s.trim().toLowerCase() : '');
+const contentKey = q => {
+const picks = Object.keys(q.predictions ?? {}).sort().map(k => {
+const v = (q.predictions ?? {})[k];
+return `${k}:${Array.isArray(v) ? [...v].sort().join('') : String(v).toUpperCase()}`;
+}).join('|');
+return `${norm(q.name || q.nombre)}|${norm(q.vendedor)}|${norm(q.jornada)}|${picks}`;
+};
+const existingKeys = new Set(_sentQuinielas.map(contentKey));
+const novedades = items.filter(q => {
+const key = contentKey(q);
+if (existingKeys.has(key)) {
+if (ENV?.isDev) console.warn(`⚠️ markAsSent: duplicado bloqueado: "${q.name ?? q.nombre}"`);
+return false;
+}
+existingKeys.add(key);
+return true;
+});
+if (novedades.length === 0) {
+if (ENV?.isDev) console.warn('⚠️ markAsSent: todas las quinielas ya existían, nada que agregar');
+return;
+}
+if (_sentQuinielas.length + novedades.length > MAX_SENT) {
+const overflow = (_sentQuinielas.length + novedades.length) - MAX_SENT;
 _sentQuinielas.splice(0, overflow);
 console.warn(`⚠️ AppState: sentQuinielas rotado, se eliminaron ${overflow} entradas antiguas`);
 }
-_sentQuinielas.push(...items.map(q => ({ ...q })));
+_sentQuinielas.push(...novedades.map(q => ({ ...q })));
 saveToStorage();
-_emit('sentChanged', { action: 'add', count: items.length });
+_emit('sentChanged', { action: 'add', count: novedades.length });
 }
 function replaceSent(newList) {
 if (!Array.isArray(newList)) return false;
@@ -427,7 +479,7 @@ let partidos = AppState.getPartidos();
 AppState.on('savedChanged', () => { savedQuinielas = AppState.getSaved(); });
 AppState.on('sentChanged', () => { sentQuinielas = AppState.getSent(); });
 AppState.on('partidosLoaded', () => { partidos = AppState.getPartidos(); });
-/* =Esto de abajo trabaja en el guardado = */ /* =Esto de abajo trabaja en el guardado = */
+/*-------------------------Esto de abajo se encarga de trabajar en nuestro archivo y se enfoca en el guardado y las alertas -------------------------------------*/
 const userId = (() => {
 const KEY = 'userId';
 const VALID_FORMAT = /^u_[0-9a-f]{16,}$/i;
@@ -439,7 +491,6 @@ const array = new Uint8Array(8);
 crypto.getRandomValues(array);
 return 'u_' + Array.from(array, b => b.toString(16).padStart(2, '0')).join('');
 }
-
 const existing = _ls.get(KEY);
 if (existing && VALID_FORMAT.test(existing)) {
 return existing;
@@ -448,184 +499,234 @@ const newId = generateId();
 _ls.set(KEY, newId);
 return newId;
 })();
-function loadFromStorage() {
-const STORAGE_KEY = 'quinielasData';
-const EXPECTED_VERSION = 2;
-function safeRemove(key) {
-try { localStorage.removeItem(key); }
-catch { /* silencioso — no podemos hacer nada más */ }
-}
-let raw;
-try {
-raw = localStorage.getItem(STORAGE_KEY);
-} catch (e) {
-console.error('❌ loadFromStorage: no se puede acceder a localStorage:', e);
-savedQuinielas = [];
-sentQuinielas = [];
-return;
-}
-if (!raw) return;
-try {
-const data = JSON.parse(raw);
-const version = data._version ?? 1;
-if (version < EXPECTED_VERSION) {
-console.warn(`⚠️ loadFromStorage: schema v${version} detectado, se esperaba v${EXPECTED_VERSION}. savedQuinielas descartado.`);
-savedQuinielas = [];
-sentQuinielas = Array.isArray(data.sentQuinielas)
-? data.sentQuinielas.filter(q => q && typeof q === 'object' && typeof q.id === 'number')
-: [];
-safeRemove(STORAGE_KEY);
-return;
-}
-savedQuinielas = Array.isArray(data.savedQuinielas)
-? data.savedQuinielas.filter(q => {
-const ok = q && typeof q === 'object' &&
-typeof q.id === 'number' &&
-typeof q.name === 'string' && q.name.trim() &&
-typeof q.vendedor === 'string' && q.vendedor.trim() &&
-q.predictions && typeof q.predictions === 'object' &&
-typeof q.jornada === 'string' && q.jornada.trim();
-if (!ok) console.warn('⚠️ loadFromStorage: quiniela inválida descartada:', q);
-return ok;
-})
-: [];
-sentQuinielas = Array.isArray(data.sentQuinielas)
-? data.sentQuinielas.filter(q => q && typeof q === 'object' && typeof q.id === 'number')
-: [];
-if (ENV?.isDev) {
-console.log(`📦 localStorage cargado: ${savedQuinielas.length} guardadas, ${sentQuinielas.length} enviadas`);
-}
-} catch (e) {
-console.error('❌ loadFromStorage: JSON inválido, reiniciando storage:', e);
-savedQuinielas = [];
-sentQuinielas = [];
-safeRemove(STORAGE_KEY);
-}
-}
-function saveToStorage() {
-const STORAGE_KEY = 'quinielasData';
-const SCHEMA_VERSION = 2;
-const payload = JSON.stringify({
-_version: SCHEMA_VERSION,
-savedQuinielas,
-sentQuinielas,
-});
-try {
-localStorage.setItem(STORAGE_KEY, payload);
-} catch (e) {
-const isQuotaError =
-e?.name === 'QuotaExceededError' ||
-e?.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
-e?.code === 22;
-if (isQuotaError) {
-console.error('❌ saveToStorage: localStorage lleno. Vaciando historial enviadas...');
-sentQuinielas = [];
-try {
-localStorage.setItem(STORAGE_KEY, JSON.stringify({
-_version: SCHEMA_VERSION,
-savedQuinielas,
-sentQuinielas: [],
-}));
-showToast('Espacio de almacenamiento casi lleno. Historial limpiado.', 'error');
-} catch {
-console.error('❌ saveToStorage: sin espacio. Datos no persistidos.');
-showToast('No hay espacio para guardar. Libera espacio en el navegador.', 'error');
-}
-} else {
-console.error('❌ saveToStorage: error inesperado:', e);
-}
-}
-}
 function deleteQuiniela(id) {
 if (typeof id !== 'number' || !Number.isFinite(id)) {
 console.error('❌ deleteQuiniela: id inválido recibido:', id);
 return false;
 }
-const before = savedQuinielas.length;
-savedQuinielas = savedQuinielas.filter(q => q.id !== id);
-if (savedQuinielas.length === before) {
+const removed = AppState.removeSavedById(id);
+if (!removed) {
 console.warn(`⚠️ deleteQuiniela: no se encontró quiniela con id=${id}`);
 return false;
 }
-saveToStorage();
 if (typeof updateSavedBadge === 'function') updateSavedBadge();
 if (typeof showSaved === 'function') showSaved();
 return true;
 }
 const ToastManager = (() => {
-const MAX_TOASTS = 3;
+const MAXTOASTS = 3;
 const active = [];
 const TYPES = {
-success: { bg: '#10b981', icon: '✅' },
-error:   { bg: '#ef4444', icon: '❌' },
-warning: { bg: '#f59e0b', icon: '⚠️' },
-info:    { bg: '#3b82f6', icon: 'ℹ️' },
+success: {
+color: '#10b981',
+icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`
+},
+error: {
+color: '#ef4444',
+icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`
+},
+warning: {
+color: '#f59e0b',
+icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`
+},
+info: {
+color: '#3b82f6',
+icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`
+},
 };
-function remove(toast, container) {
-toast.style.transition = 'opacity 300ms ease, transform 300ms ease';
-toast.style.opacity = '0';
-toast.style.transform = 'translateX(-50%) translateY(10px)';
+function _inyectarEstilos() {
+if (document.getElementById('toast-styles')) return;
+const style = document.createElement('style');
+style.id = 'toast-styles';
+style.textContent = `
+#toast-container {
+position: fixed;
+bottom: 80px;
+right: 16px;
+z-index: 10001;
+display: flex;
+flex-direction: column-reverse;
+gap: 10px;
+pointer-events: none;
+max-width: min(360px, calc(100vw - 32px));
+width: 100%;
+}
+.wero-toast {
+pointer-events: all;
+display: flex;
+align-items: flex-start;
+gap: 12px;
+background: #1a1a1a;
+border: 1px solid rgba(255,255,255,0.08);
+border-left: 3px solid var(--toast-color);
+border-radius: 10px;
+padding: 13px 14px;
+box-shadow: 0 8px 32px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.3);
+color: #f0f0f0;
+font-size: 0.875rem;
+font-weight: 500;
+line-height: 1.4;
+position: relative;
+overflow: hidden;
+transform: translateX(120%);
+opacity: 0;
+transition: transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1),
+opacity 0.38s ease;
+will-change: transform, opacity;
+-webkit-tap-highlight-color: transparent;
+}
+.wero-toast.toast-visible {
+transform: translateX(0);
+opacity: 1;
+}
+.wero-toast.toast-saliendo {
+transform: translateX(120%);
+opacity: 0;
+transition: transform 0.3s cubic-bezier(0.55, 0, 1, 0.45),
+opacity 0.3s ease;
+}
+.wero-toast-icon {
+flex-shrink: 0;
+width: 32px;
+height: 32px;
+border-radius: 50%;
+background: color-mix(in srgb, var(--toast-color) 15%, transparent);
+display: flex;
+align-items: center;
+justify-content: center;
+color: var(--toast-color);
+margin-top: 1px;
+}
+.wero-toast-body {
+flex: 1;
+min-width: 0;
+padding-right: 8px;
+}
+.wero-toast-text {
+word-break: break-word;
+}
+.wero-toast-close {
+flex-shrink: 0;
+background: none;
+border: none;
+color: rgba(255,255,255,0.35);
+cursor: pointer;
+padding: 2px;
+line-height: 1;
+display: flex;
+align-items: center;
+justify-content: center;
+border-radius: 4px;
+transition: color 0.15s ease, background 0.15s ease;
+margin-top: 1px;
+}
+.wero-toast-close:hover {
+color: rgba(255,255,255,0.8);
+background: rgba(255,255,255,0.08);
+}
+.wero-toast-progress {
+position: absolute;
+bottom: 0;
+left: 0;
+height: 2px;
+background: var(--toast-color);
+border-radius: 0 0 0 10px;
+transform-origin: left;
+animation: toast-progress var(--toast-duration) linear forwards;
+opacity: 0.6;
+}
+@keyframes toast-progress {
+from { transform: scaleX(1); }
+to { transform: scaleX(0); }
+}
+@media (max-width: 480px) {
+#toast-container {
+right: 12px;
+left: 12px;
+max-width: 100%;
+bottom: 72px;
+}
+}
+`;
+document.head.appendChild(style);
+}
+function _obtenerContenedor() {
+let container = document.getElementById('toast-container');
+if (!container) {
+container = document.createElement('div');
+container.id = 'toast-container';
+container.setAttribute('role', 'region');
+container.setAttribute('aria-label', 'Notificaciones');
+document.body.appendChild(container);
+}
+return container;
+}
+function _remover(toast, container) {
+if (!toast.isConnected) return;
+toast.classList.remove('toast-visible');
+toast.classList.add('toast-saliendo');
 setTimeout(() => {
 try { container.removeChild(toast); } catch { /* ya fue removido */ }
 const idx = active.indexOf(toast);
 if (idx !== -1) active.splice(idx, 1);
-}, 320); 
+}, 320);
 }
 function show(message, type = 'info') {
 if (!message || typeof message !== 'string') return;
-if (active.length >= MAX_TOASTS) {
-remove(active[0], document.body);
+_inyectarEstilos();
+const container = _obtenerContenedor();
+if (active.length >= MAXTOASTS) {
+_remover(active[0], container);
 }
 const config = TYPES[type] ?? TYPES.info;
+const duration = Math.min(2000 + message.length * 35, 5500);
 const toast = document.createElement('div');
+toast.className = 'wero-toast';
 toast.setAttribute('role', 'alert');
 toast.setAttribute('aria-live', 'polite');
 toast.setAttribute('aria-atomic', 'true');
-const offset = 100 + active.length * 60;
-toast.style.cssText = [
-'position: fixed',
-`bottom: ${offset}px`,
-'left: 50%',
-'transform: translateX(-50%)',
-'-webkit-transform: translateX(-50%)',
-`background: ${config.bg}`,
-'color: white',
-'padding: 12px 20px',
-'border-radius: 8px',
-'font-size: 0.875rem',
-'font-weight: 600',
-'z-index: 10000',
-'box-shadow: 0 4px 12px rgba(0,0,0,0.3)',
-'pointer-events: none',
-'opacity: 1',
-'display: flex',
-'align-items: center',
-'gap: 8px',
-'max-width: 90vw',
-'word-break: break-word',
-].join('; ');
-const icon = document.createElement('span');
-icon.textContent = config.icon;
-icon.setAttribute('aria-hidden', 'true');
+toast.style.setProperty('--toast-color', config.color);
+toast.style.setProperty('--toast-duration', `${duration}ms`);
+const iconWrap = document.createElement('div');
+iconWrap.className = 'wero-toast-icon';
+iconWrap.setAttribute('aria-hidden', 'true');
+iconWrap.innerHTML = config.icon;
+const body = document.createElement('div');
+body.className = 'wero-toast-body';
 const text = document.createElement('span');
+text.className = 'wero-toast-text';
 text.textContent = message;
-toast.appendChild(icon);
-toast.appendChild(text);
-if (!document.body) {
-console.warn('⚠️ showToast: document.body no disponible todavía');
-return;
-}
-document.body.appendChild(toast);
+body.appendChild(text);
+const closeBtn = document.createElement('button');
+closeBtn.className = 'wero-toast-close';
+closeBtn.setAttribute('aria-label', 'Cerrar notificación');
+closeBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+closeBtn.onclick = () => _remover(toast, container);
+const progress = document.createElement('div');
+progress.className = 'wero-toast-progress';
+toast.appendChild(iconWrap);
+toast.appendChild(body);
+toast.appendChild(closeBtn);
+toast.appendChild(progress);
+container.appendChild(toast);
 active.push(toast);
-const duration = Math.min(2000 + message.length * 30, 5000);
-setTimeout(() => remove(toast, document.body), duration);
+void toast.offsetWidth;
+toast.classList.add('toast-visible');
+const timer = setTimeout(() => _remover(toast, container), duration);
+toast.addEventListener('mouseenter', () => {
+progress.style.animationPlayState = 'paused';
+clearTimeout(timer);
+});
+toast.addEventListener('mouseleave', () => {
+_remover(toast, container);
+});
 }
 return Object.freeze({ show });
 })();
 function showToast(message, type) {
 ToastManager.show(message, type);
 }
-/* = Partidos de la jornada = */ /* = Partidos de la jornada = */
+/*-------------------------Esto de abajo se encarga de trabajar en nuestro archivo y se enfoca en los Partidos de la jornada ----------------------------------------*/
 const PARTIDOS_ESPERADOS = 9;
 let _partidosLoading = false;
 /**
@@ -664,8 +765,8 @@ clearTimeout(timer);
 }
 }
 /**
-@param {{ maxRetries?: number, timeoutMs?: number, notify?: boolean }} options
-@returns {Promise<boolean>}
+* @param {{ maxRetries?: number, timeoutMs?: number, notify?: boolean }} options
+* @returns {Promise<boolean>}
 */
 async function cargarPartidos({ maxRetries = 2, timeoutMs = 8000, notify = true } = {}) {
 if (_partidosLoading) {
@@ -678,6 +779,11 @@ return true;
 }
 _partidosLoading = true;
 const url = apiUrl('/api/partidos');
+if (!url) {
+_partidosLoading = false;
+console.error('❌ cargarPartidos: URL inválida, abortando');
+return false;
+}
 let lastError = null;
 for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
 if (attempt > 1) {
@@ -753,7 +859,7 @@ showToast('No se pudieron cargar los partidos. Verifica tu conexión.', 'error')
 }
 return false;
 }
-/* = Funciones de la pagina quiniela = */ /* = Funciones de la pagina quiniela = */
+/*-------------------------Esto de abajo se encarga de trabajar en nuestro archivo y se enfoca en Funciones de la pagina quiniela --------------------------------*/
 function escapeHtml(str) {
 if (str === null || str === undefined) return '';
 return String(str)
@@ -779,8 +885,8 @@ const html = partidos.map(partido => {
 const id = partido.id;
 const local = escapeHtml(partido.local);
 const visitante = escapeHtml(partido.visitante);
-const localLogo = escapeHtml(partido.localLogo);
-const visitanteLogo = escapeHtml(partido.visitanteLogo);
+const localLogo = _isSafeImageUrl(partido.localLogo) ? escapeHtml(partido.localLogo) : '';
+const visitanteLogo = _isSafeImageUrl(partido.visitanteLogo) ? escapeHtml(partido.visitanteLogo) : '';
 const selL = predictions[id]?.includes('L') ? 'selected' : '';
 const selE = predictions[id]?.includes('E') ? 'selected' : '';
 const selV = predictions[id]?.includes('V') ? 'selected' : '';
@@ -847,7 +953,7 @@ if (typeof selectPrediction === 'function') {
 selectPrediction(matchId, pick, btn);
 }
 });
-const MAX_COMBINATIONS = 500; 
+const MAX_COMBINATIONS = 500;
 function calculateRealQuinielas() {
 const partidos = AppState.getPartidos();
 const predictions = AppState.getPredictions();
@@ -926,7 +1032,7 @@ savedButton.appendChild(badge);
 function showErrorModal(message) {
 if (typeof openModal !== 'function') {
 console.error('❌ showErrorModal: openModal no está definida');
-showToast(message, 'error'); 
+showToast(message, 'error');
 return;
 }
 const wrapper = document.createElement('div');
@@ -952,7 +1058,6 @@ AppState.resetPredictions();
 const nameInput = document.getElementById('playerName');
 if (nameInput) nameInput.value = '';
 renderQuinielaMatches();
-if (typeof saveToStorage === 'function') saveToStorage();
 updateQuinielaCount();
 updatePrice();
 }
@@ -965,7 +1070,7 @@ return;
 const OPTIONS = ['L', 'E', 'V'];
 const MAX_DOUBLES = 4;
 const MAX_TRIPLES = 3;
-const tiposPorPartido = partidos.map(() => 'single'); 
+const tiposPorPartido = partidos.map(() => 'single');
 const indices = partidos.map((_, i) => i);
 for (let i = indices.length - 1; i > 0; i--) {
 const j = Math.floor(Math.random() * (i + 1));
@@ -991,7 +1096,11 @@ let picks;
 if (tipo === 'triple') {
 picks = ['L', 'E', 'V'];
 } else if (tipo === 'double') {
-const shuffled = [...OPTIONS].sort(() => Math.random() - 0.5);
+const shuffled = [...OPTIONS];
+for (let s = shuffled.length - 1; s > 0; s--) {
+const r = Math.floor(Math.random() * (s + 1));
+[shuffled[s], shuffled[r]] = [shuffled[r], shuffled[s]];
+}
 picks = shuffled.slice(0, 2);
 } else {
 picks = [OPTIONS[Math.floor(Math.random() * OPTIONS.length)]];
@@ -999,60 +1108,67 @@ picks = [OPTIONS[Math.floor(Math.random() * OPTIONS.length)]];
 AppState.setPrediction(partido.id, picks);
 }
 renderQuinielaMatches();
-if (typeof saveToStorage === 'function') saveToStorage();
 updateQuinielaCount();
 updatePrice();
 }
-/* = Límites de dobles y triples + selección = */ /* = Límites de dobles y triples + selección = */
+/*-------------------------Esto de abajo se encarga de trabajar en nuestro archivo y se enfoca en Límites de dobles y triples + selección ----------------------------*/
 const REGLAS_QUINIELA = Object.freeze({
-MAX_DOBLES:  4,
+MAX_DOBLES: 4,
 MAX_TRIPLES: 3,
 PICKS_VALIDOS: new Set(['L', 'E', 'V']),
-MAX_MATCH_ID:  8,
-MIN_MATCH_ID:  0,
+MAX_MATCH_ID: 8,
+MIN_MATCH_ID: 0,
 });
 const VENDEDOR_WHATSAPP = Object.freeze({
-    'Alexander':    '5218287683709',
-    'Alfonso':      '5218186589145',
-    'Arturo':       '5218182727993',
-    'Azael':        '5218120708453',
-    'Boosters':     '5218121942047',
-    'Checo':        '5218281186921',
-    'Choneke':      '5218138834830',
-    'Dani':         '5218282942378',
-    'Del Angel':    '5218117456805',
-    'El Leona':     '5218282944745',
-    'El Piojo':     '5218118004801',
-    'Energeticos':  '5218281432464',
-    'Enoc':         '5218186836163',
-    'Fer':          '5218281317783',
-    'Figueroa':     '5218334077675',
-    'Gera':         '5218182523537',
-    'GioSoto':      '5218116911526',
-    'Guerrero':     '5217206346990',
-    'Javier Garcia':'5218281148922',
-    'JJ':           '5218281006452',
-    'Jose Luis':    '5218113153788',
-    'Juan de Dios': '5218128897266',
-    'Juanillo':     '5218136984024',
-    'Kany':         '5218281007191',
-    'Manu':         '5213111359115',
-    'Marchan':      '5218281007640',
-    'Marcos':       '5218117567344',
-    'Mazatan':      '5218136280437',
-    'Memo':         '5218284577005',
-    'Pantoja':      '5218117027387',
-    'Patty':        '5218281016489',
-    'PolloGol':     '5218125728071',
-    'Ranita':       '5218281432398',
-    'Rolando':      '5214891009110',
+'Alexander':     '5218287683709',
+'Alfonso':       '5218186589145',
+'Arturo':        '5218182727993',
+'Azael':         '5218120708453',
+'Boosters':      '5218121942047',
+'Checo':         '5218281186921',
+'Choneke':       '5218138834830',
+'Dani':          '5218282942378',
+'Del Angel':     '5218117456805',
+'El Leona':      '5218282944745',
+'El Piojo':      '5218118004801',
+'Energeticos':   '5218281432464',
+'Enoc':          '5218186836163',
+'Ever':          '5218117299742',
+'Fer':           '5218281317783',
+'Figueroa':      '5218334077675',
+'Gera':          '5218182523537',
+'GioSoto':       '5218116911526',
+'Guerrero':      '5217206346990',
+'Javier Garcia': '5218281148922',
+'JJ':            '5218281006452',
+'Jose Luis':     '5218113153788',
+'Juan de Dios':  '5218128897266',
+'Juanillo':      '5218136984024',
+'Kany':          '5218281007191',
+'Manu':          '5213111359115',
+'Marchan':       '5218281007640',
+'Marcos':        '5218117567344',
+'Mazatan':       '5218136280437',
+'Memo':          '5218284577005',
+'Pantoja':       '5218117027387',
+'Patty':         '5218281016489',
+'Piny':          '5218282941357',
+'PolloGol':      '5218125728071',
+'Ranita':        '5218281432398',
+'Rolando':       '5214891009110',
+'Taliban':       '5218287685754',
+'Tienda':        '5210123456789',
+'Vender 1':      '5210123456789',
+'Rifa':          '5210123456789',
+'Dinamica Final':'5210123456789',
+'•':             '5218281011650',
 });
 function validateDoublesAndTriples(predictionsObj, { showModal = true } = {}) {
 const obj = predictionsObj ?? AppState.getPredictions();
 if (!obj || typeof obj !== 'object' || Array.isArray(obj)) {
 return { valid: false, dobles: 0, triples: 0, reason: 'Objeto de predicciones inválido' };
 }
-let dobles  = 0;
+let dobles = 0;
 let triples = 0;
 let picksInvalidos = 0;
 for (const [matchId, picks] of Object.entries(obj)) {
@@ -1099,7 +1215,7 @@ const currentPicks = Array.isArray(currentPredictions[id])
 ? [...currentPredictions[id]]
 : [];
 const pickIndex = currentPicks.indexOf(prediction);
-const isAdding  = pickIndex === -1;
+const isAdding = pickIndex === -1;
 const simulated = Object.fromEntries(
 Object.entries(currentPredictions).map(([k, v]) => [k, [...v]])
 );
@@ -1114,7 +1230,7 @@ delete simulated[id];
 }
 if (isAdding) {
 const { valid } = validateDoublesAndTriples(simulated, { showModal: true });
-if (!valid) return; 
+if (!valid) return;
 }
 const newPicks = simulated[id] ?? [];
 if (newPicks.length === 0) {
@@ -1133,7 +1249,7 @@ const matchContainer = button.closest(`[data-match-id="${id}"]`);
 if (matchContainer) {
 const updatedPicks = AppState.getPredictions()[id] ?? [];
 matchContainer.querySelectorAll('.quiniela-btn[data-pick]').forEach(btn => {
-const btnPick  = btn.dataset.pick;
+const btnPick = btn.dataset.pick;
 const isActive = updatedPicks.includes(btnPick);
 btn.classList.toggle('selected', isActive);
 btn.setAttribute('aria-pressed', String(isActive));
@@ -1142,13 +1258,11 @@ btn.setAttribute('aria-pressed', String(isActive));
 } else {
 if (typeof renderQuinielaMatches === 'function') renderQuinielaMatches();
 }
-if (typeof saveToStorage === 'function') saveToStorage();
 if (typeof updateQuinielaCount === 'function') updateQuinielaCount();
 if (typeof updatePrice === 'function') updatePrice();
 }
-/* = Combinaciones y guardado = */ /* = Combinaciones y guardado = */
 function generateQuinielaCombinations() {
-const partidos    = AppState.getPartidos();
+const partidos = AppState.getPartidos();
 const predictions = AppState.getPredictions();
 if (partidos.length === 0) {
 console.error('❌ generateQuinielaCombinations: no hay partidos cargados');
@@ -1189,21 +1303,13 @@ return combinations;
 }
 async function saveQuiniela() {
 const nameInput = document.getElementById('playerName');
-const rawName   = nameInput ? nameInput.value.trim() : '';
+const rawName = nameInput ? nameInput.value.trim() : '';
 if (!rawName) {
 showErrorModal('Por favor escribe tu nombre');
 return;
 }
-if (rawName.length < 2) {
-showErrorModal('El nombre debe tener al menos 2 caracteres');
-return;
-}
 if (rawName.length > 20) {
 showErrorModal('El nombre no puede tener más de 20 caracteres');
-return;
-}
-if (!/[a-záéíóúüñA-ZÁÉÍÓÚÜÑ]/.test(rawName)) {
-showErrorModal('El nombre debe contener al menos una letra');
 return;
 }
 const name = rawName
@@ -1259,16 +1365,16 @@ return null;
 predictionsObj[partidos[i].id] = [pick];
 }
 return {
-id:          timestamp + comboIndex, 
+id: timestamp + comboIndex,
 name,
 vendedor,
 predictions: predictionsObj,
-folio:       null,
-estado:      'borrador',
-jornada:     jornadaNombre,
-userId,                     
+folio: null,
+estado: 'borrador',
+jornada: jornadaNombre,
+userId,
 };
-}).filter(Boolean); 
+}).filter(Boolean);
 if (nuevasQuinielas.length === 0) {
 showErrorModal('No se pudo generar ninguna quiniela válida. Intenta de nuevo.');
 return;
@@ -1284,31 +1390,33 @@ return;
 AppState.resetPredictions();
 if (nameInput) nameInput.value = '';
 if (typeof renderQuinielaMatches === 'function') renderQuinielaMatches();
-if (typeof updateQuinielaCount   === 'function') updateQuinielaCount();
-if (typeof updatePrice           === 'function') updatePrice();
-if (typeof updateSavedBadge      === 'function') updateSavedBadge();
+if (typeof updateQuinielaCount === 'function') updateQuinielaCount();
+if (typeof updatePrice === 'function') updatePrice();
+if (typeof updateSavedBadge === 'function') updateSavedBadge();
 if (ENV?.isDev) console.log(`💾 saveQuiniela: ${added} quinielas guardadas para "${name}" (${vendedor})`);
 }
-/* = Navegación principal = */ /* = Navegación principal = */
+/*-------------------------Esto de abajo se encarga de trabajar en nuestro archivo y se enfoca en la Navegación principal -------------------------------------------*/
 const NavigationManager = (() => {
 const PAGES_VALIDAS = new Set(['inicio', 'quiniela', 'resultados', 'analisis', 'ayuda', 'admin']);
 const PAGINA_INICIAL = 'inicio';
 const HERO_ID_MAP = {
-inicio:     'hero',       
+inicio:     'hero',
 quiniela:   'hero-quiniela',
 resultados: 'hero-resultados',
 analisis:   'hero-analisis',
 ayuda:      'hero-ayuda',
 admin:      'hero-admin',
 };
-let navToggle   = null;
-let floatingNav = null;
-let navItems    = [];
-let pages       = [];
+let navToggle        = null;
+let floatingNav      = null;
+let navItems         = [];
+let pages            = [];
 let _docClickCleanup = null;
+let _keydownCleanup  = null;
 function updateHero(page) {
-document.querySelectorAll('.hero-admin').forEach(hero => {
-hero.classList.remove('active');
+Object.values(HERO_ID_MAP).forEach(heroId => {
+const el = document.getElementById(heroId);
+if (el) el.classList.remove('active');
 });
 const heroId = HERO_ID_MAP[page];
 if (!heroId) {
@@ -1332,7 +1440,7 @@ console.error('❌ NavigationManager.navigateTo: no hay elementos .page en el DO
 return;
 }
 pages.forEach(p => p.classList.remove('active'));
-const targetId     = page.charAt(0).toUpperCase() + page.slice(1);
+const targetId = page.charAt(0).toUpperCase() + page.slice(1);
 const targetPageEl = document.getElementById(`page${targetId}`);
 if (!targetPageEl) {
 console.error(`❌ NavigationManager.navigateTo: #page${targetId} no encontrado`);
@@ -1354,27 +1462,27 @@ function _runPageHooks(page) {
 try {
 switch (page) {
 case 'quiniela':
-if (typeof renderQuinielaMatches   === 'function') renderQuinielaMatches();
-if (typeof updateQuinielaCount     === 'function') updateQuinielaCount();
-if (typeof updatePrice             === 'function') updatePrice();
+if (typeof renderQuinielaMatches === 'function') renderQuinielaMatches();
+if (typeof updateQuinielaCount   === 'function') updateQuinielaCount();
+if (typeof updatePrice           === 'function') updatePrice();
 break;
 case 'analisis':
 _activateFirstTab('#pageAnalisis', 'horarios', 'tabHorarios');
-if (typeof renderMatchesHorarios   === 'function') renderMatchesHorarios();
+if (typeof renderMatchesHorarios    === 'function') renderMatchesHorarios();
 if (typeof renderMatchesPorcentajes === 'function') renderMatchesPorcentajes();
 break;
 case 'resultados':
 _activateFirstTab('#pageResultados', 'misQuinielasJugadas', 'tabMisQuinielas');
-if (typeof renderMyQuinielas       === 'function') renderMyQuinielas();
+if (typeof renderMyQuinielas === 'function') renderMyQuinielas();
 break;
 case 'admin':
 setTimeout(() => {
 try {
 if (typeof actualizarContadorTotal === 'function') actualizarContadorTotal();
 if (typeof actualizarJornadaActual === 'function') actualizarJornadaActual();
-if (typeof mostrarAdminTab        === 'function') mostrarAdminTab('pendientes');
-if (typeof cargarJugandoTabla     === 'function') cargarJugandoTabla();
-if (typeof cargarEsperaTabla      === 'function') cargarEsperaTabla();
+if (typeof mostrarAdminTab         === 'function') mostrarAdminTab('pendientes');
+if (typeof cargarJugandoTabla      === 'function') cargarJugandoTabla();
+if (typeof cargarEsperaTabla       === 'function') cargarEsperaTabla();
 } catch (e) {
 console.error('❌ NavigationManager: error en hooks de admin:', e);
 }
@@ -1401,9 +1509,7 @@ if (firstContent) firstContent.classList.add('active');
 function _closeNav() {
 if (floatingNav && floatingNav.classList.contains('open')) {
 floatingNav.classList.remove('open');
-if (navToggle) {
-navToggle.setAttribute('aria-expanded', 'false');
-}
+if (navToggle) navToggle.setAttribute('aria-expanded', 'false');
 }
 }
 function _handleDocClick(e) {
@@ -1418,12 +1524,15 @@ floatingNav = document.getElementById('floatingNav');
 navItems    = Array.from(document.querySelectorAll('.nav-item'));
 pages       = Array.from(document.querySelectorAll('.page'));
 if (ENV?.isDev) {
-if (!navToggle)        console.warn('⚠️ NavigationManager: #navToggle no encontrado');
-if (!floatingNav)      console.warn('⚠️ NavigationManager: #floatingNav no encontrado');
+if (!navToggle)            console.warn('⚠️ NavigationManager: #navToggle no encontrado');
+if (!floatingNav)          console.warn('⚠️ NavigationManager: #floatingNav no encontrado');
 if (navItems.length === 0) console.warn('⚠️ NavigationManager: sin elementos .nav-item');
 if (pages.length === 0)    console.warn('⚠️ NavigationManager: sin elementos .page');
 }
 if (navToggle && floatingNav) {
+const freshToggle = navToggle.cloneNode(true);
+navToggle.parentNode.replaceChild(freshToggle, navToggle);
+navToggle = freshToggle;
 navToggle.setAttribute('aria-expanded', 'false');
 navToggle.setAttribute('aria-controls', 'floatingNav');
 navToggle.setAttribute('aria-label', 'Abrir menú de navegación');
@@ -1432,12 +1541,13 @@ e.preventDefault();
 const isOpen = floatingNav.classList.toggle('open');
 navToggle.setAttribute('aria-expanded', String(isOpen));
 });
-if (_docClickCleanup) _docClickCleanup(); 
+if (_docClickCleanup) _docClickCleanup();
 document.addEventListener('click', _handleDocClick);
 _docClickCleanup = () => document.removeEventListener('click', _handleDocClick);
-document.addEventListener('keydown', function(e) {
-if (e.key === 'Escape') _closeNav();
-});
+if (_keydownCleanup) _keydownCleanup();
+const _keydownHandler = (e) => { if (e.key === 'Escape') _closeNav(); };
+document.addEventListener('keydown', _keydownHandler);
+_keydownCleanup = () => document.removeEventListener('keydown', _keydownHandler);
 }
 navItems.forEach(item => {
 const page = item.getAttribute('data-page');
@@ -1454,9 +1564,7 @@ navigateTo(clickedPage);
 }
 item.addEventListener('click', activateItem);
 item.addEventListener('keydown', function(e) {
-if (e.key === 'Enter' || e.key === ' ') {
-activateItem(e);
-}
+if (e.key === 'Enter' || e.key === ' ') activateItem(e);
 });
 });
 const paginaActiva = navItems.find(item =>
@@ -1477,10 +1585,10 @@ document.addEventListener('DOMContentLoaded', () => NavigationManager.init(), { 
 } else {
 NavigationManager.init();
 }
-/* = Actualizar los hero con las quinielas Jugando o No jugando =*/ /* = Actualizar los hero con las quinielas Jugando o No jugando =*/
+/*----------------Esto de abajo se encarga de trabajar en nuestro archivo y se enfoca en Actualizar los hero con las quinielas Jugando o No jugando ---------------*/
 async function fetchAPI(endpoint, {
-timeout  = 8000, 
-retries  = 1,
+timeout = 8000,
+retries = 1,
 } = {}) {
 const url = apiUrl(endpoint);
 if (!url) {
@@ -1496,12 +1604,12 @@ const controller = new AbortController();
 const timerId = setTimeout(() => controller.abort(), timeout);
 try {
 const res = await fetch(url, {
-signal:  controller.signal,
+signal: controller.signal,
 headers: { 'Accept': 'application/json' },
 });
 clearTimeout(timerId);
 if (!res.ok) {
-const isDefinitive = res.status === 404 || res.status === 400 || res.status === 401;
+const isDefinitive = [400, 401, 403, 404].includes(res.status);
 lastError = `HTTP ${res.status}`;
 if (ENV?.isDev) console.warn(`⚠️ fetchAPI (intento ${attempt}): ${lastError} → ${url}`);
 if (isDefinitive) break;
@@ -1531,6 +1639,13 @@ return { data: null, error: lastError, status: null };
 }
 const CounterAnimator = (() => {
 const _activeTimers = new Map();
+function _cancelTimer(elementId) {
+if (!_activeTimers.has(elementId)) return;
+const t = _activeTimers.get(elementId);
+if (t.isTimeout) clearTimeout(t.id);
+else clearInterval(t.id);
+_activeTimers.delete(elementId);
+}
 function animate(elementId, targetValue) {
 const el = document.getElementById(elementId);
 if (!el) return;
@@ -1539,44 +1654,43 @@ const target = typeof targetValue === 'number' && Number.isFinite(targetValue) &
 : 0;
 const current = parseInt(el.textContent, 10) || 0;
 if (current === target) return;
-if (_activeTimers.has(elementId)) {
-clearInterval(_activeTimers.get(elementId));
-_activeTimers.delete(elementId);
-}
+_cancelTimer(elementId);
 if (Math.abs(target - current) <= 3) {
 el.style.transition = 'transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1)';
-el.style.transform  = 'scale(1.15)';
-const microTimer = setTimeout(() => {
+el.style.transform = 'scale(1.15)';
+const microId = setTimeout(() => {
 if (document.contains(el)) {
-el.textContent  = target;
+el.textContent = target;
 el.style.transform = 'scale(1)';
 }
+_activeTimers.delete(elementId);
 }, 75);
-_activeTimers.set(elementId, microTimer);
+_activeTimers.set(elementId, { id: microId, isTimeout: true });
 return;
 }
-const PASOS    = 30;
+const PASOS = 30;
 const DURACION = 800;
-const diff     = target - current;
-const step     = diff / PASOS;
+const diff = target - current;
+const step = diff / PASOS;
 let count = 0;
-const timerId = setInterval(() => {
+const intervalId = setInterval(() => {
 if (!document.contains(el)) {
-clearInterval(timerId);
-_activeTimers.delete(elementId);
+_cancelTimer(elementId);
 return;
 }
 count++;
 el.textContent = count >= PASOS ? target : Math.round(current + step * count);
 if (count >= PASOS) {
-clearInterval(timerId);
-_activeTimers.delete(elementId);
+_cancelTimer(elementId);
 }
 }, DURACION / PASOS);
-_activeTimers.set(elementId, timerId);
+_activeTimers.set(elementId, { id: intervalId, isTimeout: false });
 }
 function cancelAll() {
-_activeTimers.forEach(id => clearInterval(id));
+_activeTimers.forEach((t) => {
+if (t.isTimeout) clearTimeout(t.id);
+else clearInterval(t.id);
+});
 _activeTimers.clear();
 }
 return Object.freeze({ animate, cancelAll });
@@ -1585,13 +1699,14 @@ function actualizarContadorAnimado(elementId, targetValue) {
 CounterAnimator.animate(elementId, targetValue);
 }
 const HeroStatsManager = (() => {
-let _lastJugando  = -1;
-let _lastNoJugando = -1;
-let _jornadaRetries   = 0;
+let _lastJugando    = -1;
+let _lastNoJugando  = -1;
+let _jornadaRetries = 0;
 const MAX_JORNADA_RETRIES = 10;
-let _quinielaHandler    = null;
-let _visibilityHandler  = null;
-let _periodicTimerId    = null;
+let _quinielaHandler   = null;
+let _visibilityHandler = null;
+let _periodicTimerId   = null;
+let _sentChangedCleanup = null;
 function updateStats() {
 const sentQuinielas = AppState.getSent();
 if (sentQuinielas.length === 0) {
@@ -1628,9 +1743,9 @@ else if (q.estado === 'pendiente' || q.estado === 'espera') noJugando++;
 if (jugando === _lastJugando && noJugando === _lastNoJugando) return;
 _lastJugando   = jugando;
 _lastNoJugando = noJugando;
-CounterAnimator.animate('quinielasJugandoCount',            jugando);
-CounterAnimator.animate('quinielasNoJugandoCount',          noJugando);
-CounterAnimator.animate('quinielasJugandoCountResultados',  jugando);
+CounterAnimator.animate('quinielasJugandoCount',             jugando);
+CounterAnimator.animate('quinielasNoJugandoCount',           noJugando);
+CounterAnimator.animate('quinielasJugandoCountResultados',   jugando);
 CounterAnimator.animate('quinielasNoJugandoCountResultados', noJugando);
 if (ENV?.isDev) {
 console.log(`📊 HeroStats: Jugando=${jugando} | No jugando=${noJugando} | Jornada="${jornadaNombre}"`);
@@ -1644,7 +1759,7 @@ _visibilityHandler = () => {
 if (!document.hidden) updateStats();
 };
 document.addEventListener('visibilitychange', _visibilityHandler);
-AppState.on('sentChanged', updateStats);
+_sentChangedCleanup = AppState.on('sentChanged', updateStats);
 _periodicTimerId = setInterval(() => {
 if (!document.hidden) updateStats();
 }, 30_000);
@@ -1654,25 +1769,24 @@ if (ENV?.isDev) console.log('✅ HeroStatsManager inicializado');
 function destroy() {
 if (_quinielaHandler)   document.removeEventListener('quinielaAgregada', _quinielaHandler);
 if (_visibilityHandler) document.removeEventListener('visibilitychange', _visibilityHandler);
+// FIX: ahora sí limpiamos el listener de AppState
+if (_sentChangedCleanup) { _sentChangedCleanup(); _sentChangedCleanup = null; }
 if (_periodicTimerId)   clearInterval(_periodicTimerId);
 CounterAnimator.cancelAll();
-_quinielaHandler   = null;
-_visibilityHandler = null;
-_periodicTimerId   = null;
-_lastJugando       = -1;
-_lastNoJugando     = -1;
-_jornadaRetries    = 0;
+_quinielaHandler    = null;
+_visibilityHandler  = null;
+_periodicTimerId    = null;
+_lastJugando        = -1;
+_lastNoJugando      = -1;
+_jornadaRetries     = 0;
 }
 return Object.freeze({ init, destroy, updateStats });
 })();
 function updateHeroStats() {
 HeroStatsManager.updateStats();
 }
-function updateHeroStatsLocal() {
-HeroStatsManager.updateStats();
-}
 HeroStatsManager.init();
-/* = Navegación principal segunda parte = */ /* = Navegación principal segunda parte = */
+/*----------------Esto de abajo se encarga de trabajar en nuestro archivo y se enfoca en la Navegación principal segunda parte ----------------------------------*/
 function _activateTab(sectionId, tabName, contentId) {
 const section = document.getElementById(sectionId);
 if (!section) {
@@ -1729,13 +1843,12 @@ const AdminTabManager = (() => {
 const TABS_VALIDAS = new Set(['pendientes', 'espera', 'jugando']);
 const TAB_LOADERS = {
 pendientes: () => typeof cargarPendientesTabla === 'function' && cargarPendientesTabla(),
-espera: () => typeof cargarEsperaTabla === 'function' && cargarEsperaTabla(),
-jugando: () => typeof cargarJugandoTabla === 'function' && cargarJugandoTabla(),
+espera:     () => typeof cargarEsperaTabla     === 'function' && cargarEsperaTabla(),
+jugando:    () => typeof cargarJugandoTabla    === 'function' && cargarJugandoTabla(),
 };
-let _currentTab = null;
+let _currentTab    = null;
 let _debounceTimer = null;
-let _loadAbortCtrl = null;
-const DEBOUNCE_MS = 250;
+const DEBOUNCE_MS  = 250;
 function show(tab) {
 if (!TABS_VALIDAS.has(tab)) {
 console.error(`❌ AdminTabManager.show: tab inválida → "${tab}". Válidas: ${[...TABS_VALIDAS].join(', ')}`);
@@ -1745,7 +1858,6 @@ clearTimeout(_debounceTimer);
 _debounceTimer = setTimeout(() => _doShow(tab), DEBOUNCE_MS);
 }
 function _doShow(tab) {
-if (_loadAbortCtrl) { _loadAbortCtrl.abort(); _loadAbortCtrl = null; }
 ['pendientes', 'espera', 'jugando'].forEach(sectionTab => {
 const sectionId = `admin${sectionTab.charAt(0).toUpperCase() + sectionTab.slice(1)}`;
 const section = document.getElementById(sectionId);
@@ -1765,7 +1877,6 @@ if (ENV?.isDev) console.log(`📋 AdminTabManager: tab "${tab}" ya activa, skip 
 return;
 }
 _currentTab = tab;
-_loadAbortCtrl = new AbortController();
 try {
 TAB_LOADERS[tab]?.();
 } catch (e) {
@@ -1779,11 +1890,6 @@ function mostrarAdminTab(tab) { AdminTabManager.show(tab); }
 function navigateTo(page) {
 if (typeof NavigationManager !== 'undefined' && typeof NavigationManager.navigateTo === 'function') {
 NavigationManager.navigateTo(page);
-const hook = PAGE_HOOKS[page];
-if (typeof hook === 'function') {
-try { hook(); }
-catch (e) { console.error(`❌ navigateTo→hook "${page}":`, e); }
-}
 return;
 }
 if (ENV?.isDev) console.warn('⚠️ navigateTo: NavigationManager no disponible, usando fallback');
@@ -1824,7 +1930,8 @@ AdminTabManager.show(tab);
 document.addEventListener('click', handler);
 window._filterBtnCleanup = () => document.removeEventListener('click', handler);
 })();
-document.addEventListener('pageNavigated', function(e) {
+if (window._pageNavigatedCleanup) window._pageNavigatedCleanup();
+function _pageNavigatedHandler(e) {
 const page = e?.detail?.page;
 if (!page) return;
 const hook = PAGE_HOOKS[page];
@@ -1832,15 +1939,13 @@ if (typeof hook === 'function') {
 try { hook(); }
 catch (err) { console.error(`❌ pageNavigated hook "${page}":`, err); }
 }
-});
-/* = Esto de abajo trabaja en la jornada actual= */ /* = Esto de abajo trabaja en la jornada actual= */
+}
+document.addEventListener('pageNavigated', _pageNavigatedHandler);
+window._pageNavigatedCleanup = () => document.removeEventListener('pageNavigated', _pageNavigatedHandler);
+/*----------------Esto de abajo se encarga de trabajar en nuestro archivo y se enfoca en la informacion de la jornada actual ----------------------------------------*/
 const JornadaManager = (() => {
 let _jornadaActual = null;
 const SCHEMA_REQUERIDO = ['nombre', 'inicio', 'fin', 'link_grupo', 'codigo_grupo'];
-/**
-* @param {any} data
-* @returns {{ valid: boolean, reason?: string }}
-*/
 function _validateSchema(data) {
 if (!data || typeof data !== 'object' || Array.isArray(data)) {
 return { valid: false, reason: 'No es un objeto' };
@@ -1861,10 +1966,6 @@ return { valid: false, reason: `link_grupo no es una URL de WhatsApp válida: "$
 }
 return { valid: true };
 }
-/**
-* @param {string} url
-* @returns {boolean}
-*/
 function _isWhatsAppUrl(url) {
 if (typeof url !== 'string' || !url.trim()) return false;
 try {
@@ -1879,17 +1980,15 @@ parsed.hostname === 'api.whatsapp.com')
 return false;
 }
 }
-function getJornada() {
-return _jornadaActual;
-}
+function getJornada() { return _jornadaActual; }
 function actualizarDOM() {
 if (!_jornadaActual) {
 if (ENV?.isDev) console.warn('⚠️ JornadaManager.actualizarDOM: sin jornada cargada');
 return;
 }
-const nombre = _jornadaActual.nombre.trim();
+const nombre      = _jornadaActual.nombre.trim();
 const codigoGrupo = String(_jornadaActual.codigo_grupo).trim();
-const linkGrupo = _jornadaActual.link_grupo;
+const linkGrupo   = _jornadaActual.link_grupo;
 const badges = document.querySelectorAll('.jornada-badge');
 if (badges.length === 0 && ENV?.isDev) {
 console.warn('⚠️ JornadaManager.actualizarDOM: sin elementos .jornada-badge en DOM');
@@ -1925,9 +2024,7 @@ const delay = (attempt - 1) * 1000;
 if (ENV?.isDev) console.log(`🔄 JornadaManager: reintento ${attempt - 1}/${maxRetries} en ${delay}ms`);
 await new Promise(r => setTimeout(r, delay));
 }
-const { data, error } = await fetchAPI('/jornada-actual', {
-timeout: 10000,
-});
+const { data, error } = await fetchAPI('/jornada-actual', { timeout: 10000 });
 if (error || !data) {
 lastError = error ?? 'Respuesta vacía del servidor';
 if (ENV?.isDev) console.warn(`⚠️ JornadaManager (intento ${attempt}): ${lastError}`);
@@ -1941,7 +2038,7 @@ break;
 _jornadaActual = Object.freeze({ ...data });
 Object.defineProperty(window, 'jornadaActual', {
 get: () => _jornadaActual,
-set: (val) => {
+set: () => {
 console.warn('⚠️ window.jornadaActual es de solo lectura. Usa JornadaManager.cargar()');
 },
 configurable: true,
@@ -1957,18 +2054,10 @@ console.error(`❌ JornadaManager: no se pudo cargar la jornada tras ${maxRetrie
 showToast('No se pudo cargar la jornada actual. Recarga la página.', 'error');
 return false;
 }
-return Object.freeze({
-cargar,
-getJornada,
-actualizarDOM,
-});
+return Object.freeze({ cargar, getJornada, actualizarDOM });
 })();
-async function cargarJornadaActual() {
-return JornadaManager.cargar();
-}
-function actualizarJornada() {
-JornadaManager.actualizarDOM();
-}
+async function cargarJornadaActual() { return JornadaManager.cargar(); }
+function actualizarJornada() { JornadaManager.actualizarDOM(); }
 async function _initJornada() {
 const ok = await JornadaManager.cargar();
 if (ok) {
@@ -1989,21 +2078,22 @@ try { actualizarEstadosDesdeBackend(); } catch { /* silencioso */ }
 }
 }
 }
-document.addEventListener('jornadaCargada', function(e) {
+if (window._jornadaCargadaCleanup) window._jornadaCargadaCleanup();
+function _jornadaCargadaHandler(e) {
 if (ENV?.isDev) console.log('📅 Evento jornadaCargada recibido:', e.detail?.jornada?.nombre);
-if (typeof HeroStatsManager !== 'undefined') {
-HeroStatsManager.updateStats();
+if (typeof HeroStatsManager !== 'undefined') HeroStatsManager.updateStats();
 }
-});
+document.addEventListener('jornadaCargada', _jornadaCargadaHandler);
+window._jornadaCargadaCleanup = () => document.removeEventListener('jornadaCargada', _jornadaCargadaHandler);
 if (document.readyState === 'loading') {
 document.addEventListener('DOMContentLoaded', _initJornada, { once: true });
 } else {
 _initJornada();
 }
-/* = Esto de abajo trabaja en la Lista Oficial = */ /* = Esto de abajo trabaja en la Lista Oficial = */
+/*----------------Esto de abajo se encarga de trabajar en nuestro archivo y se enfoca en la Lista Oficial--------------------------------------------------------*/
 const ListaOficialManager = (() => {
 let _officialResults = {};
-let _participants    = []; 
+let _participants    = [];
 let _resumen         = {};
 let _dataLoaded      = false;
 let _loadedAt        = null;
@@ -2030,21 +2120,19 @@ function _buildResumen(sorted) {
 if (!sorted.length) {
 return {
 total_participantes: 0,
-first_place_points: 0, first_place_count: 0,
+first_place_points:  0, first_place_count:  0,
 second_place_points: 0, second_place_count: 0,
 };
 }
-const fp = sorted[0].points;
+const fp        = sorted[0].points;
 const secondObj = sorted.find(p => p.points < fp);
-const sp = secondObj?.points ?? 0;
+const sp        = secondObj?.points ?? 0;
 return {
 total_participantes: sorted.length,
 first_place_points:  fp,
 first_place_count:   sorted.filter(p => p.points === fp).length,
 second_place_points: sp,
-second_place_count:  secondObj
-? sorted.filter(p => p.points === sp).length
-: 0,
+second_place_count:  secondObj ? sorted.filter(p => p.points === sp).length : 0,
 };
 }
 function _validateQuinielaItem(q) {
@@ -2074,11 +2162,12 @@ if (partidos.length === 0) {
 console.error('❌ ListaOficialManager.loadData: partidos no cargados en AppState');
 return false;
 }
+const tbody = document.getElementById('resultsBody');
+if (tbody) tbody.innerHTML = '<tr><td colspan="20" style="text-align:center;padding:2rem;color:var(--color-text-muted)">Cargando resultados...</td></tr>';
 const [resOficial, resResultados] = await Promise.all([
-fetchAPI('/api/lista-oficial',         { timeout: 10000, retries: 1 }),
-fetchAPI('/api/resultados-oficiales',  { timeout: 10000, retries: 1 }),
+fetchAPI('/api/lista-oficial',        { timeout: 10000, retries: 1 }),
+fetchAPI('/api/resultados-oficiales', { timeout: 10000, retries: 1 }),
 ]);
-
 if (resOficial.error || !resOficial.data) {
 console.error('❌ ListaOficialManager: error cargando lista oficial:', resOficial.error);
 showToast('Error al cargar la Lista Oficial', 'error');
@@ -2127,16 +2216,16 @@ const picksObj = _picksToObj(q.picks, partidos);
 const puntos   = _calcularPuntos(picksObj, _officialResults);
 mapped.push({
 id:          q.folio.trim(),
-name:        typeof q.nombre === 'string' ? q.nombre.trim() : 'Sin nombre',
+name:        typeof q.nombre   === 'string' ? q.nombre.trim()   : 'Sin nombre',
 vendor:      typeof q.vendedor === 'string' ? q.vendedor.trim() : 'Sin vendedor',
 predictions: picksObj,
 points:      puntos,
 });
 }
 _participants = mapped.sort((a, b) => b.points - a.points);
-_resumen = _buildResumen(_participants);
-_dataLoaded = true;
-_loadedAt   = Date.now();
+_resumen      = _buildResumen(_participants);
+_dataLoaded   = true;
+_loadedAt     = Date.now();
 if (ENV?.isDev) {
 console.log('✅ ListaOficialManager cargado:', {
 participantes: _participants.length,
@@ -2163,13 +2252,13 @@ if (!Number.isFinite(index) || index < 1 || index > partidos.length) {
 if (ENV?.isDev) console.warn(`⚠️ renderMatchesHeader: matchIndex inválido "${rawIndex}"`);
 return;
 }
-const partido = partidos[index - 1]; 
+const partido = partidos[index - 1];
 if (!partido) return;
-th.innerHTML = ''; 
-const wrapper  = document.createElement('div');
+th.innerHTML = '';
+const wrapper = document.createElement('div');
 wrapper.className = 'match-header';
 const imgLocal = document.createElement('img');
-imgLocal.src       = escapeHtml(partido.localLogo);
+imgLocal.src       = _isSafeImageUrl(partido.localLogo) ? escapeHtml(partido.localLogo) : '';
 imgLocal.alt       = escapeHtml(partido.local);
 imgLocal.className = 'match-logo';
 imgLocal.width     = 20;
@@ -2179,7 +2268,7 @@ const vs = document.createElement('span');
 vs.className   = 'match-vs';
 vs.textContent = 'vs';
 const imgVisitante = document.createElement('img');
-imgVisitante.src       = escapeHtml(partido.visitanteLogo);
+imgVisitante.src       = _isSafeImageUrl(partido.visitanteLogo) ? escapeHtml(partido.visitanteLogo) : '';
 imgVisitante.alt       = escapeHtml(partido.visitante);
 imgVisitante.className = 'match-logo';
 imgVisitante.width     = 20;
@@ -2211,13 +2300,7 @@ const resultadoOficial = _officialResults[String(partido.id)] || '';
 const cellCls = !resultadoOficial
 ? 'pending'
 : (res && res === resultadoOficial ? 'correct' : 'incorrect');
-const td   = document.createElement('td');
-td.className = 'col-match';
-const span = document.createElement('span');
-span.className   = `result-cell ${cellCls}`;
-span.textContent = res || '-'; 
-td.appendChild(span);
-return td.outerHTML;
+return `<td class="col-match"><span class="result-cell ${cellCls}">${escapeHtml(res) || '-'}</span></td>`;
 }).join('');
 return (
 '<tr>' +
@@ -2250,7 +2333,7 @@ const secondTotalEl = document.getElementById('secondPlaceTotal');
 if (firstTotalEl)  firstTotalEl.textContent  = _resumen.first_place_count;
 if (secondTotalEl) secondTotalEl.textContent = _resumen.second_place_count;
 }
-async function renderWinnersList(targetId, place = 'first') {
+function renderWinnersList(targetId, place = 'first') {
 const PLACES_VALIDOS = new Set(['first', 'second']);
 if (!PLACES_VALIDOS.has(place)) {
 console.error(`❌ renderWinnersList: place inválido → "${place}"`);
@@ -2265,9 +2348,9 @@ const winners = _resumen.second_place_count === 0 && place === 'second'
 const container = document.getElementById(targetId);
 if (!container) {
 if (place === 'first') {
-const firstPlaceTotalEl = document.getElementById('firstPlaceTotal');
-const firstPlacePointsEl = document.getElementById('firstPlacePoints');   
-if (firstPlaceTotalEl) firstPlaceTotalEl.textContent = String(winners.length || 0);
+const firstPlaceTotalEl  = document.getElementById('firstPlaceTotal');
+const firstPlacePointsEl = document.getElementById('firstPlacePoints');
+if (firstPlaceTotalEl)  firstPlaceTotalEl.textContent  = String(winners.length || 0);
 if (firstPlacePointsEl) {
 firstPlacePointsEl.textContent =
 targetPoints === 0 ? 'Sin participantes' :
@@ -2275,9 +2358,9 @@ targetPoints === 1 ? 'Con 1 punto' :
 `Con ${targetPoints} puntos`;
 }
 } else {
-const secondPlaceTotalEl = document.getElementById('secondPlaceTotal');
+const secondPlaceTotalEl  = document.getElementById('secondPlaceTotal');
 const secondPlacePointsEl = document.getElementById('secondPlacePoints');
-if (secondPlaceTotalEl) secondPlaceTotalEl.textContent = String(winners.length || 0);
+if (secondPlaceTotalEl)  secondPlaceTotalEl.textContent  = String(winners.length || 0);
 if (secondPlacePointsEl) {
 if (!winners.length || targetPoints === 0) {
 secondPlacePointsEl.textContent = 'Sin segundo lugar';
@@ -2292,7 +2375,7 @@ return;
 }
 if (place === 'first') {
 _updateResumenElements(
-'firstPlaceTotal', 'firstPlacePoints',
+'firstPlaceTotal',  'firstPlacePoints',
 winners.length, targetPoints, 'Sin participantes'
 );
 } else {
@@ -2312,17 +2395,17 @@ return (
 `<div class="winner-folio">Folio: ${escapeHtml(w.id)}</div>` +
 `<div class="winner-name">${escapeHtml(w.name)}</div>` +
 `<div class="winner-vendor">${escapeHtml(w.vendor)}</div>` +
-`<div class="winner-points">${w.points} ${puntosTxt}</div>` +
+`<div class="winner-points">${puntosTxt}</div>` +
 '</div>'
 );
 }).join('');
 }
-async function initFirstPlacePage() {
-await renderWinnersList('firstPlaceList', 'first');
+function initFirstPlacePage() {
+renderWinnersList('firstPlaceList', 'first');
 updateSummary();
 }
-async function initSecondPlacePage() {
-await renderWinnersList('secondPlaceList', 'second');
+function initSecondPlacePage() {
+renderWinnersList('secondPlaceList', 'second');
 updateSummary();
 }
 return Object.freeze({
@@ -2336,6 +2419,7 @@ initFirstPlacePage,
 initSecondPlacePage,
 getParticipants: () => [..._participants],
 getResumen:      () => ({ ..._resumen }),
+getOfficialResults: () => ({ ..._officialResults }),
 });
 })();
 async function loadDataFromAPI() {
@@ -2345,13 +2429,13 @@ function renderMatchesHeader() {
 ListaOficialManager.renderMatchesHeader();
 }
 const quiniela = {
-renderResults:      () => ListaOficialManager.renderResults(),
-updateSummary:      () => ListaOficialManager.updateSummary(),
-renderWinnersList:  (id, place) => ListaOficialManager.renderWinnersList(id, place),
-initFirstPlacePage: () => ListaOficialManager.initFirstPlacePage(),
-initSecondPlacePage:() => ListaOficialManager.initSecondPlacePage(),
+renderResults:       () => ListaOficialManager.renderResults(),
+updateSummary:       () => ListaOficialManager.updateSummary(),
+renderWinnersList:   (id, place) => ListaOficialManager.renderWinnersList(id, place),
+initFirstPlacePage:  () => ListaOficialManager.initFirstPlacePage(),
+initSecondPlacePage: () => ListaOficialManager.initSecondPlacePage(),
 };
-/* = Esto de abajo trabaja en el verificador de la quiniela (Lista Oficial) = */ /* = Esto de abajo trabaja en el verificador de la quiniela (Lista Oficial) = */
+/*------------Esto de abajo se encarga de trabajar en nuestro archivo y se enfoca en el verificador de la quiniela (Lista Oficial) -----------------------------*/
 const ParticipantSearch = (() => {
 function _normalize(str) {
 if (typeof str !== 'string') str = String(str ?? '');
@@ -2361,11 +2445,14 @@ return str
 .replace(/\p{Diacritic}/gu, '')
 .trim();
 }
-let _debounceTimer = null;
-const DEBOUNCE_MS  = 350;
-let _input     = null;
-let _container = null;
+let _debounceTimer  = null;
+const DEBOUNCE_MS   = 350;
+let _input          = null;
+let _container      = null;
+let _inputHandler   = null;
+let _keydownHandler = null;
 function _renderEmpty(icon, text) {
+if (!_container) return;
 _container.innerHTML =
 `<div class="no-results">` +
 `<span class="no-results-icon">${icon}</span>` +
@@ -2373,17 +2460,16 @@ _container.innerHTML =
 `</div>`;
 }
 function _renderLoading() {
+if (!_container) return;
 _container.innerHTML =
 `<div class="no-results">` +
 `<span class="no-results-icon">⏳</span>` +
 `<p>Buscando...</p>` +
 `</div>`;
 }
-function _renderCard(q, firstPoints, secondPoints) {
-const partidos  = AppState.getPartidos();
-const resultados = ListaOficialManager.getOfficialResults?.() ?? {};
-const isFirst  = q.points === firstPoints && firstPoints > 0;
-const isSecond = !isFirst && secondPoints > 0 && q.points === secondPoints;
+function _renderCard(q, firstPoints, secondPoints, partidos, resultados) {
+const isFirst     = q.points === firstPoints && firstPoints > 0;
+const isSecond    = !isFirst && secondPoints > 0 && q.points === secondPoints;
 const placeClass  = isFirst ? ' first-place' : (isSecond ? ' second-place' : '');
 const puntosTexto = q.points === 1 ? '1 Punto' : `${q.points} Puntos`;
 const predictionsHtml = partidos.map(partido => {
@@ -2434,13 +2520,13 @@ return;
 }
 const termNorm = _normalize(rawTerm);
 const filtered = participants.filter(p => {
-const nombreNorm  = _normalize(p.name);
-const vendorNorm  = _normalize(p.vendor);
-const folioNorm   = _normalize(p.id);
+const nombreNorm = _normalize(p.name);
+const vendorNorm = _normalize(p.vendor);
+const folioNorm  = _normalize(p.id);
 return (
 nombreNorm.includes(termNorm) ||
 vendorNorm.includes(termNorm) ||
-folioNorm.includes(termNorm)  
+folioNorm.includes(termNorm)
 );
 });
 if (ENV?.isDev) {
@@ -2456,8 +2542,10 @@ return;
 }
 const fp = resumen.first_place_points;
 const sp = resumen.second_place_points;
+const partidos   = AppState.getPartidos();
+const resultados = ListaOficialManager.getOfficialResults?.() ?? {};
 _container.innerHTML = filtered
-.map(q => _renderCard(q, fp, sp))
+.map(q => _renderCard(q, fp, sp, partidos, resultados))
 .join('');
 }
 function search() {
@@ -2475,13 +2563,17 @@ if (!_input || !_container) {
 if (ENV?.isDev) console.warn('⚠️ ParticipantSearch.init: elementos del DOM no encontrados');
 return;
 }
-_input.addEventListener('input', search);
-_input.addEventListener('keydown', e => {
+if (_inputHandler)   _input.removeEventListener('input',   _inputHandler);
+if (_keydownHandler) _input.removeEventListener('keydown', _keydownHandler);
+_inputHandler   = () => search();
+_keydownHandler = (e) => {
 if (e.key === 'Enter') {
 e.preventDefault();
 searchImmediate();
 }
-});
+};
+_input.addEventListener('input',   _inputHandler);
+_input.addEventListener('keydown', _keydownHandler);
 _renderEmpty('🔎', 'Buscar jugada');
 if (ENV?.isDev) console.log('✅ ParticipantSearch inicializado');
 }
@@ -2495,13 +2587,14 @@ document.addEventListener('DOMContentLoaded', () => ParticipantSearch.init(), { 
 } else {
 ParticipantSearch.init();
 }
-/* = Esto de abajo trabaja en el simulador de la quiniela = */ /* = Esto de abajo trabaja en el simulador de la quiniela = */
+/*------------Esto de abajo se encarga de trabajar en nuestro archivo y se enfoca en el simulador de la quiniela  ---------------------------------------*/
 const SimuladorManager = (() => {
-let _simState       = {}; 
-let _rankedCache    = null; 
-let _initialized    = false;
-let _gridListener   = null;
-let _resetListener  = null;
+let _simState      = {};
+let _rankedCache   = null;
+let _initialized   = false;
+let _gridListener  = null;
+let _resetListener = null;
+let _processing    = false;
 function _getPartidos() {
 return AppState.getPartidos();
 }
@@ -2509,43 +2602,10 @@ function _initSimState() {
 const partidos = _getPartidos();
 _simState = {};
 partidos.forEach(p => { _simState[String(p.id)] = '-'; });
-_rankedCache = null; 
+_rankedCache = null;
 }
 function _isComplete() {
 return Object.values(_simState).every(v => v !== '-');
-}
-function _calculatePoints(picksArray) {
-const partidos = _getPartidos();
-if (!Array.isArray(picksArray) || picksArray.length === 0) return 0;
-let points = 0;
-picksArray.forEach((pick, i) => {
-const partido = partidos[i];
-if (!partido) return;
-const simResult = _simState[String(partido.id)];
-if (simResult && simResult !== '-' && pick === simResult) points++;
-});
-return points;
-}
-function _getRanked() {
-if (_rankedCache) return _rankedCache;
-const participants = ListaOficialManager.getParticipants();
-if (!participants.length) {
-_rankedCache = [];
-return _rankedCache;
-}
-const ranked = participants.map(p => ({
-folio:   p.id,
-nombre:  p.name,
-vendedor: p.vendor,
-picks:   p.predictions,
-puntos:  _calculatePointsFromObj(p.predictions),
-}));
-ranked.sort((a, b) => {
-if (b.puntos !== a.puntos) return b.puntos - a.puntos;
-return String(a.folio).localeCompare(String(b.folio), 'es', { numeric: true });
-});
-_rankedCache = ranked;
-return _rankedCache;
 }
 function _calculatePointsFromObj(predictionsObj) {
 if (!predictionsObj || typeof predictionsObj !== 'object') return 0;
@@ -2556,12 +2616,83 @@ if (simResult && simResult !== '-' && pick === simResult) points++;
 }
 return points;
 }
+function _getRanked() {
+if (_rankedCache) return _rankedCache;
+const participants = ListaOficialManager.getParticipants();
+if (!participants.length) {
+_rankedCache = [];
+return _rankedCache;
+}
+const ranked = participants.map(p => ({
+folio:    p.id,
+nombre:   p.name,
+vendedor: p.vendor,
+picks:    p.predictions,
+puntos:   _calculatePointsFromObj(p.predictions),
+}));
+ranked.sort((a, b) => {
+if (b.puntos !== a.puntos) return b.puntos - a.puntos;
+return String(a.folio).localeCompare(String(b.folio), 'es', { numeric: true });
+});
+_rankedCache = ranked;
+return _rankedCache;
+}
+function _setGridDisabled(disabled) {
+const grid = document.getElementById('simulationGrid');
+if (!grid) return;
+grid.querySelectorAll('.sim-result-btn').forEach(btn => {
+btn.disabled = disabled;
+});
+grid.style.opacity       = disabled ? '0.55' : '1';
+grid.style.pointerEvents = disabled ? 'none' : '';
+// Spinner overlay
+let overlay = document.getElementById('_simProcessingOverlay');
+if (disabled) {
+if (!overlay) {
+overlay = document.createElement('div');
+overlay.id = '_simProcessingOverlay';
+overlay.setAttribute('aria-live', 'polite');
+overlay.setAttribute('aria-label', 'Calculando resultados...');
+overlay.style.cssText = [
+'position:absolute',
+'inset:0',
+'display:flex',
+'align-items:center',
+'justify-content:center',
+'background:oklch(from var(--color-bg,#f7f6f2) l c h / 0.55)',
+'z-index:10',
+'border-radius:inherit',
+'pointer-events:none',
+].join(';');
+overlay.innerHTML =
+'<div style="display:flex;flex-direction:column;align-items:center;gap:0.5rem">' +
+'<div style="width:28px;height:28px;border:3px solid var(--color-primary,#01696f);' +
+'border-top-color:transparent;border-radius:50%;animation:_simSpin 0.7s linear infinite"></div>' +
+'<span style="font-size:0.75rem;color:var(--color-text-muted,#7a7974);font-weight:500">Calculando...</span>' +
+'</div>';
+if (!document.getElementById('_simSpinStyle')) {
+const style = document.createElement('style');
+style.id = '_simSpinStyle';
+style.textContent = '@keyframes _simSpin{to{transform:rotate(360deg)}}';
+document.head.appendChild(style);
+}
+}
+const parent = grid.parentElement;
+if (parent) {
+const pos = getComputedStyle(parent).position;
+if (pos === 'static') parent.style.position = 'relative';
+parent.appendChild(overlay);
+}
+} else {
+overlay?.remove();
+}
+}
 function _renderGrid() {
 const grid = document.getElementById('simulationGrid');
 if (!grid) return;
 const partidos = _getPartidos();
 const fragment = document.createDocumentFragment();
-partidos.forEach((partido, index) => {
+partidos.forEach(partido => {
 const matchId = String(partido.id);
 const current = _simState[matchId] ?? '-';
 const card = document.createElement('div');
@@ -2569,11 +2700,11 @@ card.className = 'sim-match-card';
 const row = document.createElement('div');
 row.className = 'sim-match-row';
 row.dataset.matchId = matchId;
-const btnL = _createSimBtn('L', matchId, current === 'L');
-const teamLocal = _createTeamEl(partido.localLogo, partido.local, false);
-const btnE = _createSimBtn('E', matchId, current === 'E');
+const btnL         = _createSimBtn('L', matchId, current === 'L');
+const teamLocal    = _createTeamEl(partido.localLogo,     partido.local,     false);
+const btnE         = _createSimBtn('E', matchId, current === 'E');
 const teamVisitante = _createTeamEl(partido.visitanteLogo, partido.visitante, true);
-const btnV = _createSimBtn('V', matchId, current === 'V');
+const btnV         = _createSimBtn('V', matchId, current === 'V');
 row.appendChild(btnL);
 row.appendChild(teamLocal);
 row.appendChild(btnE);
@@ -2589,11 +2720,14 @@ _gridListener = null;
 grid.innerHTML = '';
 grid.appendChild(fragment);
 _gridListener = function(e) {
+if (_processing) return;
 const btn = e.target.closest('.sim-result-btn[data-match-id][data-result]');
 if (!btn) return;
 const matchId = btn.dataset.matchId;
 const result  = btn.dataset.result;
 if (!matchId || !['L', 'E', 'V'].includes(result)) return;
+_processing = true;
+_setGridDisabled(true);
 const row = btn.closest('.sim-match-row');
 if (row) {
 row.querySelectorAll('.sim-result-btn').forEach(b => {
@@ -2605,9 +2739,13 @@ btn.classList.add('selected');
 btn.setAttribute('aria-pressed', 'true');
 _simState[matchId] = result;
 _rankedCache = null;
+requestAnimationFrame(() => {
 const ranked = _getRanked();
 _renderResults(ranked);
 _updateSummary(ranked);
+_processing = false;
+_setGridDisabled(false);
+});
 };
 grid.addEventListener('click', _gridListener);
 }
@@ -2616,7 +2754,7 @@ const btn = document.createElement('button');
 btn.className       = `sim-result-btn${isSelected ? ' selected' : ''}`;
 btn.dataset.matchId = matchId;
 btn.dataset.result  = result;
-btn.textContent     = result; 
+btn.textContent     = result;
 btn.setAttribute('aria-pressed', String(isSelected));
 btn.setAttribute('aria-label', `Resultado ${result}`);
 return btn;
@@ -2625,16 +2763,14 @@ function _createTeamEl(logoUrl, teamName, isRight) {
 const div = document.createElement('div');
 div.className = `sim-team-inline${isRight ? ' right' : ''}`;
 const img = document.createElement('img');
-img.src     = typeof logoUrl === 'string' && logoUrl.trim()
-? logoUrl
-: '';
-img.alt     = escapeHtml(teamName ?? ''); 
-img.width   = 20;
-img.height  = 20;
-img.onerror = () => { img.style.visibility = 'hidden'; };
+img.src       = _isSafeImageUrl(logoUrl) ? escapeHtml(logoUrl) : '';
+img.alt       = escapeHtml(teamName ?? '');
+img.width     = 20;
+img.height    = 20;
+img.onerror   = () => { img.style.visibility = 'hidden'; };
 img.className = 'team-logo-sim';
 const span = document.createElement('span');
-span.textContent = teamName ?? ''; 
+span.textContent = teamName ?? '';
 if (isRight) {
 div.appendChild(span);
 div.appendChild(img);
@@ -2651,9 +2787,9 @@ if (!ranked.length) {
 tbody.innerHTML = '<tr><td colspan="100%" class="sim-empty-state">No hay datos para simular</td></tr>';
 return;
 }
-const partidos    = _getPartidos();
-const firstPoints = ranked[0].puntos;
-const secondObj   = ranked.find(r => r.puntos < firstPoints);
+const partidos     = _getPartidos();
+const firstPoints  = ranked[0].puntos;
+const secondObj    = ranked.find(r => r.puntos < firstPoints);
 const secondPoints = secondObj?.puntos ?? 0;
 const isSimComplete = _isComplete();
 const rows = ranked.map(q => {
@@ -2664,7 +2800,7 @@ const matchCells = partidos.map(partido => {
 const matchId   = String(partido.id);
 const pick      = q.picks?.[matchId] || '-';
 const simResult = _simState[matchId];
-const cellCls = simResult === '-'
+const cellCls   = simResult === '-'
 ? 'pending'
 : (pick && pick === simResult ? 'correct' : 'incorrect');
 return `<td class="col-match"><span class="result-cell ${cellCls}">${escapeHtml(pick)}</span></td>`;
@@ -2694,10 +2830,10 @@ if (simSecondPlace) simSecondPlace.textContent = '0';
 if (simTotal)       simTotal.textContent       = '0';
 return;
 }
-const firstPoints  = ranked[0].puntos;
-const firstCount   = ranked.filter(q => q.puntos === firstPoints).length;
-const secondObj    = ranked.find(q => q.puntos < firstPoints);
-const secondCount  = secondObj
+const firstPoints = ranked[0].puntos;
+const firstCount  = ranked.filter(q => q.puntos === firstPoints).length;
+const secondObj   = ranked.find(q => q.puntos < firstPoints);
+const secondCount = secondObj
 ? ranked.filter(q => q.puntos === secondObj.puntos).length
 : 0;
 if (simFirstPlace)  simFirstPlace.textContent  = firstCount;
@@ -2705,20 +2841,20 @@ if (simSecondPlace) simSecondPlace.textContent = secondCount;
 if (simTotal)       simTotal.textContent       = ranked.length;
 }
 async function init() {
+if (_initialized) {
+reset();
+return;
+}
 const grid = document.getElementById('simulationGrid');
 const ok = await ListaOficialManager.loadData();
 if (!ok) {
-if (grid) {
-grid.innerHTML = '<div class="sim-error-state">❌ Error al cargar el simulador</div>';
-}
+if (grid) grid.innerHTML = '<div class="sim-error-state">❌ Error al cargar el simulador</div>';
 console.error('❌ SimuladorManager.init: no se pudieron cargar los datos');
 return;
 }
 const partidos = _getPartidos();
 if (partidos.length === 0) {
-if (grid) {
-grid.innerHTML = '<div class="sim-error-state">⚠️ No hay partidos configurados</div>';
-}
+if (grid) grid.innerHTML = '<div class="sim-error-state">⚠️ No hay partidos configurados</div>';
 console.error('❌ SimuladorManager.init: AppState sin partidos');
 return;
 }
@@ -2747,88 +2883,37 @@ _updateSummary(ranked);
 function destroy() {
 const grid     = document.getElementById('simulationGrid');
 const resetBtn = document.getElementById('resetSimulation');
-if (grid && _gridListener)        grid.removeEventListener('click', _gridListener);
-if (resetBtn && _resetListener)   resetBtn.removeEventListener('click', _resetListener);
+if (grid && _gridListener)      grid.removeEventListener('click', _gridListener);
+if (resetBtn && _resetListener) resetBtn.removeEventListener('click', _resetListener);
 _gridListener  = null;
 _resetListener = null;
 _rankedCache   = null;
 _initialized   = false;
+_processing    = false;
+_setGridDisabled(false);
 }
 return Object.freeze({ init, reset, destroy });
 })();
 const simulador = {
-init:          () => SimuladorManager.init(),
-reset:         () => SimuladorManager.reset(),
-renderGrid:    () => { /* delegado al manager */ },
-renderResults: () => { /* delegado al manager */ },
-updateSummary: () => { /* delegado al manager */ },
+init:  () => SimuladorManager.init(),
+reset: () => SimuladorManager.reset(),
 };
-/* = Funciones de Horarios = */ /* = Funciones de Horarios = */
-function renderMatchesHorarios() {
-const container = document.getElementById('matchesHorarios');
-if (!container) return;
-const partidos = AppState.getPartidos();
-if (partidos.length === 0) {
-container.innerHTML = '<p class="empty-state-msg">No hay partidos configurados para esta jornada.</p>';
-if (ENV?.isDev) console.warn('⚠️ renderMatchesHorarios: AppState sin partidos');
-return;
+/*------------Esto de abajo se encarga de trabajar en nuestro archivo y se enfoca en los horarios de la quiniela  --------------------------------------------------*/
+function _isSafeImageUrl(url) {
+if (typeof url !== 'string' || !url.trim()) return false;
+if (url.startsWith('/') && !url.startsWith('//')) return true;
+try {
+const parsed = new URL(url);
+return parsed.protocol === 'https:' ||
+(ENV?.isDev && parsed.protocol === 'http:');
+} catch {
+return false;
 }
-const fragment = document.createDocumentFragment();
-partidos.forEach(partido => {
-const card = document.createElement('div');
-card.className = 'match-card';
-const league = document.createElement('div');
-league.className = 'match-league match-league-header';
-const horarioSpan = document.createElement('span');
-horarioSpan.textContent = partido.horario ?? 'Horario por confirmar';
-league.appendChild(horarioSpan);
-const teamsDiv = document.createElement('div');
-teamsDiv.className = 'match-teams';
-teamsDiv.appendChild(_createTeamDiv(partido.localLogo, partido.local));
-const vsDiv = document.createElement('div');
-vsDiv.className  = 'match-vs';
-vsDiv.textContent = 'VS'; 
-teamsDiv.appendChild(vsDiv);
-teamsDiv.appendChild(_createTeamDiv(partido.visitanteLogo, partido.visitante));
-const infoDiv = document.createElement('div');
-infoDiv.className = 'match-info match-info-center';
-if (partido.televisionLogo || partido.televisora) {
-const tvSpan = document.createElement('span');
-const tvImg  = _createLogoImg(
-partido.televisionLogo,
-partido.televisora ?? 'Televisora',
-'match-tv-logo'
-);
-tvSpan.appendChild(tvImg);
-infoDiv.appendChild(tvSpan);
-} else {
-const noTvSpan = document.createElement('span');
-noTvSpan.className   = 'match-tv-unavailable';
-noTvSpan.textContent = '—';
-infoDiv.appendChild(noTvSpan);
-}
-card.appendChild(league);
-card.appendChild(teamsDiv);
-card.appendChild(infoDiv);
-fragment.appendChild(card);
-});
-container.innerHTML = '';
-container.appendChild(fragment);
-}
-function _createTeamDiv(logoUrl, teamName) {
-const div = document.createElement('div');
-div.className = 'match-team';
-const img = _createLogoImg(logoUrl, teamName, 'team-logo');
-const span = document.createElement('span');
-span.textContent = teamName ?? 'Equipo';
-div.appendChild(img);
-div.appendChild(span);
-return div;
 }
 function _createLogoImg(url, altText, className) {
 const img = document.createElement('img');
-img.src = _isSafeImageUrl(url) ? url : '';
-img.alt       = typeof altText === 'string' ? altText : '';
+img.src       = _isSafeImageUrl(url) ? escapeHtml(url) : '';
+img.alt       = typeof altText === 'string' ? escapeHtml(altText) : '';
 img.className = className ?? '';
 if (className === 'team-logo') {
 img.width  = 40;
@@ -2840,20 +2925,73 @@ img.height = 44;
 img.loading = 'lazy';
 img.onerror = () => {
 img.style.visibility = 'hidden';
-img.onerror = null; 
+img.onerror = null;
 };
 return img;
 }
-function _isSafeImageUrl(url) {
-if (typeof url !== 'string' || !url.trim()) return false;
-try {
-const parsed = new URL(url);
-return parsed.protocol === 'https:' || parsed.protocol === 'http:';
-} catch {
-return !/^(javascript|data|vbscript):/i.test(url.trim());
+function _createTeamDiv(logoUrl, teamName) {
+const div = document.createElement('div');
+div.className = 'match-team';
+const img = _createLogoImg(logoUrl, teamName, 'team-logo');
+const span = document.createElement('span');
+span.textContent = teamName ?? 'Equipo';
+div.appendChild(img);
+div.appendChild(span);
+return div;
 }
+function renderMatchesHorarios() {
+const container = document.getElementById('matchesHorarios');
+if (!container) return;
+const partidos = AppState.getPartidos();
+if (partidos.length === 0) {
+container.innerHTML = '<p class="empty-state-msg">No hay partidos configurados para esta jornada.</p>';
+if (ENV?.isDev) console.warn('⚠️ renderMatchesHorarios: AppState sin partidos');
+return;
 }
-/* = Porcentajes en tiempo real basados en Lista Oficial = */                                     /* = Porcentajes en tiempo real basados en Lista Oficial = */
+container.innerHTML = partidos.map(partido => {
+const logoLocal  = _isSafeImageUrl(partido.localLogo)     ? escapeHtml(partido.localLogo)     : '';
+const logoVisita = _isSafeImageUrl(partido.visitanteLogo)  ? escapeHtml(partido.visitanteLogo)  : '';
+const logoTv     = _isSafeImageUrl(partido.televisionLogo) ? escapeHtml(partido.televisionLogo) : '';
+const tvHtml = (logoTv || partido.televisora)
+? (
+'<span>' +
+`<img src="${logoTv}" alt="${escapeHtml(partido.televisora ?? 'Televisora')}"` +
+' class="match-tv-logo" width="44" height="44" loading="lazy"' +
+` onerror="this.style.visibility='hidden';this.onerror=null">` +
+'</span>'
+)
+: '<span class="match-tv-unavailable">—</span>';
+return (
+'<div class="match-card">' +
+'<div class="match-league match-league-header">' +
+`<span>${escapeHtml(partido.horario ?? 'Horario por confirmar')}</span>` +
+'</div>' +
+'<div class="match-teams">' +
+'<div class="match-team">' +
+`<img src="${logoLocal}" alt="${escapeHtml(partido.local ?? '')}"` +
+` class="team-logo" width="40" height="40" loading="lazy"` +
+` onerror="this.style.visibility='hidden';this.onerror=null">` +
+`<span>${escapeHtml(partido.local ?? 'Equipo')}</span>` +
+'</div>' +
+'<div class="match-vs">VS</div>' +
+'<div class="match-team">' +
+`<img src="${logoVisita}" alt="${escapeHtml(partido.visitante ?? '')}"` +
+` class="team-logo" width="40" height="40" loading="lazy"` +
+` onerror="this.style.visibility='hidden';this.onerror=null">` +
+`<span>${escapeHtml(partido.visitante ?? 'Equipo')}</span>` +
+'</div>' +
+'</div>' +
+`<div class="match-info match-info-center">${tvHtml}</div>` +
+'</div>'
+);
+}).join('');
+}
+/*------------Esto de abajo se encarga de trabajar en nuestro archivo y se enfoca en los Porcentajes en tiempo real basados en Lista Oficial ----------------------*/
+const _PCT_COLOR_MAP = {
+'pct-high': '#00A859',
+'pct-mid':  '#333333',
+'pct-low':  '#dc2626',
+};
 const PorcentajesManager = (() => {
 async function cargar() {
 const container = document.getElementById('matchesPorcentajes');
@@ -2889,8 +3027,8 @@ const raw = [
 { key: 'V', value: (countV / total) * 100 },
 ];
 raw.forEach(item => { item.floor = Math.floor(item.value); });
-const sumFloor   = raw.reduce((s, i) => s + i.floor, 0);
-const remainder  = 100 - sumFloor; 
+const sumFloor  = raw.reduce((s, i) => s + i.floor, 0);
+const remainder = 100 - sumFloor;
 raw
 .slice()
 .sort((a, b) => (b.value - b.floor) - (a.value - a.floor))
@@ -2905,9 +3043,9 @@ function getMostFavored(perc) {
 const max = Math.max(perc.L, perc.E, perc.V);
 const min = Math.min(perc.L, perc.E, perc.V);
 function getIntensity(val) {
-if (val === max && max !== min) return 'pct-high'; 
-if (val === min && max !== min) return 'pct-low';    
-return 'pct-mid';                                   
+if (val === max && max !== min) return 'pct-high';
+if (val === min && max !== min) return 'pct-low';
+return 'pct-mid';
 }
 return {
 L: getIntensity(perc.L),
@@ -2918,103 +3056,62 @@ V: getIntensity(perc.V),
 function renderPorcentajes() {
 const container = document.getElementById('matchesPorcentajes');
 if (!container) return;
-const partidos          = AppState.getPartidos();
-const realPercentages   = calculateRealPercentages();
-const totalQuinielas    = ListaOficialManager.getResumen()?.total_participantes ?? 0;
+const partidos        = AppState.getPartidos();
+const realPercentages = calculateRealPercentages();
+const totalQuinielas  = ListaOficialManager.getResumen()?.total_participantes ?? 0;
 if (partidos.length === 0) {
 container.innerHTML = '<p class="empty-state-msg">No hay partidos configurados.</p>';
 return;
 }
-const fragment = document.createDocumentFragment();
-partidos.forEach((partido, index) => {
+container.innerHTML = partidos.map((partido, index) => {
 const perc    = realPercentages[index] ?? { L: 0, E: 0, V: 0, total: 0 };
 const favored = getMostFavored(perc);
-const card = document.createElement('div');
-card.className = 'match-card';
-const league = document.createElement('div');
-league.className = 'match-league match-pct-header';
-const headerSpan = document.createElement('span');
-headerSpan.className   = 'match-pct-subtitle';
-headerSpan.textContent = `Porcentajes basados a ${perc.total} participante${perc.total !== 1 ? 's' : ''}  en la lista 📊`;
-league.appendChild(headerSpan);
-const teamsDiv = document.createElement('div');
-teamsDiv.className = 'match-teams';
-teamsDiv.appendChild(_createTeamDiv(partido.localLogo, partido.local));
-const vsDiv = document.createElement('div');
-vsDiv.className  = 'match-vs';
-vsDiv.textContent = 'VS';
-teamsDiv.appendChild(vsDiv);
-teamsDiv.appendChild(_createTeamDiv(partido.visitanteLogo, partido.visitante, true));
-const pctDiv = document.createElement('div');
-pctDiv.className = 'match-percentages';
-['L', 'E', 'V'].forEach(key => {
-pctDiv.appendChild(_createPercentageItem(key, perc[key], favored[key]));
-});
-card.appendChild(league);
-card.appendChild(teamsDiv);
-card.appendChild(pctDiv);
-fragment.appendChild(card);
-});
-container.innerHTML = '';
-container.appendChild(fragment);
+const logoLocal  = _isSafeImageUrl(partido.localLogo)     ? escapeHtml(partido.localLogo)     : '';
+const logoVisita = _isSafeImageUrl(partido.visitanteLogo)  ? escapeHtml(partido.visitanteLogo)  : '';
+const participantesTxt = `Porcentajes basados a ${perc.total} participante${perc.total !== 1 ? 's' : ''} en la lista 📊`;
+const pctHtml = ['L', 'E', 'V'].map(key => {
+const val           = perc[key];
+const cls           = favored[key];
+const color         = _PCT_COLOR_MAP[cls] || '#9ca3af';
+return (
+'<div class="percentage-item">' +
+`<span class="percentage-label">${key}</span>` +
+'<div class="percentage-bar">' +
+`<div class="percentage-fill ${cls}"` +
+` style="width:${val}%;background-color:${color}"` +
+` role="progressbar"` +
+` aria-valuenow="${val}"` +
+` aria-valuemin="0"` +
+` aria-valuemax="100"` +
+` aria-label="${key}: ${val}%">` +
+'</div>' +
+'</div>' +
+`<span class="percentage-value" style="color:${color};font-weight:600">${val}%</span>` +
+'</div>'
+);
+}).join('');
+return (
+'<div class="match-card">' +
+'<div class="match-league match-pct-header">' +
+`<span class="match-pct-subtitle">${escapeHtml(participantesTxt)}</span>` +
+'</div>' +
+'<div class="match-teams">' +
+'<div class="match-team">' +
+`<img src="${logoLocal}" alt="${escapeHtml(partido.local ?? '')}" class="team-logo" width="40" height="40" loading="lazy" onerror="this.style.visibility='hidden';this.onerror=null">` +
+`<span>${escapeHtml(partido.local ?? 'Equipo')}</span>` +
+'</div>' +
+'<div class="match-vs">VS</div>' +
+'<div class="match-team">' +
+`<img src="${logoVisita}" alt="${escapeHtml(partido.visitante ?? '')}" class="team-logo" width="40" height="40" loading="lazy" onerror="this.style.visibility='hidden';this.onerror=null">` +
+`<span>${escapeHtml(partido.visitante ?? 'Equipo')}</span>` +
+'</div>' +
+'</div>' +
+`<div class="match-percentages">${pctHtml}</div>` +
+'</div>'
+);
+}).join('');
 if (ENV?.isDev) {
 console.log(`📊 PorcentajesManager: ${partidos.length} partidos, ${totalQuinielas} quinielas`);
-}
-}
-function _createTeamDiv(logoUrl, teamName, isRight = false) {
-const div = document.createElement('div');
-div.className = 'match-team';
-const img = document.createElement('img');
-img.src       = _isSafeImageUrl(logoUrl) ? logoUrl : '';
-img.alt       = typeof teamName === 'string' ? teamName : '';
-img.className = 'team-logo';
-img.width     = 40;
-img.height    = 40;
-img.loading   = 'lazy';
-img.onerror   = () => { img.style.visibility = 'hidden'; img.onerror = null; };
-const span = document.createElement('span');
-span.textContent = teamName ?? 'Equipo';
-div.appendChild(img);
-div.appendChild(span);
-return div;
-}
-function _createPercentageItem(label, value, intensityClass) {
-const item = document.createElement('div');
-item.className = 'percentage-item';
-const labelSpan = document.createElement('span');
-labelSpan.className   = 'percentage-label';
-labelSpan.textContent = label;
-const bar = document.createElement('div');
-bar.className = 'percentage-bar';
-const fill = document.createElement('div');
-fill.className = `percentage-fill ${intensityClass}`;
-fill.style.width = `${value}%`;
-const colorMap = { 'pct-high': '#00A859', 'pct-mid': '#333333', 'pct-low': '#dc2626' };
-fill.style.backgroundColor = colorMap[intensityClass] || '#9ca3af';
-fill.setAttribute('role', 'progressbar');
-fill.setAttribute('aria-valuenow', String(value));
-fill.setAttribute('aria-valuemin', '0');
-fill.setAttribute('aria-valuemax', '100');
-fill.setAttribute('aria-label', `${label}: ${value}%`);
-bar.appendChild(fill);
-const valueSpan = document.createElement('span');
-valueSpan.className   = 'percentage-value';
-valueSpan.textContent = `${value}%`;
-const textColorMap = { 'pct-high': '#00A859', 'pct-mid': '#333333', 'pct-low': '#dc2626' };
-valueSpan.style.color = textColorMap[intensityClass] || '#6b7280';
-valueSpan.style.fontWeight = '600';
-item.appendChild(labelSpan);
-item.appendChild(bar);
-item.appendChild(valueSpan);
-return item;
-}
-function _isSafeImageUrl(url) {
-if (typeof url !== 'string' || !url.trim()) return false;
-try {
-const parsed = new URL(url);
-return parsed.protocol === 'https:' || parsed.protocol === 'http:';
-} catch {
-return !/^(javascript|data|vbscript):/i.test(url.trim());
 }
 }
 return Object.freeze({
@@ -3029,86 +3126,55 @@ return PorcentajesManager.cargar();
 function renderMatchesPorcentajes() {
 PorcentajesManager.renderPorcentajes();
 }
-/* Funciones de Quiniela - Quiniela Guardada */ /* Funciones de Quiniela - Quiniela Guardada */                     /* Funciones de Quiniela - Quiniela Guardada */
-function _buildMiniQuinielaEl(q) {
+/*------------Esto de abajo se encarga de trabajar en nuestro archivo y se enfoca en las Funciones de la quiniela - quiniela Guardada ----------------------*/
+function _buildMiniQuinielaHtml(q) {
 const partidos = AppState.getPartidos();
-const wrapper = document.createElement('div');
-wrapper.style.cssText = 'background:#ffffff;padding:10px;border-radius:10px;margin-bottom:10px;border:2px solid #e5e7eb;max-width:580px;width:100%;';
-const header = document.createElement('div');
-header.style.cssText = 'margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid #e5e7eb;';
-const nameEl = document.createElement('div');
-nameEl.style.cssText = 'font-size:0.9rem;font-weight:700;color:#1f2937;margin-bottom:2px;';
-nameEl.textContent = q.name || 'Sin nombre';
-const metaEl = document.createElement('div');
-metaEl.style.cssText = 'font-size:0.65rem;color:#6b7280;';
-const jornadaNombre = window.jornadaActual?.nombre ?? 'Jornada';
-const vendedorNombre = q.vendedor || currentVendedor || 'Sin vendedor';
-metaEl.textContent = `Vendedor: ${vendedorNombre} • ${jornadaNombre}`;
-header.appendChild(nameEl);
-header.appendChild(metaEl);
-if (q.folio) {
-const folioEl = document.createElement('div');
-folioEl.style.cssText = 'font-size:0.65rem;color:#6b7280;margin-top:2px;';
-folioEl.textContent = `Folio: ${escapeHtml(q.folio)}`;
-header.appendChild(folioEl);
-}
-wrapper.appendChild(header);
-partidos.forEach(partido => {
-const preds = q.predictions?.[String(partido.id)] ?? [];
-const localSelected  = Array.isArray(preds) && preds.includes('L');
-const empateSelected = Array.isArray(preds) && preds.includes('E');
-const visitaSelected = Array.isArray(preds) && preds.includes('V');
-const row = document.createElement('div');
-row.style.cssText = 'display:flex;align-items:center;gap:2px;padding:2px 0;';
-const btnL = document.createElement('button');
-btnL.textContent = 'L';
-btnL.disabled = true;
-btnL.style.cssText = `width:24px;height:24px;min-width:24px;min-height:24px;border:1px solid ${localSelected ? '#006847' : '#d1d5db'};border-radius:3px;font-size:0.65rem;font-weight:700;cursor:default;background:${localSelected ? '#006847' : '#ffffff'};color:${localSelected ? 'white' : '#6b7280'};flex-shrink:0;padding:0;display:flex;align-items:center;justify-content:center;`;
-const teamLocal = document.createElement('div');
-teamLocal.style.cssText = 'flex:1;display:flex;align-items:center;gap:2px;font-size:0.6rem;color:#374151;min-width:0;';
-const logoLocal = document.createElement('img');
-logoLocal.src = typeof partido.localLogo === 'string' ? partido.localLogo : '';
-logoLocal.alt = partido.local ?? '';
-logoLocal.style.cssText = 'width:14px;height:14px;object-fit:contain;flex-shrink:0;';
-logoLocal.onerror = () => { logoLocal.style.display = 'none'; };
-const nameLocal = document.createElement('span');
-nameLocal.style.cssText = 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
-nameLocal.textContent = partido.local ?? '';
-teamLocal.appendChild(logoLocal);
-teamLocal.appendChild(nameLocal);
-const btnE = document.createElement('button');
-btnE.textContent = 'E';
-btnE.disabled = true;
-btnE.style.cssText = `width:24px;height:24px;min-width:24px;min-height:24px;border:1px solid ${empateSelected ? '#006847' : '#d1d5db'};border-radius:3px;font-size:0.65rem;font-weight:700;cursor:default;background:${empateSelected ? '#006847' : '#ffffff'};color:${empateSelected ? 'white' : '#6b7280'};flex-shrink:0;padding:0;display:flex;align-items:center;justify-content:center;`;
-const teamVisita = document.createElement('div');
-teamVisita.style.cssText = 'flex:1;display:flex;align-items:center;gap:2px;font-size:0.6rem;justify-content:flex-end;color:#374151;min-width:0;';
-const nameVisita = document.createElement('span');
-nameVisita.style.cssText = 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right;';
-nameVisita.textContent = partido.visitante ?? '';
-const logoVisita = document.createElement('img');
-logoVisita.src = typeof partido.visitanteLogo === 'string' ? partido.visitanteLogo : '';
-logoVisita.alt = partido.visitante ?? '';
-logoVisita.style.cssText = 'width:14px;height:14px;object-fit:contain;flex-shrink:0;';
-logoVisita.onerror = () => { logoVisita.style.display = 'none'; };
-teamVisita.appendChild(nameVisita);
-teamVisita.appendChild(logoVisita);
-const btnV = document.createElement('button');
-btnV.textContent = 'V';
-btnV.disabled = true;
-btnV.style.cssText = `width:24px;height:24px;min-width:24px;min-height:24px;border:1px solid ${visitaSelected ? '#006847' : '#d1d5db'};border-radius:3px;font-size:0.65rem;font-weight:700;cursor:default;background:${visitaSelected ? '#006847' : '#ffffff'};color:${visitaSelected ? 'white' : '#6b7280'};flex-shrink:0;padding:0;display:flex;align-items:center;justify-content:center;`;
-row.appendChild(btnL);
-row.appendChild(teamLocal);
-row.appendChild(btnE);
-row.appendChild(teamVisita);
-row.appendChild(btnV);
-wrapper.appendChild(row);
-});
-const deleteBtn = document.createElement('button');
-deleteBtn.textContent = 'Eliminar 🗑️';
-deleteBtn.style.cssText = 'background:#ef4444;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:0.7rem;font-weight:600;width:100%;margin-top:6px;';
-deleteBtn.addEventListener('click', () => _confirmDeleteQuiniela(q.id, q.name));
-wrapper.appendChild(deleteBtn);
-return wrapper;
+const vendedorNombre = (typeof q.vendedor === 'string' && q.vendedor.trim())
+? escapeHtml(q.vendedor.trim())
+: 'Sin vendedor';
+const jornadaNombre = escapeHtml(window.jornadaActual?.nombre ?? 'Jornada');
+const folioHtml = q.folio
+? `<div style="font-size:0.65rem;color:#6b7280;margin-top:2px;">Folio: ${escapeHtml(String(q.folio))}</div>`
+: '';
+const BTN_BASE = 'width:24px;height:24px;min-width:24px;min-height:24px;border:1px solid;border-radius:3px;font-size:0.65rem;font-weight:700;cursor:default;flex-shrink:0;padding:0;display:flex;align-items:center;justify-content:center;';
+const SEL_ON   = 'background:#006847;color:white;border-color:#006847;';
+const SEL_OFF  = 'background:#ffffff;color:#6b7280;border-color:#d1d5db;';
+const rowsHtml = partidos.map(partido => {
+const preds      = q.predictions?.[String(partido.id)] ?? [];
+const lSel       = Array.isArray(preds) && preds.includes('L');
+const eSel       = Array.isArray(preds) && preds.includes('E');
+const vSel       = Array.isArray(preds) && preds.includes('V');
+const logoLocal  = _isSafeImageUrl(partido.localLogo)    ? escapeHtml(partido.localLogo)    : '';
+const logoVisita = _isSafeImageUrl(partido.visitanteLogo) ? escapeHtml(partido.visitanteLogo) : '';
+const nLocal     = escapeHtml(partido.local    ?? '');
+const nVisita    = escapeHtml(partido.visitante ?? '');
+return (
+'<div style="display:flex;align-items:center;gap:2px;padding:2px 0;">' +
+`<button disabled style="${BTN_BASE}${lSel ? SEL_ON : SEL_OFF}">L</button>` +
+'<div style="flex:1;display:flex;align-items:center;gap:2px;font-size:0.6rem;color:#374151;min-width:0;">' +
+`<img src="${logoLocal}" alt="${nLocal}" loading="lazy" style="width:14px;height:14px;object-fit:contain;flex-shrink:0;" onerror="this.style.display='none';this.onerror=null">` +
+`<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${nLocal}</span>` +
+'</div>' +
+`<button disabled style="${BTN_BASE}${eSel ? SEL_ON : SEL_OFF}">E</button>` +
+'<div style="flex:1;display:flex;align-items:center;gap:2px;font-size:0.6rem;justify-content:flex-end;color:#374151;min-width:0;">' +
+`<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right;">${nVisita}</span>` +
+`<img src="${logoVisita}" alt="${nVisita}" loading="lazy" style="width:14px;height:14px;object-fit:contain;flex-shrink:0;" onerror="this.style.display='none';this.onerror=null">` +
+'</div>' +
+`<button disabled style="${BTN_BASE}${vSel ? SEL_ON : SEL_OFF}">V</button>` +
+'</div>'
+);
+}).join('');
+return (
+'<div style="background:#ffffff;padding:10px;border-radius:10px;margin-bottom:10px;border:2px solid #e5e7eb;max-width:580px;width:100%;">' +
+'<div style="margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid #e5e7eb;">' +
+`<div style="font-size:0.9rem;font-weight:700;color:#1f2937;margin-bottom:2px;">${escapeHtml(q.name || 'Sin nombre')}</div>` +
+`<div style="font-size:0.65rem;color:#6b7280;">Vendedor: ${vendedorNombre} • ${jornadaNombre}</div>` +
+folioHtml +
+'</div>' +
+rowsHtml +
+`<button data-mini-q-delete data-qid="${String(q.id ?? '')}" data-qname="${escapeHtml(q.name || 'Sin nombre')}" style="background:#ef4444;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:0.7rem;font-weight:600;width:100%;margin-top:6px;">Eliminar 🗑️</button>` +
+'</div>'
+);
 }
 function _confirmDeleteQuiniela(quinielaId, quinielaName) {
 const content = document.createElement('div');
@@ -3126,11 +3192,11 @@ btnConfirm.addEventListener('click', () => {
 closeModal();
 deleteQuinielaPorId(quinielaId);
 setTimeout(() => showSaved(), 100);
-});
+}, { once: true });
 const btnCancel = document.createElement('button');
 btnCancel.textContent = 'Cancelar';
 btnCancel.style.cssText = 'width:100%;padding:10px;background:transparent;color:#9ca3af;border:2px solid #e5e7eb;border-radius:8px;font-size:0.875rem;font-weight:600;cursor:pointer;';
-btnCancel.addEventListener('click', closeModal);
+btnCancel.addEventListener('click', closeModal, { once: true });
 content.appendChild(icon);
 content.appendChild(msg);
 content.appendChild(btnConfirm);
@@ -3158,9 +3224,15 @@ const count = savedQuinielas.length;
 const total = count * price;
 const container = document.createElement('div');
 container.style.cssText = 'display:flex;flex-direction:column;align-items:center;';
-savedQuinielas.forEach(q => {
-if (!q || !q.predictions) return;
-container.appendChild(_buildMiniQuinielaEl(q));
+const validCards = savedQuinielas.filter(q => q && q.predictions);
+container.innerHTML = validCards.map(q => _buildMiniQuinielaHtml(q)).join('');
+container.addEventListener('click', function onDeleteClick(e) {
+const btn = e.target.closest('[data-mini-q-delete]');
+if (!btn) return;
+const qid  = parseInt(btn.dataset.qid, 10);
+const qname = btn.dataset.qname || 'Sin nombre';
+if (!Number.isFinite(qid)) return;
+_confirmDeleteQuiniela(qid, qname);
 });
 const footer = document.createElement('div');
 footer.style.cssText = 'background:#006847;padding:10px 16px;border-radius:12px;text-align:center;width:100%;max-width:580px;margin-top:10px;';
@@ -3185,7 +3257,7 @@ if (quinielasSnapshot.length === 0) {
 showErrorModal('No tienes quinielas guardadas para enviar.');
 return;
 }
-const count = quinielasSnapshot.length;
+const count      = quinielasSnapshot.length;
 const totalPrice = count * 30;
 const overlay = document.createElement('div');
 overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px';
@@ -3214,10 +3286,10 @@ const btnConfirm = document.createElement('button');
 btnConfirm.textContent = 'Enviar ahora ✅';
 btnConfirm.style.cssText = 'width:100%;padding:14px;margin-bottom:10px;background:linear-gradient(135deg,#25D366 0%,#128C7E 100%);color:white;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(37,211,102,0.4)';
 btnConfirm.addEventListener('click', () => {
-btnConfirm.disabled = true;
+btnConfirm.disabled    = true;
 btnConfirm.textContent = '⏳ Enviando...';
 btnConfirm.style.opacity = '0.7';
-btnConfirm.style.cursor = 'not-allowed';
+btnConfirm.style.cursor  = 'not-allowed';
 overlay.remove();
 if (typeof procesarEnvioWhatsApp === 'function') {
 try { procesarEnvioWhatsApp(quinielasSnapshot, totalPrice); }
@@ -3241,22 +3313,26 @@ document.body.appendChild(overlay);
 overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
 }
 function deleteQuinielaPorId(quinielaId) {
-if (!quinielaId) return;
+if (typeof quinielaId !== 'number' || !Number.isFinite(quinielaId)) {
+console.error('deleteQuinielaPorId: id inválido', quinielaId);
+return;
+}
 AppState.removeSavedById(quinielaId);
 if (typeof updateQuinielaCount === 'function') updateQuinielaCount();
-if (typeof updatePrice === 'function') updatePrice();
-if (typeof updateSavedBadge === 'function') updateSavedBadge();
+if (typeof updatePrice         === 'function') updatePrice();
+if (typeof updateSavedBadge    === 'function') updateSavedBadge();
 }
-/* Quinielas Enviadas - Sección Jugadas */ /* Quinielas Enviadas - Sección Jugadas */ /* Quinielas Enviadas - Sección Jugadas */ /* Quinielas Enviadas - Sección Jugadas */
+/*------------Esto de abajo se encarga de trabajar en nuestro archivo y se enfoca en las Quinielas Enviadas - Sección Jugadas -----------------------------------*/
 let officialResults = {};
-function calcularPuntosQuiniela(predictionsObj) {
-if (!officialResults || Object.keys(officialResults).length === 0) return 0;
+function calcularPuntosQuiniela(predictionsObj, resultados) {
+const res = resultados ?? officialResults;
+if (!res || Object.keys(res).length === 0) return 0;
 const partidos = AppState.getPartidos();
 let puntos = 0;
 partidos.forEach(partido => {
-const pickArr  = predictionsObj?.[String(partido.id)];
-const pick     = Array.isArray(pickArr) ? pickArr[0] : pickArr;
-const resultado = officialResults[String(partido.id)];
+const pickArr = predictionsObj?.[String(partido.id)];
+const pick = Array.isArray(pickArr) ? pickArr[0] : pickArr;
+const resultado = res[String(partido.id)];
 if (resultado && pick && resultado === pick) puntos++;
 });
 return puntos;
@@ -3272,73 +3348,85 @@ if (!jornadaNombre) {
 if (ENV?.isDev) console.warn('⚠️ actualizarEstadosDesdeBackend: sin jornada');
 return;
 }
-const params   = new URLSearchParams({ vendedor, jornada: jornadaNombre });
-const buildUrl = (ep) => apiUrl(ep.replace(/^\//, '')) + '?' + params;
+const qs = new URLSearchParams({ vendedor, jornada: jornadaNombre }).toString();
 let resPend, resEsp, resJug;
 try {
 [resPend, resEsp, resJug] = await Promise.all([
-fetch(buildUrl('/api/pendientes'), { headers: { 'Accept': 'application/json' } }).then(r => r.ok ? r.json() : null).catch(() => null),
-fetch(buildUrl('/api/espera'),     { headers: { 'Accept': 'application/json' } }).then(r => r.ok ? r.json() : null).catch(() => null),
-fetch(buildUrl('/api/jugando'),    { headers: { 'Accept': 'application/json' } }).then(r => r.ok ? r.json() : null).catch(() => null),
+fetchAPI(`/api/pendientes?${qs}`),
+fetchAPI(`/api/espera?${qs}`),
+fetchAPI(`/api/jugando?${qs}`),
 ]);
 } catch (err) {
-if (ENV?.isDev) console.warn('⚠️ actualizarEstadosDesdeBackend: error en fetch paralelo', err);
+if (ENV?.isDev) console.warn('⚠️ actualizarEstadosDesdeBackend: error en Promise.all', err);
 return;
+}
+const dataPend = resPend?.data;
+const dataEsp = resEsp?.data;
+const dataJug = resJug?.data;
+const todosFetchsOk = !resPend?.error && !resEsp?.error && !resJug?.error;
+if (!todosFetchsOk && ENV?.isDev) {
+console.warn('⚠️ actualizarEstadosDesdeBackend: algún endpoint falló — reset omitido', {
+pendientes: resPend?.error ?? 'ok',
+espera: resEsp?.error ?? 'ok',
+jugando: resJug?.error ?? 'ok',
+});
 }
 const partidos = AppState.getPartidos();
 function normalizarQuiniela(q, estado) {
 const preds = {};
 if (Array.isArray(q.picks)) {
 q.picks.forEach((pick, idx) => {
-const p   = partidos[idx];
+const p = partidos[idx];
 const key = p ? String(p.id) : String(idx);
 preds[key] = (pick && pick !== '-') ? [pick] : [];
 });
 }
 return {
-id:          q.id,
-nombre:      q.nombre,
-vendedor:    q.vendedor,
-folio:       q.folio,
+id: q.id,
+nombre: q.nombre,
+vendedor: q.vendedor,
+folio: q.folio,
 predictions: preds,
 estado,
-jornada:     jornadaNombre,
+jornada: jornadaNombre,
 };
 }
 const allQuinielas = [];
-if (resPend?.pendientes) resPend.pendientes.forEach(q => allQuinielas.push(normalizarQuiniela(q, 'pendiente')));
-if (resEsp?.espera)      resEsp.espera.forEach(q =>      allQuinielas.push(normalizarQuiniela(q, 'espera')));
-if (resJug?.jugando)     resJug.jugando.forEach(q =>     allQuinielas.push(normalizarQuiniela(q, 'jugando')));
+if (dataPend?.pendientes) dataPend.pendientes.forEach(q => allQuinielas.push(normalizarQuiniela(q, 'pendiente')));
+if (dataEsp?.espera) dataEsp.espera.forEach(q => allQuinielas.push(normalizarQuiniela(q, 'espera')));
+if (dataJug?.jugando) dataJug.jugando.forEach(q => allQuinielas.push(normalizarQuiniela(q, 'jugando')));
 if (allQuinielas.length === 0 && ENV?.isDev) {
 console.warn('⚠️ actualizarEstadosDesdeBackend: 0 quinielas desde backend');
 }
 let sent = AppState.getSent();
+const norm = s => (typeof s === 'string' ? s.trim().toLowerCase() : '');
+const toKey = (preds) => partidos.map(p => {
+const pred = preds?.[String(p.id)];
+if (!pred || (Array.isArray(pred) && pred.length === 0)) return '-';
+return Array.isArray(pred) ? [...pred].sort().join('') : String(pred);
+}).join('|');
 allQuinielas.forEach(qBackend => {
 let local = sent.find(q => q.pythonId != null && String(q.pythonId) === String(qBackend.id));
 if (!local && qBackend.folio != null) {
 local = sent.find(q => q.folio != null && String(q.folio) === String(qBackend.folio));
 }
 if (!local) {
-const toKey = (preds) => partidos.map(p => {
-const pred = preds?.[String(p.id)];
-if (!pred || (Array.isArray(pred) && pred.length === 0)) return '-';
-return Array.isArray(pred) ? [...pred].sort().join('') : String(pred);
-}).join('|');
 local = sent.find(q => {
-if ((q.name    || '') !== (qBackend.nombre   || '')) return false;
-if ((q.vendedor || '') !== (qBackend.vendedor || '')) return false;
+if (norm(q.name) !== norm(qBackend.nombre)) return false;
+if (norm(q.vendedor) !== norm(qBackend.vendedor)) return false;
 return toKey(q.predictions) === toKey(qBackend.predictions);
 });
 }
 if (local) {
-local.estado   = qBackend.estado;
-local.folio    = qBackend.folio;
+local.estado = qBackend.estado;
+local.folio = qBackend.folio;
 local.pythonId = qBackend.id;
 if (ENV?.isDev) console.log(`✅ Actualizada: ${local.name} → ${local.estado} (${local.folio ?? 'sin folio'})`);
 } else {
-if (ENV?.isDev) console.warn(`⚠️ No se encontró local para backend id=${qBackend.id} nombre="${qBackend.nombre}"`);
+if (ENV?.isDev) console.warn(`⚠️ No encontrado local para backend id=${qBackend.id} nombre="${qBackend.nombre}"`);
 }
 });
+if (todosFetchsOk) {
 const idsEnBackend = allQuinielas.map(q => String(q.id));
 sent = sent.map(q => {
 if (
@@ -3351,6 +3439,7 @@ return { ...q, estado: 'pendiente', folio: null, pythonId: null };
 }
 return q;
 });
+}
 AppState.replaceSent(sent);
 deduplicarSentQuinielas();
 if (typeof updateHeroStats === 'function') updateHeroStats();
@@ -3359,18 +3448,21 @@ if (ENV?.isDev) console.log(`🔄 Sincronización completa: ${allQuinielas.lengt
 async function renderMyQuinielas() {
 const container = document.getElementById('myQuinielasList');
 if (!container) return;
+let localResultados = {};
 try {
 const { data: dataResultados } = await fetchAPI('/api/resultados-oficiales');
-officialResults = dataResultados?.resultados ?? {};
+localResultados = dataResultados?.resultados ?? {};
+officialResults = localResultados;
 } catch (e) {
 console.error('❌ renderMyQuinielas: error cargando resultados', e);
+localResultados = {};
 officialResults = {};
 }
 await actualizarEstadosDesdeBackend();
-const partidos      = AppState.getPartidos();
+const partidos = AppState.getPartidos();
 const jornadaNombre = window.jornadaActual?.nombre ?? 'Jornada actual';
-const sent          = AppState.getSent();
-const deJornada     = sent.filter(q => q.jornada === jornadaNombre);
+const sent = AppState.getSent();
+const deJornada = sent.filter(q => q.jornada === jornadaNombre);
 if (deJornada.length === 0) {
 container.innerHTML = `
 <div class="empty-state">
@@ -3380,42 +3472,43 @@ container.innerHTML = `
 </div>`;
 return;
 }
-const hayResultados = Object.keys(officialResults).length > 0;
+const hayResultados = Object.keys(localResultados).length > 0;
 const conDatos = deJornada
 .map(q => ({
 q,
 jugando: q.estado === 'jugando',
-puntos:  hayResultados ? calcularPuntosQuiniela(q.predictions) : 0,
+puntos: hayResultados ? calcularPuntosQuiniela(q.predictions, localResultados) : 0,
 }))
 .sort((a, b) => {
 if (a.jugando !== b.jugando) return a.jugando ? -1 : 1;
-if (b.puntos  !== a.puntos)  return b.puntos - a.puntos;
+if (b.puntos !== a.puntos) return b.puntos - a.puntos;
 const folioA = parseInt(a.q.folio) || 0;
 const folioB = parseInt(b.q.folio) || 0;
 return folioA - folioB;
 });
 container.innerHTML = conDatos.map(({ q, jugando, puntos }) => {
-const cardClass    = jugando ? 'jugando' : 'no-jugando';
-const folioHtml    = (jugando && q.folio) ? `<div class="jugada-folio">Folio: ${escapeHtml(String(q.folio))}</div>` : '';
-const vendedorName = escapeHtml(q.vendedor || VendedorManager.current || 'Sin vendedor');
+const cardClass = jugando ? 'jugando' : 'no-jugando';
+const folioHtml = (jugando && q.folio) ? `<div class="jugada-folio">Folio: ${escapeHtml(String(q.folio))}</div>` : '';
+const vendedorName = escapeHtml(q.vendedor || 'Sin vendedor');
 const miniQuiniela = partidos.map(partido => {
-// FIX #4 — usar String(partido.id) explícitamente para máxima consistencia
-const predArr   = q.predictions?.[String(partido.id)];
-const pick      = Array.isArray(predArr) ? (predArr[0] || '-') : (predArr || '-');
-const resultado = officialResults[String(partido.id)];
-const pickSan   = pick.trim().toUpperCase();
-let pickClass   = 'quiniela-pick';
+const predArr = q.predictions?.[String(partido.id)];
+const pick = Array.isArray(predArr) ? (predArr[0] || '-') : (predArr || '-');
+const resultado = localResultados[String(partido.id)];
+const pickSan = pick.trim().toUpperCase();
+let pickClass = 'quiniela-pick';
 if (resultado) pickClass += pickSan === resultado ? ' correct' : ' incorrect';
+const logoLocal = isSafeImageUrl(partido.localLogo) ? escapeHtml(partido.localLogo) : '';
+const logoVisita = isSafeImageUrl(partido.visitanteLogo) ? escapeHtml(partido.visitanteLogo) : '';
 return `
 <div class="quiniela-row">
 <div class="quiniela-team">
-<img src="${escapeHtml(partido.localLogo)}" alt="${escapeHtml(partido.local)}">
+<img src="${logoLocal}" alt="${escapeHtml(partido.local)}" loading="lazy" width="20" height="20" onerror="this.style.visibility='hidden';this.onerror=null">
 <span>${escapeHtml(partido.local)}</span>
 </div>
 <div class="${pickClass}">${escapeHtml(pick)}</div>
 <div class="quiniela-team" style="justify-content:flex-end;">
 <span style="text-align:right;">${escapeHtml(partido.visitante)}</span>
-<img src="${escapeHtml(partido.visitanteLogo)}" alt="${escapeHtml(partido.visitante)}">
+<img src="${logoVisita}" alt="${escapeHtml(partido.visitante)}" loading="lazy" width="20" height="20" onerror="this.style.visibility='hidden';this.onerror=null">
 </div>
 </div>`;
 }).join('');
@@ -3437,7 +3530,23 @@ ${miniQuiniela}
 }).join('');
 if (ENV?.isDev) console.log(`✅ renderMyQuinielas: ${deJornada.length} quinielas renderizadas`);
 }
-/* Anti-duplicados en Jugadas (sentQuinielas) */ /* Anti-duplicados en Jugadas (sentQuinielas) */                    /* Anti-duplicados en Jugadas (sentQuinielas) */
+/*------------Esto de abajo se encarga de trabajar en nuestro archivo y se enfoca en trabajar para no duplicar quinielas-----------------------------------*/
+function _generarKeyContenido(q, partidos) {
+const nombre = (q.name || q.nombre || '').trim().toLowerCase();
+const vendedor = (q.vendedor || '').trim().toLowerCase();
+const jornada = (q.jornada || '').trim().toLowerCase();
+const picks = partidos.length > 0
+? partidos.map(p => {
+const pred = q.predictions?.[String(p.id)];
+if (!pred || (Array.isArray(pred) && pred.length === 0)) return '-';
+return Array.isArray(pred) ? [...pred].sort().join('') : String(pred).trim().toUpperCase();
+}).join('|')
+: Object.keys(q.predictions ?? {}).sort().map(k => {
+const v = (q.predictions ?? {})[k];
+return `${k}:${Array.isArray(v) ? [...v].sort().join('') : String(v).toUpperCase()}`;
+}).join('|');
+return `cnt:${nombre}|${vendedor}|${jornada}|${picks}`;
+}
 function deduplicarSentQuinielas() {
 const current = AppState.getSent();
 if (current.length === 0) {
@@ -3447,6 +3556,8 @@ if (typeof generarKeyQuiniela !== 'function') {
 console.error('❌ deduplicarSentQuinielas: generarKeyQuiniela no está definida');
 return { removed: 0, total: current.length, errors: 1 };
 }
+const partidos = AppState.getPartidos();
+const jornadaFallback = window.jornadaActual?.nombre ?? 'no-jornada';
 const vistas = new Set();
 const limpias = [];
 let errors = 0;
@@ -3460,24 +3571,65 @@ let key;
 try {
 key = generarKeyQuiniela(q);
 } catch (e) {
-console.error('❌ deduplicarSentQuinielas: error generando key:', e, 'item:', q?.folio);
+console.error('❌ deduplicarSentQuinielas: error generando key:', e, 'folio:', q?.folio);
 errors++;
 continue;
 }
 if (typeof key !== 'string' || !key.trim()) {
-const fallbackKey = `${q.folio ?? 'no-folio'}_${q.jornada ?? 'no-jornada'}`;
+const nombre = (q.name || q.nombre || 'sin-nombre').trim().toLowerCase();
+const picks = partidos.length > 0
+? partidos.map(p => {
+const pred = q.predictions?.[String(p.id)];
+if (!pred || (Array.isArray(pred) && pred.length === 0)) return '-';
+return Array.isArray(pred) ? [...pred].sort().join('') : String(pred).toUpperCase();
+}).join('|')
+: JSON.stringify(q.predictions ?? {});
+key = `fb:${nombre}_${q.jornada ?? jornadaFallback}_${picks}`;
 if (ENV?.isDev) {
-console.warn(`⚠️ deduplicarSentQuinielas: key inválida para folio ${q.folio}, usando fallback: ${fallbackKey}`);
+console.warn(`⚠️ deduplicarSentQuinielas: key inválida para folio ${q.folio}, fallback generado`);
 }
-key = fallbackKey;
 }
 if (!vistas.has(key)) {
 vistas.add(key);
 limpias.push(q);
 } else {
 if (ENV?.isDev) {
-console.warn(`⚠️ Duplicado encontrado: folio=${q.folio}, jornada=${q.jornada}`);
+console.warn(`⚠️ Duplicado (pase 1) eliminado: folio=${q.folio}, nombre="${q.name}"`);
 }
+}
+}
+if (partidos.length > 0) {
+const porContenido = new Map();
+for (const q of limpias) {
+const ckey = _generarKeyContenido(q, partidos);
+if (!porContenido.has(ckey)) {
+porContenido.set(ckey, q);
+} else {
+const existente = porContenido.get(ckey);
+const scoreExistente = (existente.pythonId != null ? 4 : 0) + (existente.folio != null ? 2 : 0);
+const scoreCurrent  = (q.pythonId != null ? 4 : 0) + (q.folio != null ? 2 : 0);
+let ganador, perdedor;
+if (scoreCurrent > scoreExistente) {
+ganador = q;
+perdedor = existente;
+} else if (scoreCurrent === scoreExistente) {
+ganador = (q.id ?? 0) >= (existente.id ?? 0) ? q : existente;
+perdedor = ganador === q ? existente : q;
+} else {
+ganador = existente;
+perdedor = q;
+}
+porContenido.set(ckey, ganador);
+if (ENV?.isDev) {
+console.warn(`⚠️ Duplicado (pase 2 contenido) eliminado: folio=${perdedor?.folio ?? 'null'}, pythonId=${perdedor?.pythonId ?? 'null'}, nombre="${perdedor?.name}"`);
+}
+}
+}
+const limp2 = [...porContenido.values()];
+const removedP2 = limpias.length - limp2.length;
+if (removedP2 > 0) {
+limpias.length = 0;
+limpias.push(...limp2);
 }
 }
 const removed = current.length - limpias.length;
@@ -3488,22 +3640,24 @@ return { removed: 0, total: current.length, errors: 0 };
 if (errors > 0 && ENV?.isDev) {
 console.warn(`⚠️ deduplicarSentQuinielas: ${errors} item(s) con errores descartados`);
 }
+if (removed > 0) {
 AppState.replaceSent(limpias);
 if (typeof updateSavedBadge === 'function') updateSavedBadge();
 if (typeof updateQuinielaCount === 'function') updateQuinielaCount();
 if (ENV?.isDev) {
 console.log(`🧹 deduplicarSentQuinielas: ${removed} duplicado(s) eliminado(s), ${limpias.length} quinielas limpias`);
 }
+}
 return { removed, total: limpias.length, errors };
 }
 function limpiarDuplicados() {
 return deduplicarSentQuinielas();
 }
-/*Sistema para envío de quinielas por WhatsApp */ /*Sistema para envío de quinielas por WhatsApp */                 /*Sistema para envío de quinielas por WhatsApp */
+/*------------Esto de abajo se encarga de trabajar en nuestro archivo y se enfoca en trabajar el Sistema de envío de quinielas por WhatsApp -----------------------*/
 const WhatsAppSender = (() => {
 let sending = false;
 const REQUEST_TIMEOUT_MS = 12000;
-const RETRY_ATTEMPTS = 2;
+const MAX_INTENTOS = 3;
 const RETRY_DELAY_MS = 1500;
 const INTER_REQUEST_MS = 100;
 function isSending() {
@@ -3511,22 +3665,27 @@ return sending;
 }
 function generarKeyQuiniela(q) {
 if (!q || typeof q !== 'object') return null;
-if (q.pythonId !== null && q.pythonId !== undefined) return `py-${q.pythonId}`;
+if (q.pythonId != null) return `py-${q.pythonId}`;
 if (q.folio) return `fo-${q.folio}`;
 const partidos = AppState.getPartidos();
+const jornadaId = AppState.getJornada?.()?.id ?? 'sin-jornada';
 const picksKey = partidos.map(p => {
 const pred = q.predictions?.[String(p.id)];
 if (!pred) return '-';
 if (Array.isArray(pred)) return [...pred].sort().join('');
 return String(pred);
 }).join('');
-return `nm${q.name}|vd${q.vendedor}|pk${picksKey}`;
+return `jo${jornadaId}|nm${q.name}|vd${q.vendedor}|pk${picksKey}`;
 }
 function generarIdempotencyKey(q) {
 if (q._idempotencyKey) return q._idempotencyKey;
-const key = typeof crypto?.randomUUID === 'function'
-? crypto.randomUUID()
-: `idem-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+const jornadaId = AppState.getJornada?.()?.id ?? 'sin-jornada';
+const raw = `${jornadaId}|${q.name ?? ''}|${q.vendedor ?? ''}|${JSON.stringify(q.predictions ?? {})}`;
+let hash = 0;
+for (let i = 0; i < raw.length; i++) {
+hash = Math.imul(31, hash) + raw.charCodeAt(i) | 0;
+}
+const key = `idem-${Math.abs(hash).toString(36)}-${raw.length}`;
 q._idempotencyKey = key;
 return key;
 }
@@ -3558,9 +3717,9 @@ if (typeof mostrarModalCargando === 'function') {
 try { loadingModal = mostrarModalCargando(quinielasSnapshot.length); } catch (e) { console.error('mostrarModalCargando falló', e); }
 }
 try {
-const resultado = await enviarQuinielasAPython(quinielasSnapshot, loadingModal);
+const resultado = await _enviarQuinielasAPython(quinielasSnapshot, loadingModal);
 if (!resultado || !Array.isArray(resultado.exitosas) || !Array.isArray(resultado.fallidas)) {
-throw new Error('Respuesta inesperada de enviarQuinielasAPython');
+throw new Error('Respuesta inesperada del servidor');
 }
 cerrarModal(loadingModal);
 if (resultado.exitosas.length === 0) {
@@ -3590,7 +3749,7 @@ showErrorModal('Error de conexión con el servidor. Intenta de nuevo.');
 finalizarEnvio(btnEnviar);
 }
 }
-async function enviarQuinielasAPython(quinielas, loadingModal) {
+async function _enviarQuinielasAPython(quinielas, loadingModal) {
 const exitosas = [];
 const fallidas = [];
 const keysVistas = new Set();
@@ -3601,7 +3760,7 @@ keysVistas.add(key);
 return true;
 });
 const filtradas = quinielas.length - quinielasUnicas.length;
-if (filtradas > 0) ENV?.isDev && console.warn(`WhatsAppSender: ${filtradas} duplicadas filtradas antes de enviar`);
+if (filtradas > 0 && ENV?.isDev) console.warn(`WhatsAppSender: ${filtradas} duplicadas filtradas antes de enviar`);
 const total = quinielasUnicas.length;
 for (let i = 0; i < total; i++) {
 const q = quinielasUnicas[i];
@@ -3626,12 +3785,17 @@ if (pick) predictions[String(partido.id)] = pick;
 }
 const nombre = typeof q.name === 'string' ? q.name.trim() : '';
 if (!nombre) return { ok: false, razon: 'Nombre de quiniela vacío' };
-const userId = AppState.getUserId?.();
-const vendedor = q.vendedor || AppState.getCurrentVendedor?.() || 'Desconocido';
-const payload = { nombre, vendedor, predictions, ...(userId !== null ? { userId } : {}) };
+const userIdVal = typeof userId !== 'undefined' ? userId : null; 
+const vendedor = q.vendedor || VendedorManager?.current || 'Desconocido'; 
+const payload = {
+nombre,
+vendedor,
+predictions,
+...(userIdVal !== null ? { userId: userIdVal } : {}),
+};
 const idempotencyKey = generarIdempotencyKey(q);
 let lastError = null;
-for (let attempt = 1; attempt <= RETRY_ATTEMPTS + 1; attempt++) {
+for (let attempt = 1; attempt <= MAX_INTENTOS; attempt++) { 
 try {
 const controller = new AbortController();
 const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -3651,13 +3815,13 @@ clearTimeout(timeoutId);
 }
 let data;
 try { data = await response.json(); } catch { data = {}; }
-if (response.ok && data.id !== null) {
+if (response.ok && data.id != null) { 
 if (ENV?.isDev) console.log(`${current}/${total} Quiniela enviada (ID: ${data.id})`);
-return { ok: true, data: { pythonId: data.id, folio: data.folio, estado: data.estado } };
+return { ok: true, data: { pythonId: data.id, folio: data.folio ?? null, estado: data.estado ?? null } }; 
 }
-if (response.status === 409 && data.id) {
-if (ENV?.isDev) console.log(`✅ Quiniela ya existía (idempotente): ID=${data.id}`);
-return { ok: true, data: { pythonId: data.id, folio: data.folio, estado: data.estado } };
+if (response.status === 409 && data.id != null) { 
+if (ENV?.isDev) console.log(`✅ Idempotente: quiniela ya existía (ID=${data.id})`);
+return { ok: true, data: { pythonId: data.id, folio: data.folio ?? null, estado: data.estado ?? null } }; 
 }
 if (response.status >= 400 && response.status < 500) {
 const razon = data.error || data.detail || `Error ${response.status}`;
@@ -3668,8 +3832,8 @@ lastError = data.error || data.detail || `Error ${response.status}`;
 const isTimeout = error.name === 'AbortError';
 lastError = isTimeout ? 'Timeout de conexión' : (error.message ?? 'Error de red');
 if (!navigator.onLine) return { ok: false, razon: 'Sin conexión a internet' };
-if (attempt <= RETRY_ATTEMPTS) {
-if (ENV?.isDev) console.warn(`Reintento ${attempt}/${RETRY_ATTEMPTS}...`);
+if (attempt < MAX_INTENTOS) { // MEJORA 5: condición correcta con MAX_INTENTOS
+if (ENV?.isDev) console.warn(`Reintento ${attempt}/${MAX_INTENTOS - 1}...`);
 await sleep(RETRY_DELAY_MS * attempt);
 }
 }
@@ -3695,31 +3859,33 @@ return Object.freeze({
 isSending,
 generarKeyQuiniela,
 procesarEnvioWhatsApp,
-enviarQuinielasAPython,
 });
 })();
 function generarKeyQuiniela(q) { return WhatsAppSender.generarKeyQuiniela(q); }
 async function procesarEnvioWhatsApp(quinielas, totalPrice) { return WhatsAppSender.procesarEnvioWhatsApp(quinielas, totalPrice); }
-async function enviarQuinielasAPython(quinielas) { return WhatsAppSender.enviarQuinielasAPython(quinielas, null); }
-/* = Estructura para el mensaje de whats app= *//* = Estructura para el mensaje de whats app= */
+/*------------Esto de abajo se encarga de trabajar en nuestro archivo y se enfoca en trabajar la Estructura para el mensaje de whats app -----------------------*/
 function getVendedorFromURL() {
 const params = new URLSearchParams(window.location.search);
-const raw    = params.get('vendedor') ?? '';
+const raw = params.get('vendedor') ?? '';
 const sanitized = raw
 .replace(/[<>"'&]/g, '')
 .trim()
 .slice(0, 60);
-return sanitized || null; 
+return sanitized || null;
 }
 function generarMensajeWhatsApp(quinielas, totalPrice) {
 if (!Array.isArray(quinielas) || quinielas.length === 0) return '';
 const partidos = AppState.getPartidos();
-let mensaje    = '';
+const precioSeguro = (typeof totalPrice === 'number' && isFinite(totalPrice))
+? totalPrice.toFixed(2)
+: (parseFloat(totalPrice) > 0 ? parseFloat(totalPrice).toFixed(2) : '0.00');
+let mensaje = '';
 quinielas.forEach((q, index) => {
 const nombre = typeof q.name === 'string' && q.name.trim()
 ? q.name.trim()
 : 'Sin nombre';
 mensaje += `*${nombre}*\n`;
+let hayPicks = false;
 partidos.forEach((partido, idx) => {
 const pred = q.predictions?.[String(partido.id)];
 let resultado = '-';
@@ -3729,14 +3895,19 @@ resultado = String(pred[0]);
 resultado = pred;
 }
 if (resultado !== '-') {
+hayPicks = true;
 mensaje += `P${idx + 1} ${resultado}\n`;
 }
 });
+if (!hayPicks) {
+mensaje += `⚠️ Sin pronósticos registrados\n`;
+if (ENV?.isDev) console.warn(`generarMensajeWhatsApp: quiniela "${nombre}" sin picks. Verifica IDs de partidos vs predictions.`);
+}
 if (index < quinielas.length - 1) mensaje += '\n';
 });
 mensaje += '\n━━━━━━━━━━━━━━\n';
 mensaje += `Total: ${quinielas.length} ${quinielas.length === 1 ? 'quiniela' : 'quinielas'}`;
-mensaje += `\nA pagar: $${totalPrice}`;
+mensaje += `\nA pagar: $${precioSeguro}`;
 mensaje += '\n\nEn unos momentos te envío el comprobante';
 return mensaje;
 }
@@ -3753,9 +3924,10 @@ return false;
 }
 }
 function buildFallbackWhatsAppUrl(mensaje, vendedor = null) {
-const numero = (vendedor && VENDEDOR_WHATSAPP[vendedor]) || '';
+const libro = typeof VENDEDOR_WHATSAPP !== 'undefined' ? VENDEDOR_WHATSAPP : {};
+const numero = (vendedor && libro[vendedor]) || '';
 if (!numero) {
-console.error('❌ WhatsAppMessenger: sin número para', vendedor);
+console.error('❌ WhatsAppMessenger: sin número para vendedor →', vendedor);
 return null;
 }
 return `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`;
@@ -3765,33 +3937,33 @@ const lista = Array.isArray(fallidas) ? fallidas : [];
 const content = document.createElement('div');
 content.className = 'error-envio-modal';
 const icon = document.createElement('div');
-icon.className   = 'error-envio-icon';
+icon.className = 'error-envio-icon';
 icon.textContent = '❌';
 const title = document.createElement('h2');
-title.className   = 'error-envio-title';
+title.className = 'error-envio-title';
 title.textContent = 'Error al enviar';
 const subtitle = document.createElement('p');
-subtitle.className   = 'error-envio-subtitle';
+subtitle.className = 'error-envio-subtitle';
 subtitle.textContent =
 `No se ${lista.length === 1 ? 'pudo guardar' : 'pudieron guardar'} ` +
 `${lista.length} ${lista.length === 1 ? 'quiniela' : 'quinielas'}`;
 const errorList = document.createElement('div');
 errorList.className = 'error-envio-list';
 lista.forEach(f => {
-const item    = document.createElement('div');
+const item = document.createElement('div');
 item.className = 'error-envio-item';
 const nameEl = document.createElement('div');
-nameEl.className   = 'error-envio-item-name';
+nameEl.className = 'error-envio-item-name';
 nameEl.textContent = f?.quiniela ?? 'Sin nombre';
 const razonEl = document.createElement('div');
-razonEl.className   = 'error-envio-item-reason';
+razonEl.className = 'error-envio-item-reason';
 razonEl.textContent = f?.razon ?? 'Error desconocido';
 item.appendChild(nameEl);
 item.appendChild(razonEl);
 errorList.appendChild(item);
 });
 const btnClose = document.createElement('button');
-btnClose.className   = 'btn-danger error-envio-close';
+btnClose.className = 'btn-danger error-envio-close';
 btnClose.textContent = 'Cerrar';
 btnClose.addEventListener('click', closeModal);
 content.appendChild(icon);
@@ -3809,9 +3981,11 @@ const btnWhatsApp  = document.getElementById('btnIrWhatsApp');
 const modalEl      = document.getElementById('modalEnvioExitoso');
 if (!exitosasEl || !totalPriceEl || !mensajeEl || !btnWhatsApp || !modalEl) {
 console.error('❌ mostrarConfirmacionEnvio: elementos del DOM no encontrados:', {
-exitosasEl: !!exitosasEl, totalPriceEl: !!totalPriceEl,
-mensajeEl: !!mensajeEl,   btnWhatsApp:  !!btnWhatsApp,
-modalEl:   !!modalEl,
+exitosasEl:   !!exitosasEl,
+totalPriceEl: !!totalPriceEl,
+mensajeEl:    !!mensajeEl,
+btnWhatsApp:  !!btnWhatsApp,
+modalEl:      !!modalEl,
 });
 if (typeof openModal === 'function') {
 const fallbackEl = document.createElement('p');
@@ -3841,25 +4015,32 @@ const vendedorDesdeQuinielas =
 Array.isArray(quinielasData) && quinielasData.length > 0
 ? (quinielasData.find(q => typeof q.vendedor === 'string' && q.vendedor.trim())?.vendedor ?? null)
 : null;
+const currentVendedorSafe = typeof currentVendedor !== 'undefined' ? currentVendedor : null; 
 const vendedorFinal =
-VendedorManager?.current      
-?? currentVendedor              
-?? vendedorDesdeQuinielas;    
+VendedorManager?.current
+?? currentVendedorSafe
+?? vendedorDesdeQuinielas;
 if (!vendedorFinal) {
-console.error('❌ mostrarConfirmacionEnvio: vendedor no identificado. ' +
+console.error(
+'❌ mostrarConfirmacionEnvio: vendedor no identificado.',
 'VendedorManager.current =', VendedorManager?.current,
-'| currentVendedor =', currentVendedor);
+'| currentVendedor =', currentVendedorSafe
+);
 showToast(
 'No se detectó tu vendedor. Abre la app desde el link de tu vendedor e intenta de nuevo.',
 'error'
 );
 return;
 }
-if (ENV?.isDev) {
-console.log('✅ mostrarConfirmacionEnvio: vendedor resuelto →', vendedorFinal);
+if (ENV?.isDev) console.log('✅ mostrarConfirmacionEnvio: vendedor resuelto →', vendedorFinal);
+const mensaje = generarMensajeWhatsApp(quinielasData ?? [], totalPrice);
+if (!mensaje) {
+console.error('❌ mostrarConfirmacionEnvio: mensaje vacío, no se puede enviar a WhatsApp');
+showToast('Error generando el mensaje. Recarga e intenta de nuevo.', 'error');
+return;
 }
-let whatsappUrl = null;
-const mensaje   = generarMensajeWhatsApp(quinielasData ?? [], totalPrice);
+let whatsappUrl      = null;
+let servidorEnvioOk  = false;
 try {
 const controller = new AbortController();
 const timeoutId  = setTimeout(() => controller.abort(), 8_000);
@@ -3868,11 +4049,8 @@ try {
 resp = await fetch('/api/enviar-whatsapp', {
 method:  'POST',
 headers: { 'Content-Type': 'application/json' },
-body: JSON.stringify({
-vendedor: vendedorFinal,   
-mensaje:  mensaje,
-}),
-signal: controller.signal,
+body:    JSON.stringify({ vendedor: vendedorFinal, mensaje }),
+signal:  controller.signal,
 });
 } finally {
 clearTimeout(timeoutId);
@@ -3880,16 +4058,15 @@ clearTimeout(timeoutId);
 if (resp.ok) {
 let data;
 try { data = await resp.json(); } catch { data = {}; }
+servidorEnvioOk = data?.enviado === true; // el backend debe mandar { enviado: true }
 if (_validarWhatsAppUrl(data?.url)) {
 whatsappUrl = data.url;
-} else {
-if (ENV?.isDev) console.warn('⚠️ URL de WhatsApp del backend inválida:', data?.url);
+} else if (ENV?.isDev) {
+console.warn('⚠️ URL de WhatsApp del backend inválida:', data?.url);
 }
 }
 } catch (e) {
-if (ENV?.isDev) {
-console.warn('⚠️ No se pudo obtener URL de WhatsApp del backend, usando fallback');
-}
+if (ENV?.isDev) console.warn('⚠️ No se pudo obtener URL del backend, usando fallback. Error:', e?.message);
 }
 if (!whatsappUrl) {
 whatsappUrl = buildFallbackWhatsAppUrl(mensaje, vendedorFinal);
@@ -3897,11 +4074,17 @@ whatsappUrl = buildFallbackWhatsAppUrl(mensaje, vendedorFinal);
 const newBtn = btnWhatsApp.cloneNode(true);
 btnWhatsApp.parentNode?.replaceChild(newBtn, btnWhatsApp);
 if (whatsappUrl) {
+if (servidorEnvioOk) {
+newBtn.textContent = '📲 Ver en WhatsApp';
+if (ENV?.isDev) console.log('ℹ️ Servidor ya envió el mensaje. Botón en modo "ver", no reenvío.');
+} else {
+newBtn.textContent = '📲 Enviar a WhatsApp';
+}
+newBtn.disabled = false;
 newBtn.addEventListener('click', () => {
 window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
 cerrarModalEnvio();
 }, { once: true });
-newBtn.disabled = false;
 } else {
 newBtn.disabled    = true;
 newBtn.textContent = 'WhatsApp no disponible';
@@ -3916,11 +4099,16 @@ modalEl.classList.remove('show');
 const exitosasEl   = document.getElementById('exitosasCount');
 const totalPriceEl = document.getElementById('totalPriceAmount');
 const mensajeEl    = document.getElementById('mensajeEnvio');
+const btnEl        = document.getElementById('btnIrWhatsApp');
 if (exitosasEl)   exitosasEl.textContent   = '';
 if (totalPriceEl) totalPriceEl.textContent = '';
 if (mensajeEl)    mensajeEl.textContent    = '';
+if (btnEl) {                                
+btnEl.disabled    = false;
+btnEl.textContent = '📲 Enviar a WhatsApp';
 }
-/* = Esto de abajo trabaja el reglamento de nuestra quiniela = */                                    /* = Esto de abajo trabaja el reglamento de nuestra quiniela = */
+}
+/*------------Esto de abajo se encarga de trabajar en nuestro archivo y se enfoca en trabajar el reglamento de nuestra quiniela ------------------------------------*/
 function showReglamento() {
 openModal(`
 <h3>📋 Reglamento</h3>
@@ -3957,7 +4145,7 @@ Por otra parte, si un partido es pospuesto antes de iniciar y no se juega dentro
 </p>
 `);
 }
-/* = Esto de abajo trabaja en la ayuda al cliente para realizar la quiniela = */ /* = Esto de abajo trabaja en la ayuda al cliente para realizar la quiniela = */
+/*------------Esto de abajo se encarga de trabajar en nuestro archivo y se enfoca en la ayuda al cliente para realizar la quiniela ------------------------------------*/
 function showHelpModal() {
 openModal(`
 <h3 style="text-align:center;">¿Cómo jugar tu quiniela? ⚽</h3>
@@ -3996,12 +4184,17 @@ Rápido, fácil y desde tu celular 📲
 </p>
 `);
 }
-/* = Se usa para: reglamento, ayuda, errores, quinielas guardadas = */                       /* = Se usa para: reglamento, ayuda, errores, quinielas guardadas = */
+/*------------Esto de abajo se encarga de trabajar en nuestro archivo y se usa para: reglamento, ayuda, errores, quinielas guardadas-------------------------------*/
 function openModal(content) {
 const existingModal = document.getElementById('customModal');
 if (existingModal) existingModal.remove();
+const _previousFocus = document.activeElement ?? null;
 const modal = document.createElement('div');
 modal.id = 'customModal';
+modal.setAttribute('role', 'dialog');
+modal.setAttribute('aria-modal', 'true');
+modal.setAttribute('aria-label', 'Ventana de información');
+modal._previousFocus = _previousFocus;
 modal.style.cssText = `
 position: fixed;
 top: 0;
@@ -4010,11 +4203,8 @@ width: 100%;
 height: 100%;
 background: rgba(0, 0, 0, 0.9);
 display: flex;
-display: -webkit-flex;
 align-items: center;
--webkit-align-items: center;
 justify-content: center;
--webkit-justify-content: center;
 z-index: 9999;
 padding: 20px;
 overflow-y: auto;
@@ -4036,11 +4226,13 @@ color: var(--blanco);
 `;
 if (typeof content === 'string') {
 modalContent.innerHTML = content;
-} else {
+} else if (content instanceof Node) {
 modalContent.appendChild(content);
 }
 const closeBtn = document.createElement('button');
 closeBtn.textContent = 'Cerrar ✖️';
+closeBtn.setAttribute('aria-label', 'Cerrar ventana');
+closeBtn.setAttribute('type', 'button');
 closeBtn.onclick = closeModal;
 closeBtn.style.cssText = `
 margin-top: 20px;
@@ -4059,15 +4251,31 @@ touch-action: manipulation;
 modalContent.appendChild(closeBtn);
 modal.appendChild(modalContent);
 document.body.appendChild(modal);
+document.body.style.overflow = 'hidden';
+closeBtn.focus();
+const handleKeydown = (e) => {
+if (e.key === 'Escape') closeModal();
+};
+modal._escapeHandler = handleKeydown;
+document.addEventListener('keydown', handleKeydown);
 modal.addEventListener('click', (e) => {
 if (e.target === modal) closeModal();
 });
 }
 function closeModal() {
 const modal = document.getElementById('customModal');
-if (modal) modal.remove();
+if (!modal) return;
+if (typeof modal._escapeHandler === 'function') {
+document.removeEventListener('keydown', modal._escapeHandler);
 }
-/* = Esto de abajo trabaja para mi seccion de ayuda = */ /* = Esto de abajo trabaja para mi seccion de ayuda = */ /* = Esto de abajo trabaja para mi seccion de ayuda = */
+const prevFocus = modal._previousFocus ?? null;
+modal.remove();
+document.body.style.overflow = '';
+if (prevFocus && typeof prevFocus.focus === 'function') {
+prevFocus.focus();
+}
+}
+/*------------Esto de abajo se encarga de trabajar en nuestro archivo y se usa para mi seccion de ayuda-------------------------------*/
 function debounce(func, wait) {
 if (typeof func !== 'function') {
 throw new TypeError(`debounce: se esperaba una función, recibido ${typeof func}`);
@@ -5021,38 +5229,46 @@ if (document.visibilityState === "visible" && !ScrollAnimations.observer) {
 ScrollAnimations.init();
 }
 });
-/* = Inicialización - Cuando la página carga completamente = */                                         /* = Inicialización - Cuando la página carga completamente = */
+/*------------Esto de abajo se encarga de trabajar en nuestro archivo y se usa para Inicialización - cuando la página carga completamente -------------------------------*/
 const AppInit = (() => {
-let _pollingId     = null; 
-let _pageController = null; 
+let _pollingId = null;
+let _pageController = null;
 function _buildSimHeaderContent(partido) {
+if (!partido || typeof partido !== 'object') return document.createDocumentFragment();
 const wrap = document.createElement('div');
 wrap.className = 'match-header';
 const localImg = document.createElement('img');
-localImg.src       = partido.localLogo;
-localImg.alt       = partido.local ?? ''; 
+localImg.src = (typeof _isSafeImageUrl === 'function' && _isSafeImageUrl(partido.localLogo))
+? partido.localLogo
+: '';
+localImg.alt = partido.local ?? '';
 localImg.className = 'match-logo';
-localImg.loading   = 'lazy';
+localImg.loading = 'lazy';
+localImg.onerror = function() { this.style.visibility = 'hidden'; this.onerror = null; };
 const vsSpan = document.createElement('span');
-vsSpan.className   = 'match-vs';
+vsSpan.className = 'match-vs';
 vsSpan.textContent = 'vs';
 const visitImg = document.createElement('img');
-visitImg.src       = partido.visitanteLogo;
-visitImg.alt       = partido.visitante ?? '';
+visitImg.src = (typeof _isSafeImageUrl === 'function' && _isSafeImageUrl(partido.visitanteLogo))
+? partido.visitanteLogo
+: '';
+visitImg.alt = partido.visitante ?? '';
 visitImg.className = 'match-logo';
-visitImg.loading   = 'lazy';
+visitImg.loading = 'lazy';
+visitImg.onerror = function() { this.style.visibility = 'hidden'; this.onerror = null; };
 wrap.appendChild(localImg);
 wrap.appendChild(vsSpan);
 wrap.appendChild(visitImg);
 return wrap;
 }
 function _updateSimHeaders() {
+const partidos = AppState.getPartidos();
 const simHeaders = document.querySelectorAll(
 '#tabSimulador .results-table thead .col-match'
 );
 simHeaders.forEach(th => {
 const rawIndex = th.dataset.matchIndex;
-const index    = parseInt(rawIndex, 10);
+const index = parseInt(rawIndex, 10);
 if (!Number.isInteger(index) || index < 1) {
 if (ENV?.isDev) console.warn(`⚠️ SimHeaders: data-match-index inválido "${rawIndex}"`);
 return;
@@ -5071,15 +5287,15 @@ cargarJornadaActual(),
 }
 function _renderInitialUI() {
 const renders = [
-['updateHeroStats',        updateHeroStats],
-['actualizarJornada',      actualizarJornada],
-['renderMatchesHorarios',  renderMatchesHorarios],
-['renderQuinielaMatches',  renderQuinielaMatches],
-['renderMatchesHeader',    renderMatchesHeader],
-['updateQuinielaCount',    updateQuinielaCount],
-['updatePrice',            updatePrice],
-['updateSavedBadge',       updateSavedBadge],
-['_updateSimHeaders',      _updateSimHeaders],
+['updateHeroStats',       updateHeroStats],
+['actualizarJornada',     actualizarJornada],
+['renderMatchesHorarios', renderMatchesHorarios],
+['renderQuinielaMatches', renderQuinielaMatches],
+['renderMatchesHeader',   renderMatchesHeader],
+['updateQuinielaCount',   updateQuinielaCount],
+['updatePrice',           updatePrice],
+['updateSavedBadge',      updateSavedBadge],
+['_updateSimHeaders',     _updateSimHeaders],
 ];
 renders.forEach(([name, fn]) => {
 try {
@@ -5091,7 +5307,9 @@ console.error(`❌ AppInit._renderInitialUI: ${name} falló:`, err);
 }
 function _initModules(signal) {
 const modules = [
-['initHelpPage', () => initHelpPage()],
+['initHelpPage', () => {
+if (typeof initHelpPage === 'function') initHelpPage(signal);
+}],
 ];
 modules.forEach(([name, fn]) => {
 try {
@@ -5110,9 +5328,9 @@ try {
 const success = await Promise.race([loadDataFromAPI(), timeoutPromise]);
 if (success) {
 if (ENV?.isDev) console.log('✅ Datos de Lista Oficial cargados');
-try { quiniela.initFirstPlacePage(); } catch (e) { console.error('❌ initFirstPlacePage:', e); }
-try { quiniela.initSecondPlacePage(); } catch (e) { console.error('❌ initSecondPlacePage:', e); }
-try { simulador.init(); }             catch (e) { console.error('❌ simulador.init:', e); }
+try { if (typeof quiniela?.initFirstPlacePage === 'function') quiniela.initFirstPlacePage(); } catch (e) { console.error('❌ initFirstPlacePage:', e); }
+try { if (typeof quiniela?.initSecondPlacePage === 'function') quiniela.initSecondPlacePage(); } catch (e) { console.error('❌ initSecondPlacePage:', e); }
+try { if (typeof simulador?.init === 'function') simulador.init(); } catch (e) { console.error('❌ simulador.init:', e); }
 } else {
 console.warn('⚠️ Lista Oficial no disponible — funcionalidad reducida');
 }
@@ -5149,22 +5367,30 @@ searchInput.addEventListener('input', debouncedSearch, { signal });
 searchInput.addEventListener('keydown', (e) => {
 if (e.key === 'Enter') {
 e.preventDefault();
-debouncedSearch.flush(); 
+debouncedSearch.flush();
 }
 }, { signal });
 }
 }
 function _handleInitialRoute(signal) {
 const renderRoute = (hash) => {
-const page = hash.replace('#', '') || 'inicio';
+try {
+const page = (hash ?? '').replace('#', '') || 'inicio';
 if (page === 'resultados' && typeof renderMyQuinielas === 'function') {
 renderMyQuinielas();
+}
+} catch (err) {
+if (ENV?.isDev) console.warn('⚠️ _handleInitialRoute renderRoute falló:', err.message);
 }
 };
 renderRoute(window.location.hash);
 window.addEventListener('hashchange', (e) => {
+try {
 const newHash = new URL(e.newURL).hash;
 renderRoute(newHash);
+} catch (err) {
+if (ENV?.isDev) console.warn('⚠️ _handleInitialRoute hashchange falló:', err.message);
+}
 }, { signal });
 }
 async function _loadInitialPorcentajes() {
@@ -5187,7 +5413,9 @@ _initModules(signal);
 _initSearchUI(signal);
 _handleInitialRoute(signal);
 _startPolling();
-_loadOfflineData(); 
+_loadOfflineData().catch(err => {
+if (ENV?.isDev) console.warn('⚠️ _loadOfflineData (background) falló:', err.message);
+});
 if (ENV?.isDev) console.log('✅ Inicialización completa');
 } catch (err) {
 console.error('❌ Error crítico en inicialización:', err);
@@ -5207,7 +5435,7 @@ if (ENV?.isDev) console.log('🧹 AppInit destruido');
 return Object.freeze({ init, destroy });
 })();
 document.addEventListener('DOMContentLoaded', () => AppInit.init(), { once: true });
-/* = Activación del panel Admin - Modo secreto = */   /* = Activación del panel Admin - Modo secreto = */              /* = Activación del panel Admin - Modo secreto = */
+/*------------Esto de abajo se encarga de trabajar en nuestro archivo y se usa Activación del panel Admin - Modo secreto  -------------------------------*/
 const AdminPanel = (() => {
 let _activated = false;
 let _clickCount = 0;
@@ -5575,7 +5803,7 @@ vendedor: vendedor,
 jornada: jornadaActual.nombre,
 });
 try {
-// Cargar pendientes, espera y jugando en paralelo para construir lista completa
+/*----Esto de abajo se encarga de trabajar en nuestro archivo y se usa para cargar pendientes, espera y jugando en paralelo para construir lista completa -----------*/
 const [resPend, resEsp, resJug] = await Promise.allSettled([
 _safeFetch(`${API_BASE}/api/pendientes?${params.toString()}`),
 _safeFetch(`${API_BASE}/api/espera?${params.toString()}`),
@@ -5942,9 +6170,10 @@ if (ENV?.isDev) console.log('🧹 AdminContent destruido');
 return Object.freeze({ renderAdminContent, destroy });
 })();
 document.addEventListener('DOMContentLoaded', () => AdminPanel.init(), { once: true });
-/* = Esto de abajo trabaja en actualizar informacion de la quiniela= */ /* = Esto de abajo trabaja en actualizar informacion de la quiniela= */
+/*-----------Esto de abajo se encarga de trabajar en nuestro archivo y se usa para actualizar informacion de la quiniela------------------------------------------*/
 function actualizarJornadaActual() {
-if (!jornadaActual) {
+const jornada = window.jornadaActual ?? null;
+if (!jornada || typeof jornada !== 'object') {
 if (ENV?.isDev) console.warn('⚠️ actualizarJornadaActual: jornadaActual no disponible');
 return { success: false, razon: 'sin-datos' };
 }
@@ -5954,30 +6183,30 @@ const jornadaRange  = document.querySelector('.week-card__range');
 const jornadaStatus = document.querySelector('.week-card__status');
 const progressBar   = document.querySelector('.progress-bar__fill');
 const progressLabel = document.querySelector('.progress-labels span:nth-child(2)');
-if (jornadaNum && jornadaActual.numero !== null && jornadaActual.numero !== undefined) {
-jornadaNum.textContent = String(jornadaActual.numero);
+if (jornadaNum && jornada.numero !== null && jornada.numero !== undefined) {
+jornadaNum.textContent = String(jornada.numero);
 }
 if (jornadaRange) {
-jornadaRange.textContent = jornadaActual.nombre ?? '';
+jornadaRange.textContent = jornada.nombre ?? '';
 }
-const inicio = new Date(jornadaActual.inicio);
-const fin    = new Date(jornadaActual.fin);
+const inicio = new Date(jornada.inicio);
+const fin    = new Date(jornada.fin);
 const inicioEsValido = !isNaN(inicio.getTime());
 const finEsValido    = !isNaN(fin.getTime());
 if (!inicioEsValido || !finEsValido) {
 if (ENV?.isDev) {
 console.warn(
 '⚠️ actualizarJornadaActual: fechas inválidas',
-{ inicio: jornadaActual.inicio, fin: jornadaActual.fin }
+{ inicio: jornada.inicio, fin: jornada.fin }
 );
 }
 if (jornadaStatus) jornadaStatus.textContent = 'Fechas no disponibles';
 return { success: false, razon: 'fechas-invalidas' };
 }
-const ahora = new Date();
-const totalMs       = fin - inicio;
+const ahora          = new Date();
+const totalMs        = fin - inicio;
 const transcurridoMs = ahora - inicio;
-const faltaMs       = fin - ahora;
+const faltaMs        = fin - ahora;
 if (totalMs <= 0) {
 if (ENV?.isDev) {
 console.warn(
@@ -5988,7 +6217,7 @@ console.warn(
 if (jornadaStatus) jornadaStatus.textContent = 'Configuración de jornada inválida';
 return { success: false, razon: 'rango-invalido' };
 }
-const porcentaje = Math.max(0, Math.min(100, (transcurridoMs / totalMs) * 100));
+const porcentaje           = Math.max(0, Math.min(100, (transcurridoMs / totalMs) * 100));
 const porcentajeRedondeado = Math.round(porcentaje);
 if (progressBar) {
 progressBar.style.setProperty('--progress', porcentajeRedondeado + '%');
@@ -5999,8 +6228,6 @@ progressLabel.textContent = porcentajeRedondeado + '% completado';
 if (jornadaStatus) {
 if (faltaMs > 0) {
 jornadaStatus.textContent = _formatearCountdown(faltaMs);
-} else if (faltaMs === 0) {
-jornadaStatus.textContent = 'Cerrando ahora';
 } else {
 jornadaStatus.textContent = 'Jornada cerrada';
 }
@@ -6017,7 +6244,7 @@ return { success: false, razon: 'error-inesperado', error: err };
 }
 }
 function _formatearCountdown(ms) {
-if (ms <= 0) return 'Jornada cerrada';
+if (typeof ms !== 'number' || !isFinite(ms) || ms <= 0) return 'Jornada cerrada';
 const totalMinutos = Math.floor(ms / (1000 * 60));
 const totalHoras   = Math.floor(ms / (1000 * 60 * 60));
 const dias         = Math.floor(ms / (1000 * 60 * 60 * 24));
@@ -6031,19 +6258,19 @@ return horas > 0
 if (totalHoras === 0) {
 return totalMinutos === 1
 ? 'Cierra en 1m'
-: `Cierra en ${minutos}m`;
+: `Cierra en ${totalMinutos}m`;
 }
 return minutos > 0
 ? `Cierra en ${horas}h ${minutos}m`
 : `Cierra en ${horas}h`;
 }
-/* = Sistema de confirmación/rechazo de quinielas = */ /* = Sistema de confirmación/rechazo de quinielas = */ /* = Sistema de confirmación/rechazo de quinielas = */
+/*-----------Esto de abajo se encarga de trabajar en nuestro archivo y se usa para el sistema de confirmación/rechazo de quinielas---------------------------------*/
 const QuinielasAdmin = (() => {
 const _state = {
 quinielaId:   null,
 nombre:       '',
 vendedor:     '',
-isSubmitting: false, 
+isSubmitting: false,
 };
 let _controller = null;
 const FETCH_TIMEOUT = 10_000;
@@ -6065,8 +6292,24 @@ clearTimeout(timeoutId);
 throw err;
 }
 }
+async function _safeJson(response) {
+try {
+return await response.json();
+} catch {
+return { success: false, error: 'Respuesta no válida del servidor' };
+}
+}
 function _callIfFunction(fn) {
 if (typeof fn === 'function') fn();
+}
+function _refrescarTablas() {
+Promise.allSettled([
+typeof cargarPendientesTabla === 'function' ? cargarPendientesTabla() : Promise.resolve(),
+typeof cargarJugandoTabla    === 'function' ? cargarJugandoTabla()    : Promise.resolve(),
+typeof cargarEsperaTabla     === 'function' ? cargarEsperaTabla()     : Promise.resolve(),
+]).finally(() => {
+_callIfFunction(updateHeroStats);
+});
 }
 function init() {
 if (_controller) destroy();
@@ -6087,7 +6330,7 @@ if (typeof showToast === 'function') showToast('ID de quiniela inválido', 'erro
 return;
 }
 const nombre   = row.dataset.nombre   || '';
-const vendedor = row.dataset.vendedor || currentVendedor || '';
+const vendedor = row.dataset.vendedor || (typeof currentVendedor !== 'undefined' ? currentVendedor : '') || '';
 _mostrarModalConfirmar(id, nombre, vendedor);
 return;
 }
@@ -6117,7 +6360,10 @@ if (modalEl) modalEl.classList.add('show');
 }
 function _cerrarModalConfirmar() {
 const modalEl = document.getElementById('modalConfirmar');
-if (modalEl) modalEl.classList.remove('show');
+if (modalEl) {
+modalEl.classList.remove('show');
+modalEl.classList.remove('loading');
+}
 _resetState();
 }
 function _mostrarModalRechazar(id, nombre) {
@@ -6133,17 +6379,20 @@ if (modalEl) modalEl.classList.add('show');
 }
 function _cerrarModalRechazar() {
 const modalEl = document.getElementById('modalRechazar');
-if (modalEl) modalEl.classList.remove('show');
+if (modalEl) {
+modalEl.classList.remove('show');
+modalEl.classList.remove('loading');
+}
 _resetState();
 }
 async function ejecutarConfirmar() {
 if (!_state.quinielaId) return;
 if (_state.isSubmitting) return;
 _state.isSubmitting = true;
-const id      = _state.quinielaId;
-const nombre  = _state.nombre;
+const id       = _state.quinielaId;
+const nombre   = _state.nombre;
 const vendedor = _state.vendedor;
-const modalEl = document.getElementById('modalConfirmar');
+const modalEl  = document.getElementById('modalConfirmar');
 if (modalEl) modalEl.classList.add('loading');
 try {
 const response = await _safeFetch(
@@ -6153,7 +6402,7 @@ method:  'PATCH',
 headers: { 'Content-Type': 'application/json' },
 }
 );
-const result = await response.json();
+const result = await _safeJson(response);
 _cerrarModalConfirmar();
 if (result.success) {
 if (result.estado === 'espera') {
@@ -6171,10 +6420,7 @@ folio
 );
 }
 }
-_callIfFunction(cargarPendientesTabla);
-_callIfFunction(cargarJugandoTabla);
-_callIfFunction(cargarEsperaTabla);
-_callIfFunction(updateHeroStats);
+_refrescarTablas();
 } else {
 if (typeof showToast === 'function') {
 showToast(`Error: ${result.error || 'No se pudo confirmar'}`, 'error');
@@ -6196,8 +6442,8 @@ async function ejecutarRechazo() {
 if (!_state.quinielaId) return;
 if (_state.isSubmitting) return;
 _state.isSubmitting = true;
-const id     = _state.quinielaId;
-const nombre = _state.nombre;
+const id      = _state.quinielaId;
+const nombre  = _state.nombre;
 const modalEl = document.getElementById('modalRechazar');
 if (modalEl) modalEl.classList.add('loading');
 try {
@@ -6205,16 +6451,13 @@ const response = await _safeFetch(
 `${API_BASE}/api/quinielas/${id}/rechazar`,
 { method: 'PATCH' }
 );
-const result = await response.json();
+const result = await _safeJson(response);
 _cerrarModalRechazar();
 if (response.ok && result.success) {
 if (typeof showToast === 'function') {
-showToast(`"${nombre}" rechazada❌`, 'error');
+showToast(`"${nombre}" rechazada ❌`, 'error');
 }
-_callIfFunction(cargarPendientesTabla);
-_callIfFunction(cargarEsperaTabla);
-if (typeof cargarJugandoTabla === 'function') cargarJugandoTabla();
-_callIfFunction(updateHeroStats);
+_refrescarTablas();
 } else {
 if (typeof showToast === 'function') {
 showToast(`Error: ${result.error || 'No se pudo rechazar'}`, 'error');
@@ -6240,6 +6483,7 @@ return { valida: false, error: 'Nombre vacío' };
 if (!quiniela.predictions || Object.keys(quiniela.predictions).length === 0) {
 return { valida: false, error: 'Sin predicciones' };
 }
+const partidos = AppState.getPartidos();
 if (!Array.isArray(partidos) || !partidos.length) {
 return { valida: false, error: 'Partidos no disponibles' };
 }
@@ -6263,7 +6507,7 @@ const cantidadNormalizada = Number.isFinite(cantidad) && cantidad >= 0
 : 0;
 const overlay = document.createElement('div');
 overlay.id        = 'modal-cargando';
-overlay.className = 'loading-modal-overlay'; 
+overlay.className = 'loading-modal-overlay';
 const box = document.createElement('div');
 box.className = 'loading-modal-box';
 const icon = document.createElement('div');
@@ -6312,12 +6556,12 @@ cerrarModalRechazar:  _cerrarModalRechazar,
 });
 })();
 document.addEventListener('DOMContentLoaded', () => QuinielasAdmin.init(), { once: true });
-/* ── Exponer funciones de modales como globales para onclick del HTML ── */
+/*-------Esto de abajo se encarga de trabajar en nuestro archivo y se usa para exponer funciones de modales como globales para onclick del HTML-----------------------*/
 function ejecutarConfirmar()      { QuinielasAdmin.ejecutarConfirmar(); }
 function ejecutarRechazo()        { QuinielasAdmin.ejecutarRechazo(); }
 function cerrarModalConfirmar()   { QuinielasAdmin.cerrarModalConfirmar(); }
 function cerrarModalRechazar()    { QuinielasAdmin.cerrarModalRechazar(); }
-/* = Tabla para las quinielas por confirmar= */ /* = Tabla para las quinielas por confirmar= */
+/*-------Esto de abajo se encarga de trabajar en nuestro archivo y se usa para la Tabla para las quinielas por confirmarL---------------------------------------------*/
 async function cargarPendientesTabla() {
 const tbody = document.getElementById('pendientesTableBody');
 const countElement = document.getElementById('totalQuinielasCount');
@@ -6464,7 +6708,7 @@ tdAcciones.appendChild(btnRechazar);
 tr.appendChild(tdAcciones);
 return tr;
 }
-/* = Tabla para las quinielas en espera= */ /* = Tabla para las quinielas en espera= */
+/*-------Esto de abajo se encarga de trabajar en nuestro archivo y se usa para la Tabla para las quinielas en espera-------------------------------------------------*/
 async function cargarEsperaTabla() {
 const tbody = document.getElementById('esperaTableBody');
 const countElement = document.getElementById('esperaCount');
@@ -6592,7 +6836,7 @@ td.textContent = texto;
 tr.appendChild(td);
 tbody.appendChild(tr);
 }
-/* = Leer el vendedor desde el URL= */ /* = Leer el vendedor desde el URL= */
+/*-------Esto de abajo se encarga de trabajar en nuestro archivo y se usa para Leer el vendedor desde el URL-------------------------------------------------*/
 function getQueryParam(name) {
 if (!name || typeof name !== 'string') {
 if (ENV?.isDev) console.warn('⚠️ getQueryParam: name inválido:', name);
@@ -6600,18 +6844,17 @@ return null;
 }
 try {
 const params = new URLSearchParams(window.location.search);
-return params.get(name); 
+const value = params.get(name);
+return value !== null ? value.trim() : null;
 } catch (e) {
 if (ENV?.isDev) console.error('⚠️ getQueryParam: URLSearchParams falló:', e);
 return null;
 }
 }
 function getVendedorAdmin() {
-const desdeURL = getQueryParam('vendedor');
-const desdeStorage = localStorage.getItem('vendedor');
-return desdeURL ?? desdeStorage ?? '';
+return VendedorManager?.current ?? '';
 }
-/* = Tabla que trabaja en las quinielas jugando = */ /* = Tabla que trabaja en las quinielas jugando = */ /* = Tabla que trabaja en las quinielas jugando = */
+/*-------Esto de abajo se encarga de trabajar en nuestro archivo y se usa la Tabla que trabaja en las quinielas jugando-------------------------------------------------*/
 async function cargarJugandoTabla() {
 const tbody = document.getElementById('jugandoTableBody');
 const countElement = document.getElementById('jugandoCount');
@@ -6785,7 +7028,7 @@ tdPuntos.appendChild(spanPuntos);
 tr.appendChild(tdPuntos);
 return tr;
 }
-/* = Tabla que trabaja la lista oficial = */ /* = Tabla que trabaja la lista oficial = */ /* = Tabla que trabaja la lista oficial = */
+/*-------Esto de abajo se encarga de trabajar en nuestro archivo y se usa la Tabla que trabaja la lista oficial-------------------------------------------------*/
 async function cargarListaOficialTabla() {
 const tbody = document.getElementById('listaOficialTableBody');
 const countElement = document.getElementById('listaOficialCount');
@@ -6904,7 +7147,7 @@ tdPuntos.appendChild(spanPuntos);
 tr.appendChild(tdPuntos);
 return tr;
 }
-/* =Navegacion de las subpestañas como Horarios , porcentajes , 1 lugar , listas= */ /* =Navegacion de las subpestañas como Horarios , porcentajes , 1 lugar , listas= */
+/*----Esto de abajo se encarga de trabajar en nuestro archivo y se usa para la navegacion de las subpestañas como Horarios , porcentajes , 1 lugar , listas=----------*/
 function _initTabNavegacion(selectorBtns, selectorContents, handlers, signal) {
 const btns = document.querySelectorAll(selectorBtns);
 const contents = document.querySelectorAll(selectorContents);
@@ -7002,32 +7245,35 @@ controllerResultados.signal
 return { controllerAnalisis, controllerResultados };
 }
 document.addEventListener('DOMContentLoaded', initNavegacionTabs, { once: true });
-/* Aplicacion= */                               /* Aplicacion= */                                     /* Aplicacion= */                               /* Aplicacion= */
+/*----Esto de abajo se encarga de trabajar en nuestro archivo y se usa para la Aplicacion=----------*/
 const PWA = (() => {
 let _prompt = null;
-let _bannerTimer = null; 
-let _isInstalando = false; 
-function _leerStorage(key) {
-try {
-return localStorage.getItem(key);
-} catch {
-return null;
-}
-}
-function _escribirStorage(key, value) {
-try {
-localStorage.setItem(key, value);
-} catch {
-if (ENV?.isDev) console.warn('⚠️ PWA: localStorage no disponible');
-}
-}
+let _bannerTimer = null;
+let _isInstalando = false;
 function _yaEstaInstalada() {
 return window.matchMedia?.('(display-mode: standalone)').matches
 || window.navigator.standalone === true;
 }
+function _ocultarBanner() {
+if (_bannerTimer) {
+clearTimeout(_bannerTimer);
+_bannerTimer = null;
+}
+const banner = document.getElementById('pwaBanner');
+if (banner) banner.style.display = 'none';
+}
+function _persistirVendedorActual() {
+const vendedor = VendedorManager?.current;
+if (vendedor) {
+ls.set('vendedor', vendedor);
+if (ENV?.isDev) console.log('✅ PWA: vendedor persistido antes de instalar:', vendedor);
+}
+}
 function _mostrarBanner() {
 if (_yaEstaInstalada()) return;
-if (_leerStorage('pwaDismissed')) return;
+const vendedor = VendedorManager?.current;
+if (!vendedor) return;
+if (ls.get('pwaDismissed_' + vendedor)) return;
 if (_bannerTimer) {
 clearTimeout(_bannerTimer);
 _bannerTimer = null;
@@ -7045,12 +7291,8 @@ _mostrarBanner();
 });
 window.addEventListener('appinstalled', () => {
 _prompt = null;
-if (_bannerTimer) {
-clearTimeout(_bannerTimer);
-_bannerTimer = null;
-}
-const banner = document.getElementById('pwaBanner');
-if (banner) banner.style.display = 'none';
+_persistirVendedorActual();
+_ocultarBanner();
 if (typeof showToast === 'function') {
 showToast('¡App instalada! 🎉', 'success');
 }
@@ -7065,11 +7307,11 @@ navigator.serviceWorker.register('/service-worker.js')
 async function instalarPWA() {
 if (!_prompt || _isInstalando) return;
 _isInstalando = true;
+_persistirVendedorActual();
 try {
 await _prompt.prompt();
 const { outcome } = await _prompt.userChoice;
-const banner = document.getElementById('pwaBanner');
-if (banner) banner.style.display = 'none';
+_ocultarBanner();
 if (outcome === 'accepted') {
 if (typeof showToast === 'function') showToast('¡App instalada! 🎉', 'success');
 } else {
@@ -7083,9 +7325,9 @@ _isInstalando = false;
 }
 }
 function cerrarBanner() {
-const banner = document.getElementById('pwaBanner');
-if (banner) banner.style.display = 'none';
-_escribirStorage('pwaDismissed', '1');
+const vendedor = VendedorManager?.current;
+_ocultarBanner();
+ls.set('pwaDismissed_' + (vendedor || 'sin_vendedor'), '1');
 }
 return Object.freeze({ instalarPWA, cerrarBanner });
 })();

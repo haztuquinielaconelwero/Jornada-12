@@ -15,7 +15,8 @@
 --primary:#1a73e8; --primary-hover:#1557b0;
 --green:#34a853; --green-hover:#2d8e43;
 --gray-50:#f8f9fa; --gray-100:#f1f3f4; --gray-200:#e8eaed;
---gray-300:#dadce0; --gray-700:#5f6368; --gray-900:#202124;
+--gray-300:#dadce0; --gray-400:#9aa0a6; --gray-500:#80868b;
+--gray-700:#5f6368; --gray-900:#202124;
 --verde-mexicano:#00A859; --rojo-mexicano:#dc2626;
 --oro-light:#fffbeb;
 }
@@ -86,7 +87,6 @@ background:transparent; color:#bbb; border:1px solid #555; border-radius:5px;
 padding:8px 12px; font-size:13px; cursor:pointer; margin-left:auto; transition:all 0.2s;
 }
 .btn-sel-clear:hover { color:white; border-color:#aaa; }
-
 #toastContainer {
 position:fixed; bottom:24px; right:24px; z-index:10000;
 display:flex; flex-direction:column; gap:8px; pointer-events:none;
@@ -148,16 +148,32 @@ box-shadow:0 1px 3px rgba(0,0,0,0.1); margin-top:20px; flex-wrap:wrap;
 .btn-eliminar-fila:hover { background:#dc2626; color:white; border-color:#dc2626; }
 .loading-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.45); display:none; align-items:center; justify-content:center; z-index:9999; }
 .loading-overlay.show { display:flex; }
-.loading-content { background:white; padding:28px 36px; border-radius:8px; text-align:center; }
+.loading-content { background:white; padding:28px 36px; border-radius:8px; text-align:center; min-width:240px; }
 .spinner { width:36px; height:36px; border:4px solid var(--gray-200); border-top-color:var(--primary); border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 12px; }
 @keyframes spin { to { transform:rotate(360deg); } }
 #fileInput { display:none; }
 .bloqueo-banner {
 display:none; background:#dc2626; color:white;
-text-align:center; padding:6px; font-size:13px; font-weight:600;
-letter-spacing:0.5px;
+text-align:center; padding:8px 10px; font-size:13px; font-weight:600;
+letter-spacing:0.3px;
 }
 .bloqueo-banner.visible { display:block; }
+/* ── Esto de abajo trabaja con el Marcador ── */ /* ── Esto de abajo trabaja con el Marcador ── */ /* ── Esto de abajo trabaja con el Marcador ── */
+.resultado-marcador {
+display: flex; align-items: center; gap: 4px; margin: 4px 0 2px;
+}
+.marcador-input {
+width: 30px; height: 26px; border: 1px solid var(--gray-300); border-radius: 5px;
+text-align: center; font-size: 13px; font-weight: 700; color: var(--gray-900);
+background: white; outline: none;
+appearance: none;            
+transition: border-color .15s, box-shadow .15s;
+}
+.marcador-input::-webkit-inner-spin-button,
+.marcador-input::-webkit-outer-spin-button { display: none; }
+.marcador-input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(26,115,232,.18); }
+.marcador-input.ganador  { border-color: var(--verde-mexicano); background: #f0fdf4; color: var(--verde-mexicano); }
+.marcador-input.perdedor { border-color: var(--rojo-mexicano);  background: #fef2f2; color: #ef4444; }
 </style>
 </head>
 <body>
@@ -165,18 +181,17 @@ letter-spacing:0.5px;
 <div class="loading-overlay show" id="loadingOverlay">
 <div class="loading-content">
 <div class="spinner"></div>
-<div style="font-size:14px;color:#5f6368;">Cargando datos...</div>
+<div id="loadingText" style="font-size:14px;color:#5f6368;">Cargando datos...</div>
 </div>
 </div>
 <div class="bloqueo-banner" id="bloqueoBanner">
-Las nuevas quinielas van a en espera automáticamente ⏳
+Modo en espera activo — Las quinielas confirmadas por el vendedor no entrarán a la lista oficial ⏳ 
 </div>
 <div class="selection-bar" id="selectionBar">
 <span class="sel-count" id="selCount">0 seleccionadas</span>
 <button class="btn-sel-delete" onclick="eliminarSeleccionadas()">Eliminar seleccionadas 🗑️</button>
 <button class="btn-sel-clear"  onclick="limpiarSeleccion()">Cancelar ✕</button>
 </div>
-
 <div class="header">
 <div class="logo">
 <span>🏆</span>
@@ -188,7 +203,7 @@ Las nuevas quinielas van a en espera automáticamente ⏳
 <button class="btn btn-verde"   onclick="descargarPlantilla()">Plantilla 📄</button>
 <button class="btn btn-azul"    onclick="exportarExcel()">Exportar 📥</button>
 <button class="btn btn-rojo" id="btnEliminarTodas" onclick="eliminarTodasLasQuinielas()">Eliminar todas 🗑️</button>
-<button class="btn btn-bloquear" id="btnBloquear" onclick="toggleBloqueo()">Bloquear🔓</button>
+<button class="btn btn-bloquear" id="btnEspera" onclick="toggleBloqueo()">Modo en espera 🔓</button>
 <input type="file" id="fileInput" accept=".csv" onchange="importarCSV(event)">
 </div>
 </div>
@@ -230,13 +245,14 @@ const state = {
 datosOriginales: [],
 partidos:        [],
 resultados:      {},
+marcadores:      {},  
 primerPuntos:    -1,
 segundoPuntos:   -1,
 rowDataCache:    null,
 enProceso:       false,
 refreshCtrl:     null,
 bloqueado:       false,
-jornada: null 
+jornada:         null
 };
 let gridApi = null;
 function toast(msg, tipo = 'success', ms = 4500) {
@@ -249,7 +265,6 @@ container.appendChild(el);
 requestAnimationFrame(() => el.classList.add('show'));
 setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 300); }, ms);
 }
-
 function debounce(fn, delay) {
 let t;
 return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), delay); };
@@ -264,6 +279,9 @@ catch (err) { toast(err.message || 'Error inesperado', 'error'); console.error(e
 finally {
 state.enProceso = false;
 btnIds.forEach(id => { const b = document.getElementById(id); if (b) b.disabled = false; });
+const loadingText = document.getElementById('loadingText');
+if (loadingText) loadingText.textContent = 'Cargando datos...';
+mostrarLoading(false);
 }
 }
 function escHtml(str) {
@@ -271,7 +289,6 @@ return String(str ?? '')
 .replace(/&/g,'&amp;').replace(/</g,'&lt;')
 .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-
 // ─── BARRA DE SELECCIÓN ───────────────────────────────────────────────────────
 function actualizarBarraSeleccion() {
 if (!gridApi) return;
@@ -289,7 +306,7 @@ function limpiarSeleccion() {
 if (gridApi) gridApi.deselectAll();
 document.getElementById('selectionBar').classList.remove('visible');
 }
-// ─── Esto de abajo trabaja en la tabla para poder seleccionar─────────────────────────────────────────────────────────────────────
+// ─── Esto de abajo trabaja en la tabla para poder seleccionar ─────────────────
 function initGrid() {
 const gridOptions = {
 columnDefs: [],
@@ -313,7 +330,7 @@ return '';
 };
 gridApi = agGrid.createGrid(document.getElementById('myGrid'), gridOptions);
 }
-// ─── Esto de abajo trabaja en la carga de datos ───────────────────────────────────────────────────────────
+// ─── Esto de abajo trabaja en la carga de datos ───────────────────────────────
 async function cargarDatos() {
 try {
 mostrarLoading(true);
@@ -334,7 +351,8 @@ const dataL = await resL.json();
 const dataR = await resR.json();
 state.partidos        = dataP.partidos   || [];
 state.datosOriginales = dataL.quinielas  || [];
-state.resultados      = dataR.resultados || {};
+state.resultados = dataR.resultados || {};
+state.marcadores = dataR.marcadores || {};
 state.rowDataCache    = null;
 if (resBloq && resBloq.ok) {
 const dataBloq  = await resBloq.json();
@@ -356,26 +374,35 @@ document.addEventListener('DOMContentLoaded', async () => {
 initGrid();
 await cargarDatos();
 setInterval(async () => {
-if (state.enProceso) return;
+if (state.enProceso || !state.jornada) return;
 if (state.refreshCtrl) state.refreshCtrl.abort();
 state.refreshCtrl = new AbortController();
 const { signal } = state.refreshCtrl;
+const jornadaParam = encodeURIComponent(state.jornada);
 try {
 const [r1, r2] = await Promise.all([
-fetch(`${API_BASE}/api/lista-oficial`,        { signal }),
-fetch(`${API_BASE}/api/resultados-oficiales`, { signal }),
+fetch(`${API_BASE}/api/lista-oficial?jornada=${jornadaParam}`,        { signal }),
+fetch(`${API_BASE}/api/resultados-oficiales?jornada=${jornadaParam}`, { signal }),
 ]);
+if (!r1.ok || !r2.ok) return;
 const { quinielas: nuevas = []     } = await r1.json();
-const { resultados: nuevosRes = {} } = await r2.json();
+const r2json = await r2.json();
+const nuevosRes      = r2json.resultados || {};
+const nuevosMarcadores = r2json.marcadores || {};
 const sinCambios =
 nuevas.length === state.datosOriginales.length &&
-JSON.stringify(nuevosRes) === JSON.stringify(state.resultados);
+JSON.stringify(nuevosRes)        === JSON.stringify(state.resultados) &&
+JSON.stringify(nuevosMarcadores) === JSON.stringify(state.marcadores) &&
+JSON.stringify(nuevas)           === JSON.stringify(state.datosOriginales);
 if (sinCambios) return;
 state.datosOriginales = nuevas;
 state.resultados      = nuevosRes;
+state.marcadores      = nuevosMarcadores; 
 state.rowDataCache    = null;
 poblarFiltroVendedores();
 procesarDatos();
+renderTabla();
+renderResultadosInputs();
 actualizarEstadisticas();
 } catch (err) {
 if (err.name !== 'AbortError') console.warn('Auto-refresh:', err.message);
@@ -426,6 +453,7 @@ return { ...q, puntos };
 if (!state.datosOriginales.length || !hayResultados) {
 state.primerPuntos  = -1;
 state.segundoPuntos = -1;
+state.rowDataCache  = null;
 return;
 }
 state.primerPuntos  = state.datosOriginales.reduce((mx, q) => Math.max(mx, q.puntos), 0);
@@ -433,7 +461,7 @@ const puntosUnicos  = [...new Set(state.datosOriginales.map(q => q.puntos))].sor
 state.segundoPuntos = puntosUnicos.length > 1 ? puntosUnicos[1] : -1;
 state.rowDataCache  = null;
 }
-// ── Esto de abajo trabaja con los resultados oficiales y la tabla ────────────────────────────────────────────────────────────────────────────────────
+// ── Esto de abajo trabaja con los resultados oficiales y la tabla ─────────────
 function buildColumnDefs() {
 const pickCols = state.partidos.map((_, idx) => ({
 headerName: `P${idx + 1}`,
@@ -542,7 +570,8 @@ function renderResultadosInputs() {
 const container = document.getElementById('resultadosGrid');
 container.innerHTML = '';
 state.partidos.forEach((partido, idx) => {
-const cur = state.resultados[String(idx)] || '';
+const curRes = state.resultados[String(idx)] || '';
+const curMarcador = state.marcadores[String(idx)] || { local: '', visita: '' };
 const grupo = document.createElement('div');
 grupo.className = 'resultado-input-group';
 const num = document.createElement('span');
@@ -553,50 +582,93 @@ const logosWrap = document.createElement('div');
 logosWrap.className = 'resultado-logos';
 function crearLogo(src, nombreCorto) {
 const img = document.createElement('img');
-img.className  = 'resultado-logo-img';
-img.src        = src;
-img.alt        = nombreCorto;
-img.title      = nombreCorto;
-img.width      = 34;
-img.height     = 34;
-img.loading    = 'lazy';
-img.onerror    = function() {
+img.className = 'resultado-logo-img';
+img.src = src; img.alt = nombreCorto; img.title = nombreCorto;
+img.width = 34; img.height = 34; img.loading = 'lazy';
+img.onerror = function () {
 const fb = document.createElement('span');
-fb.className   = 'resultado-logo-fb';
+fb.className = 'resultado-logo-fb';
 fb.textContent = nombreCorto.substring(0, 3).toUpperCase();
-fb.title       = nombreCorto;
+fb.title = nombreCorto;
 this.replaceWith(fb);
 };
 return img;
 }
 const vsSpan = document.createElement('span');
-vsSpan.className   = 'resultado-vs';
+vsSpan.className = 'resultado-vs';
 vsSpan.textContent = 'vs';
-logosWrap.appendChild(crearLogo(partido.localLogo    || '', partido.local       || 'L'));
+logosWrap.appendChild(crearLogo(partido.localLogo || '', partido.local || 'L'));
 logosWrap.appendChild(vsSpan);
-logosWrap.appendChild(crearLogo(partido.visitanteLogo || '', partido.visitante  || 'V'));
+logosWrap.appendChild(crearLogo(partido.visitanteLogo || '', partido.visitante || 'V'));
 grupo.appendChild(logosWrap);
-// ── Botones L / E / V ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+const marcadorWrap = document.createElement('div');
+marcadorWrap.className = 'resultado-marcador';
+const inputLocal = document.createElement('input');
+inputLocal.type = 'number'; inputLocal.min = '0'; inputLocal.max = '20';
+inputLocal.className = 'marcador-input'; inputLocal.placeholder = '-';
+inputLocal.value = curMarcador.local ?? '';
+inputLocal.dataset.idx = idx; inputLocal.dataset.rol = 'local';
+inputLocal.setAttribute('aria-label', `Goles local P${idx + 1}`);
+const guion = document.createElement('span');
+guion.className = 'marcador-guion';
+guion.textContent = ':';
+guion.style.cssText = 'font-size:13px;font-weight:800;color:var(--gray-400);';
+const inputVisita = document.createElement('input');
+inputVisita.type = 'number'; inputVisita.min = '0'; inputVisita.max = '20';
+inputVisita.className = 'marcador-input'; inputVisita.placeholder = '-';
+inputVisita.value = curMarcador.visita ?? '';
+inputVisita.dataset.idx = idx; inputVisita.dataset.rol = 'visita';
+inputVisita.setAttribute('aria-label', `Goles visitante P${idx + 1}`);
+marcadorWrap.appendChild(inputLocal);
+marcadorWrap.appendChild(guion);
+marcadorWrap.appendChild(inputVisita);
+grupo.appendChild(marcadorWrap);
 const btns = document.createElement('div');
 btns.className = 'resultado-buttons';
 btns.dataset.partido = idx;
 ['L', 'E', 'V'].forEach(val => {
 const btn = document.createElement('button');
-btn.className = 'resultado-btn' + (cur === val ? ' active' : '');
+btn.className = 'resultado-btn' + (curRes === val ? ' active' : '');
 btn.dataset.val = val;
 btn.textContent = val;
 btn.addEventListener('click', () => {
 const estaActivo = btn.classList.contains('active');
 btns.querySelectorAll('.resultado-btn').forEach(b => b.classList.remove('active'));
 if (!estaActivo) btn.classList.add('active');
+actualizarResaltado(inputLocal, inputVisita, btns);
 });
 btns.appendChild(btn);
 });
 grupo.appendChild(btns);
+function actualizarResaltado(inpL, inpV, botonesDiv) {
+const activo = botonesDiv.querySelector('.resultado-btn.active')?.dataset.val;
+inpL.classList.remove('ganador', 'perdedor');
+inpV.classList.remove('ganador', 'perdedor');
+if (activo === 'L') { inpL.classList.add('ganador'); inpV.classList.add('perdedor'); }
+if (activo === 'V') { inpL.classList.add('perdedor'); inpV.classList.add('ganador'); }
+}
+function onMarcadorChange() {
+const gl = parseInt(inputLocal.value, 10);
+const gv = parseInt(inputVisita.value, 10);
+state.marcadores[String(idx)] = { local: inputLocal.value, visita: inputVisita.value };
+if (isNaN(gl) || isNaN(gv) || inputLocal.value === '' || inputVisita.value === '') {
+inputLocal.classList.remove('ganador', 'perdedor');
+inputVisita.classList.remove('ganador', 'perdedor');
+return;
+}
+const resultado = gl > gv ? 'L' : gl === gv ? 'E' : 'V';
+btns.querySelectorAll('.resultado-btn').forEach(b => {
+b.classList.toggle('active', b.dataset.val === resultado);
+});
+actualizarResaltado(inputLocal, inputVisita, btns);
+}
+inputLocal.addEventListener('input', onMarcadorChange);
+inputVisita.addEventListener('input', onMarcadorChange);
+if (curRes) actualizarResaltado(inputLocal, inputVisita, btns);
 container.appendChild(grupo);
 });
 }
-// ───Esto de abajo trabaja con la funcion de guardar los resultados───────────────────────────────────────────────────────────────────────────────────────────
+// ─── Esto de abajo trabaja con la función de guardar los resultados ───────────
 async function guardarResultados() {
 await conGuard(async () => {
 const nuevos = {};
@@ -606,10 +678,12 @@ const activo = group.querySelector('.resultado-btn.active');
 if (activo) nuevos[idx] = activo.dataset.val;
 });
 mostrarLoading(true);
+const body = { resultados: nuevos, marcadores: state.marcadores };
+if (state.jornada) body.jornada = state.jornada;
 const res = await fetch(`${API_BASE}/api/guardar-resultados`, {
 method:  'POST',
 headers: getAuthHeaders(),
-body:    JSON.stringify({ resultados: nuevos }),
+body:    JSON.stringify(body),
 });
 const data = await res.json();
 if (!res.ok || !data.success) throw new Error(data.mensaje || 'Error al guardar');
@@ -621,10 +695,10 @@ async function limpiarResultados() {
 if (!confirm('⚠️ ¿Limpiar todos los resultados? Los puntos se reiniciarán a 0.')) return;
 await conGuard(async () => {
 mostrarLoading(true);
-const res = await fetch(`${API_BASE}/api/resultados-oficiales`, {
-method:  'DELETE',
-headers: getAuthHeaders(),
-});
+const url = state.jornada
+? `${API_BASE}/api/resultados-oficiales?jornada=${encodeURIComponent(state.jornada)}`
+: `${API_BASE}/api/resultados-oficiales`;
+const res = await fetch(url, { method:'DELETE', headers: getAuthHeaders() });
 const data = await res.json();
 if (!res.ok || !data.success) throw new Error(data.mensaje || 'Error al limpiar');
 state.resultados   = {};
@@ -633,7 +707,7 @@ await cargarDatos();
 toast('Resultados limpiados correctamente', 'success');
 }, ['btnLimpiar']);
 }
-// ───Esto de abajo trabaja con la eliminacion de la quiniela individual───────────────────────────────────────────────────────────────────────────────────────────
+// ─── Esto de abajo trabaja con la eliminación de la quiniela individual ───────
 async function eliminarQuiniela(folio) {
 if (!confirm(`Eliminar la quiniela con folio ${folio}?`)) return;
 const quiniela = state.datosOriginales.find(q => String(q.folio) === String(folio));
@@ -652,9 +726,8 @@ renderTabla();
 actualizarEstadisticas();
 toast(`Folio ${folio} eliminado`, 'success');
 });
-mostrarLoading(false);
 }
-// ───Esto de abajo trabaja con la eliminacion de varias quinielas───────────────────────────────────────────────────────────────────────────────────────────
+// ─── Esto de abajo trabaja con la eliminación de varias quinielas ─────────────
 async function eliminarSeleccionadas() {
 if (!gridApi) return;
 const seleccionadas = gridApi.getSelectedRows().filter(r => r.folio);
@@ -686,7 +759,7 @@ toast(`${ok} eliminadas, ${fallos} con error. Ver consola.`, 'warn');
 }
 }, []);
 }
-// ───Esto de abajo trabaja con la eliminacion de todas las quinielas───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+// ─── Esto de abajo trabaja con la eliminación de todas las quinielas ──────────
 async function eliminarTodasLasQuinielas() {
 const LOTE = 50;
 const PAUSA_MS = 300;
@@ -726,16 +799,17 @@ toast(`${okTotal} eliminadas, ${fallosTotal} con error. Intenta de nuevo.`, 'war
 }
 }, ['btnEliminarTodas']);
 }
-// ───Esto de abajo trabaja con el modo espera─────────────────────────────────────────────────────────────────────────────────────────────────────────
+// ─── Esto de abajo trabaja con el modo espera ─────────────────────────────────
 function actualizarUIBloqueo() {
-const btn    = document.getElementById('btnBloquear');
+const btn    = document.getElementById('btnEspera');
 const banner = document.getElementById('bloqueoBanner');
+if (!btn || !banner) return;
 if (state.bloqueado) {
-btn.textContent = 'Modo en espera⏳';
+btn.textContent = 'Modo en espera ⏳';
 btn.classList.add('bloqueado');
 banner.classList.add('visible');
 } else {
-btn.textContent = 'Bloquear🔓';
+btn.textContent = 'Modo en espera 🔓';
 btn.classList.remove('bloqueado');
 banner.classList.remove('visible');
 }
@@ -743,7 +817,11 @@ banner.classList.remove('visible');
 async function toggleBloqueo() {
 const nuevoBloqueado = !state.bloqueado;
 const accion = nuevoBloqueado ? 'Activar modo en espera' : 'Desactivar modo en espera';
-if (!confirm(`¿${accion}? ${nuevoBloqueado ? 'Las nuevas quinielas irán a en espera.' : 'Las nuevas quinielas volverán a pendiente.'}`)) return;
+// FIX 7: Mensaje correcto — el registro siempre es pendiente
+if (!confirm(`¿${accion}? ${nuevoBloqueado
+? 'Las quinielas confirmadas por el vendedor irán en espera y NO entrarán a la lista oficial.'
+: 'Las quinielas confirmadas por el vendedor volverán a entrar normal a la lista oficial.'
+}`)) return;
 await conGuard(async () => {
 const res = await fetch(`${API_BASE}/api/bloquear-registros`, {
 method:  'POST',
@@ -751,16 +829,16 @@ headers: getAuthHeaders(),
 body:    JSON.stringify({ bloqueado: nuevoBloqueado, modo_espera: nuevoBloqueado }),
 });
 const data = await res.json();
-if (!res.ok || !data.success) throw new Error(data.mensaje || 'Error al cambiar bloqueo');
+if (!res.ok || !data.success) throw new Error(data.mensaje || 'Error al cambiar modo espera');
 state.bloqueado = nuevoBloqueado;
 actualizarUIBloqueo();
 toast(
-nuevoBloqueado ? 'Modo en espera activado⏳' : 'Modo en espera desactivado🔓',
+nuevoBloqueado ? 'Modo en espera activado ⏳' : 'Modo en espera desactivado 🔓',
 nuevoBloqueado ? 'warn' : 'success'
 );
-}, ['btnBloquear']);
+}, ['btnEspera']);
 }
-// ───Esto de abajo trabaja con la importacion y exportacion del archivo─────────────────────────────────────────────────────────────────────────────────────────
+// ─── Esto de abajo trabaja con la importación y exportación del archivo ───────
 async function recargarDatos() { await cargarDatos(); }
 async function importarCSV(event) {
 const file = event.target.files[0];
@@ -768,6 +846,7 @@ if (!file) return;
 const formData = new FormData();
 formData.append('file',   file);
 formData.append('estado', 'jugando');
+if (state.jornada) formData.append('jornada', state.jornada);
 mostrarLoading(true);
 try {
 const res  = await fetch(`${API_BASE}/api/importar-quinielas-csv`, {
@@ -806,7 +885,7 @@ descargarCSVBlob(`${header}\n451,Juan Pérez,Checo,${picks1}\n452,María López,
 function exportarExcel() {
 const numPartidos = state.partidos.length || 9;
 const pickHeaders = Array.from({ length: numPartidos }, (_, i) => `P${i + 1}`);
-const headers     = ['Folio', 'Nombre', 'Vendedor', ...pickHeaders, 'Pts'];
+const headers = ['ID', 'Folio', 'Nombre', 'Vendedor', ...pickHeaders];
 const csvLines    = [headers.join(',')];
 const porFolio    = {};
 state.datosOriginales.forEach(q => {
@@ -818,14 +897,13 @@ const q = porFolio[i];
 if (q) {
 const nombre   = (q.nombre   ?? '').replace(/"/g, '""');
 const vendedor = (q.vendedor ?? '').replace(/"/g, '""');
-const puntos   = q.puntos ?? 0;
 const picks    = Array.from({ length: numPartidos }, (_, idx) => {
 const v = Array.isArray(q.picks) ? q.picks[idx] : undefined;
 return (v && v !== '-') ? v : '';
 });
-csvLines.push([i, `"${nombre}"`, `"${vendedor}"`, ...picks, puntos].join(','));
+csvLines.push([q.id, q.folio ?? i, `"${nombre}"`, `"${vendedor}"`, ...picks].join(','));
 } else {
-csvLines.push([i, '', '', ...Array(numPartidos).fill(''), ''].join(','));
+csvLines.push([i, '', '', '', ...Array(numPartidos).fill('')].join(','));
 }
 }
 descargarCSVBlob(
@@ -844,7 +922,7 @@ a.click();
 document.body.removeChild(a);
 setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-// ───Esto de abajo trabaja con las estadisticas───────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+// ─── Esto de abajo trabaja con las estadísticas ───────────────────────────────
 function actualizarEstadisticas() {
 const { datosOriginales: datos, primerPuntos: p1, segundoPuntos: p2 } = state;
 if (!datos.length) {
@@ -861,7 +939,7 @@ document.getElementById('firstStat').textContent      = c1;
 document.getElementById('secondStat').textContent     = c2;
 document.getElementById('vendedoresStat').textContent = cv;
 }
-// ─── Esto de abajo trabaja en el loading de la pagina con el error──────────────────────────────────────────────────────────────────────────────────────────────
+// ─── Esto de abajo trabaja en el loading de la página con el error ────────────
 function mostrarLoading(show) {
 document.getElementById('loadingOverlay')?.classList.toggle('show', show);
 }
