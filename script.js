@@ -5284,11 +5284,8 @@ th.textContent = '';
 th.appendChild(_buildSimHeaderContent(partido));
 });
 }
-async function _loadInitialData() {
-await Promise.all([
-cargarPartidos(),
-cargarJornadaActual(),
-]);
+async function loadInitialData() {
+await Promise.all([cargarPartidos(), cargarJornadaActual()])
 }
 function _renderInitialUI() {
 const renders = [
