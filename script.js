@@ -2944,7 +2944,7 @@ const container = document.getElementById('matchesHorarios');
 if (!container) return;
 let partidos = AppState.getPartidos();
 if (partidos.length === 0) {
-container.innerHTML = '<p class="empty-state-msg" style="padding:1rem;text-align:center">Cargando partidos...</p>';
+container.innerHTML = '<p class="empty-state-msg" style="padding:1rem;text-align:center;opacity:0.6;">⏳ Cargando partidos...</p>';
 await cargarPartidos(2, 8000, false);
 partidos = AppState.getPartidos();
 }
