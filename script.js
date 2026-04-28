@@ -5408,7 +5408,7 @@ destroy();
 _pageController = new AbortController();
 const { signal } = _pageController;
 try {
-await _loadInitialData();
+await loadInitialData();
 await _loadInitialPorcentajes();
 _renderInitialUI();
 _initModules(signal);
