@@ -27,7 +27,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, Field, field_validator, ConfigDict, model_validator
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import httpx
 
 load_dotenv(override=False)
@@ -164,121 +164,238 @@ def init_db() -> None:
 
     logger.info("Base de datos PostgreSQL inicializada correctamente")
 
-# ── Mapeo nombre BD → nombre TheSportsDB ────────────────────────────
-NOMBRE_A_SPORTSDB: dict[str, str] = {
-    "San Luis":  "Atletico San Luis",
-    "Pumas":     "Pumas UNAM",
-    "Mazatlán":  "Mazatlan FC",
-    "Querétaro": "Queretaro FC",
-    "Necaxa":    "Necaxa",
-    "Tigres":    "Tigres UANL",
-    "Cruz Azul": "Cruz Azul",
-    "Tijuana":   "Club Tijuana",
-    "Chivas":    "Guadalajara",
-    "Puebla":    "Puebla FC",
-    "Monterrey": "Monterrey",
-    "Pachuca":   "Pachuca",
-    "León":      "Leon",
-    "Juárez":    "FC Juarez",
-    "América":   "America",
-    "Toluca":    "Toluca",
-    "Santos":    "Santos Laguna",
-    "Atlas":     "Atlas FC",
+# ── IDs de ligas en TheSportsDB ───────────────────────────────────────
+LIGAS_SPORTSDB: dict[str, str] = {
+    "liga_mx":    "4403",
+    "premier":    "4328",
+    "la_liga":    "4335",
+    "bundesliga": "4331",
+    "serie_a":    "4332",
+    "ligue_1":    "4334",
+    "champions":  "4480",
 }
-SPORTSDB_LIGA_MX = "4403"
+NOMBRE_A_SPORTSDB: dict[str, tuple[str, str]] = {
 
+    # ── Liga MX ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    "San Luis":    ("Atletico San Luis",  "4403"),
+    "Pumas":       ("Pumas UNAM",         "4403"),
+    "Mazatlán":    ("Mazatlan FC",        "4403"),
+    "Querétaro":   ("Queretaro FC",       "4403"),
+    "Necaxa":      ("Necaxa",             "4403"),
+    "Tigres":      ("Tigres UANL",        "4403"),
+    "Cruz Azul":   ("Cruz Azul",          "4403"),
+    "Tijuana":     ("Club Tijuana",       "4403"),
+    "Chivas":      ("Guadalajara",        "4403"),
+    "Puebla":      ("Puebla FC",          "4403"),
+    "Monterrey":   ("Monterrey",          "4403"),
+    "Pachuca":     ("Pachuca",            "4403"),
+    "León":        ("Leon",               "4403"),
+    "Juárez":      ("FC Juarez",          "4403"),
+    "América":     ("America",            "4403"),
+    "Toluca":      ("Toluca",             "4403"),
+    "Santos":      ("Santos Laguna",      "4403"),
+    "Atlas":       ("Atlas FC",           "4403"),
+
+    # ── Premier League ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    "Man Utd":     ("Manchester United",  "4328"),
+    "Liverpool":   ("Liverpool",          "4328"),
+    "Aston Villa": ("Aston Villa",        "4328"),
+    "Tottenham":   ("Tottenham Hotspur",  "4328"),
+    "Chelsea":     ("Chelsea",            "4328"),
+    "Everton":     ("Everton",            "4328"),
+    "Man City":    ("Manchester City",    "4328"),
+    "Forest":      ("Nottingham Forest",  "4328"),
+    "Arsenal":     ("Arsenal",            "4328"),
+    "Brighton":    ("Brighton",           "4328"),
+    "Newcastle":   ("Newcastle United",   "4328"),
+    "West Ham":    ("West Ham United",    "4328"),
+    "Wolves":      ("Wolverhampton",      "4328"),
+    "Fulham":      ("Fulham",             "4328"),
+
+    # ── La Liga ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    "Real M.":     ("Real Madrid",        "4335"),
+    "Espanyol":    ("Espanyol",           "4335"),
+    "Barcelona":   ("Barcelona",          "4335"),
+    "Atlético":    ("Atletico Madrid",    "4335"),
+    "Villarreal":  ("Villarreal",         "4335"),
+    "Sevilla":     ("Sevilla",            "4335"),
+    "Betis":       ("Real Betis",         "4335"),
+    "Valencia":    ("Valencia",           "4335"),
+    "Sociedad":    ("Real Sociedad",      "4335"),
+    "Bilbao":      ("Athletic Club",      "4335"),
+
+    # ── Bundesliga ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    "Bayern":      ("Bayern Munich",      "4331"),
+    "Dortmund":    ("Borussia Dortmund",  "4331"),
+    "Leverkusen":  ("Bayer Leverkusen",   "4331"),
+    "Leipzig":     ("RB Leipzig",         "4331"),
+    "Frankfurt":   ("Eintracht Frankfurt","4331"),
+
+    # ── Serie A ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    "Juventus":    ("Juventus",           "4332"),
+    "Inter":       ("Inter Milan",        "4332"),
+    "Milan":       ("AC Milan",           "4332"),
+    "Napoli":      ("Napoli",             "4332"),
+    "Roma":        ("AS Roma",            "4332"),
+    "Lazio":       ("Lazio",              "4332"),
+
+    # ── Ligue 1 ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    "PSG":         ("Paris Saint-Germain","4334"),
+    "Marsella":    ("Marseille",          "4334"),
+    "Monaco":      ("Monaco",             "4334"),
+}
 async def auto_sync_loop() -> None:
-    """Consulta TheSportsDB cada 10 min tras el fin de jornada y llena marcadores."""
-    await asyncio.sleep(15)   # Espera a que la app arranque
-    logger.info("auto_sync_loop iniciado")
+    """
+    Consulta TheSportsDB cada 10 min tras el fin de jornada.
+    Soporta múltiples ligas (Liga MX, Premier, La Liga, etc.)
+    usando eventsday.php por fecha + liga_id.
+    """
+    await asyncio.sleep(15)
+    logger.info("auto_sync_loop v2 (multi-liga) iniciado")
 
     while True:
         try:
-            now = datetime.now(timezone.utc)
-            fin_jornada = JORNADA_CONFIG["findt"]
+            now          = datetime.now(timezone.utc)
+            fin_jornada  = JORNADA_CONFIG["findt"]
+            inicio_jornada: datetime = JORNADA_CONFIG.get(
+                "iniciodt", fin_jornada - timedelta(days=8)
+            )
 
-            # Aún no terminó la jornada → esperar
             if now < fin_jornada:
                 secs = min((fin_jornada - now).total_seconds() + 120, 600)
                 await asyncio.sleep(secs)
                 continue
 
-            # Ya terminó → ¿faltan resultados?
             resultados, _ = get_resultados_db(JORNADA_ACTUAL)
             if all(r is not None for r in resultados):
-                await asyncio.sleep(3600)  # Todo completo, revisar cada hora
+                await asyncio.sleep(3600)
                 continue
 
-            # Construir lookup local→partido_id
-            local_lookup: dict[str, int] = {}
-            for p in PARTIDOS:
-                sdb_nombre = NOMBRE_A_SPORTSDB.get(p["local"], p["local"])
-                local_lookup[sdb_nombre.lower()] = p["id"]
+            local_lookup: dict[str, int]        = {}   
+            liga_a_ids:   dict[str, list[int]]  = {} 
 
-            jornada_num = JORNADA_CONFIG["numero"]
-            season = "2025-2026"
-            url = (
-                f"https://www.thesportsdb.com/api/v1/json/3/eventsround.php"
-                f"?id={SPORTSDB_LIGA_MX}&r={jornada_num}&s={season}"
+            for p in PARTIDOS:
+                entry = NOMBRE_A_SPORTSDB.get(p["local"])
+                if entry:
+                    sdb_nombre, liga_id = entry
+                    local_lookup[sdb_nombre.lower()] = p["id"]
+                    liga_a_ids.setdefault(liga_id, []).append(p["id"])
+                else:
+                    # Fallback: usar el nombre tal cual en minúsculas
+                    local_lookup[p["local"].lower()] = p["id"]
+                    logger.warning(
+                        "auto_sync: '%s' no está en NOMBRE_A_SPORTSDB — usando nombre directo",
+                        p["local"],
+                    )
+
+            fechas: list[str] = []
+            d = inicio_jornada.date()
+            while d <= fin_jornada.date():
+                fechas.append(d.strftime("%Y-%m-%d"))
+                d += timedelta(days=1)
+
+            ligas_usadas = list(liga_a_ids.keys())
+            actualizados = 0
+
+            logger.info(
+                "auto_sync: buscando en %d liga(s) × %d fecha(s)",
+                len(ligas_usadas), len(fechas),
             )
 
             async with httpx.AsyncClient(timeout=10) as client:
-                resp = await client.get(url)
-                if resp.status_code != 200:
-                    logger.warning("TheSportsDB devolvió %s", resp.status_code)
-                    await asyncio.sleep(600)
-                    continue
-                data = resp.json()
 
-            events = data.get("events") or []
-            actualizados = 0
+                for liga_id in ligas_usadas:
+                    for fecha_str in fechas:
 
-            for ev in events:
-                home = (ev.get("strHomeTeam") or "").lower()
-                score_h = ev.get("intHomeScore")
-                score_a = ev.get("intAwayScore")
+                        url = (
+                            f"https://www.thesportsdb.com/api/v1/json/3/"
+                            f"eventsday.php?d={fecha_str}&l={liga_id}"
+                        )
 
-                if score_h is None or score_a is None:
-                    continue  # Partido aún sin resultado
-
-                pid = local_lookup.get(home)
-                if pid is None:
-                    logger.warning("auto_sync: equipo no mapeado '%s'", home)
-                    continue
-
-                gh, ga = int(score_h), int(score_a)
-                resultado = "L" if gh > ga else ("E" if gh == ga else "V")
-
-                try:
-                    with get_db() as conn:
-                        with conn.cursor() as cur:
-                            cur.execute(
-                                """
-                                INSERT INTO resultados
-                                    (partido_id, jornada, resultado, marcador_local, marcador_visita)
-                                VALUES (%s, %s, %s, %s, %s)
-                                ON CONFLICT (partido_id, jornada) DO UPDATE SET
-                                    resultado        = EXCLUDED.resultado,
-                                    marcador_local   = EXCLUDED.marcador_local,
-                                    marcador_visita  = EXCLUDED.marcador_visita,
-                                    fecha_actualizacion = NOW()
-                                """,
-                                (pid, JORNADA_ACTUAL, resultado, gh, ga),
+                        try:
+                            resp = await client.get(url)
+                        except Exception as e:
+                            logger.warning(
+                                "auto_sync: red error liga=%s fecha=%s — %s",
+                                liga_id, fecha_str, e,
                             )
-                    actualizados += 1
-                except Exception as e:
-                    logger.error("auto_sync DB error partido %s: %s", pid, e)
+                            await asyncio.sleep(2)
+                            continue
+
+                        if resp.status_code != 200:
+                            logger.warning(
+                                "auto_sync: HTTP %s liga=%s fecha=%s",
+                                resp.status_code, liga_id, fecha_str,
+                            )
+                            continue
+
+                        try:
+                            data = resp.json()
+                        except Exception:
+                            logger.warning(
+                                "auto_sync: JSON inválido liga=%s fecha=%s",
+                                liga_id, fecha_str,
+                            )
+                            continue
+
+                        events = data.get("events") or []
+
+                        for ev in events:
+                            home    = (ev.get("strHomeTeam") or "").lower()
+                            score_h = ev.get("intHomeScore")
+                            score_a = ev.get("intAwayScore")
+
+                            if score_h is None or score_a is None:
+                                continue
+
+                            pid = local_lookup.get(home)
+                            if pid is None:
+                                continue
+
+                            gh, ga    = int(score_h), int(score_a)
+                            resultado = "L" if gh > ga else ("E" if gh == ga else "V")
+
+                            try:
+                                with get_db() as conn:
+                                    with conn.cursor() as cur:
+                                        cur.execute(
+                                            """
+                                            INSERT INTO resultados
+                                                (partido_id, jornada, resultado,
+                                                 marcador_local, marcador_visita)
+                                            VALUES (%s, %s, %s, %s, %s)
+                                            ON CONFLICT (partido_id, jornada) DO UPDATE SET
+                                                resultado           = EXCLUDED.resultado,
+                                                marcador_local      = EXCLUDED.marcador_local,
+                                                marcador_visita     = EXCLUDED.marcador_visita,
+                                                fecha_actualizacion = NOW()
+                                            """,
+                                            (pid, JORNADA_ACTUAL, resultado, gh, ga),
+                                        )
+                                actualizados += 1
+                                logger.info(
+                                    "auto_sync ✔ partido_id=%s  %s-%s  res=%s  (%s)",
+                                    pid, gh, ga, resultado, fecha_str,
+                                )
+                            except Exception as e:
+                                logger.error(
+                                    "auto_sync: DB error partido_id=%s — %s", pid, e
+                                )
+
+                        await asyncio.sleep(0.5)
 
             if actualizados:
-                logger.info("auto_sync: %s partidos actualizados", actualizados)
+                logger.info("auto_sync: %s partido(s) actualizados en esta pasada", actualizados)
+            else:
+                logger.info("auto_sync: ningún resultado nuevo encontrado")
 
         except asyncio.CancelledError:
             logger.info("auto_sync_loop detenido")
             return
         except Exception as e:
-            logger.error("auto_sync_loop error inesperado: %s", e)
+            logger.error("auto_sync_loop: error inesperado — %s", e)
 
-        await asyncio.sleep(600)   # Revisar cada 10 minutos
+        await asyncio.sleep(600)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -287,9 +404,9 @@ async def lifespan(app: FastAPI):
         init_db()
     except Exception as e:
         raise RuntimeError(f"❌ No se pudo conectar a la BD: {e}") from e
-    sync_task = asyncio.create_task(auto_sync_loop())   # ← Cambio E
+    sync_task = asyncio.create_task(auto_sync_loop())
     yield
-    sync_task.cancel()                                  # ← Cambio E
+    sync_task.cancel()
     try:
         await sync_task
     except asyncio.CancelledError:
@@ -1264,6 +1381,52 @@ async def eliminar_quiniela(quiniela_id: int):
     logger.info("Quiniela eliminada: ID %s", quiniela_id)
     return {"success": True, "mensaje": f"Quiniela {quiniela_id} eliminada correctamente"}
 
+class ActualizarQuinielaInput(BaseModel):
+    estado: Optional[str] = None
+    folio:  Optional[str] = None
+
+    @field_validator('estado')
+    @classmethod
+    def validar_estado(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and v not in ESTADOS_VALIDOS:
+            raise ValueError(f"Estado inválido. Válidos: {sorted(ESTADOS_VALIDOS)}")
+        return v
+
+
+@app.patch("/api/quinielas/{quinielaid}")
+async def actualizar_quiniela(quinielaid: int, body: ActualizarQuinielaInput):
+    if body.estado is None and body.folio is None:
+        raise HTTPException(400, detail="Debes enviar al menos 'estado' o 'folio'")
+    try:
+        with get_db() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SET LOCAL lock_timeout = '3s'")
+                cur.execute(
+                    "SELECT id, estado FROM quinielas WHERE id = %s FOR UPDATE",
+                    (quinielaid,)
+                )
+                row = cur.fetchone()
+                if not row:
+                    raise HTTPException(404, detail=f"Quiniela {quinielaid} no encontrada")
+                campos, valores = [], []
+                if body.estado is not None:
+                    campos.append("estado = %s")
+                    valores.append(body.estado)
+                if body.folio is not None:
+                    campos.append("folio = %s")
+                    valores.append(body.folio)
+                valores.append(quinielaid)
+                cur.execute(
+                    f"UPDATE quinielas SET {', '.join(campos)} WHERE id = %s",
+                    valores
+                )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Error actualizando quiniela %s: %s", quinielaid, e)
+        raise HTTPException(500, detail="Error interno al actualizar la quiniela")
+    logger.info("Quiniela %s actualizada → estado=%s folio=%s", quinielaid, body.estado, body.folio)
+    return {"success": True, "id": quinielaid, "estado": body.estado, "folio": body.folio}
 # ║     ⚽ Esto de abajo trabaja con la confirmacion y en rechazar las quinielas ⚽     ║
 _ESTADOS_CONFIRMABLES = {ESTADO_PENDIENTE, ESTADO_ESPERA}
 _ESTADOS_RECHAZABLES  = {ESTADO_PENDIENTE, ESTADO_ESPERA}
@@ -1759,7 +1922,6 @@ async def get_lista():
 _MAX_CSV_BYTES = 5 * 1024 * 1024
 _LOTE_COMMIT   = 50
 
-
 @app.post("/api/importar-quinielas-csv")
 async def importar_quinielas_csv(
     file: UploadFile = File(...),
@@ -1783,7 +1945,6 @@ async def importar_quinielas_csv(
 
     reader = csv.DictReader(io.StringIO(decoded))
 
-    # ID, Folio y Estado son opcionales — ID permite reimportar con el mismo PK
     columnas_requeridas = {"Nombre", "Vendedor"} | {f"P{i}" for i in range(1, NUM_PARTIDOS + 1)}
     if reader.fieldnames:
         columnas_csv = {c.strip() for c in reader.fieldnames if c}
@@ -1805,7 +1966,6 @@ async def importar_quinielas_csv(
                 filas_en_lote = 0
                 for row_num, row in enumerate(reader, start=2):
                     try:
-                        # ── Leer campos base ──────────────────────────────
                         folio      = row.get("Folio",    "").strip() or None
                         nombre     = row.get("Nombre",   "").strip()
                         vendedor   = row.get("Vendedor", "").strip()
@@ -1839,7 +1999,6 @@ async def importar_quinielas_csv(
                             _errores.append(f"Fila {row_num}: Vendedor '{vendedor}' no reconocido")
                             continue
 
-                        # ── Parsear picks (acepta simples y dobles L/E) ───
                         picks: list = []
                         picks_validos = True
                         for i in range(1, NUM_PARTIDOS + 1):
@@ -1856,7 +2015,6 @@ async def importar_quinielas_csv(
 
                         predictions = {str(i): [pick] for i, pick in enumerate(picks)}
 
-                        # ── INSERT respetando ID si viene en el CSV ───────
                         cur.execute("SAVEPOINT fila_import")
                         try:
                             if id_csv:
@@ -1922,10 +2080,12 @@ async def importar_quinielas_csv(
                         _errores.append(f"Fila {row_num}: Error inesperado — {e}")
                         continue
 
-                # ── Sincronizar secuencia para nuevas quinielas ───────────
-                cur.execute(
-                    "SELECT setval('quinielas_id_seq', COALESCE(MAX(id), 1)) FROM quinielas"
-                )
+                cur.execute("""
+    SELECT setval('quinielas_id_seq',
+                  COALESCE(MAX(id), 1),
+                  MAX(id) IS NOT NULL)
+    FROM quinielas
+""")
                 conn.commit()
         return _importadas, _actualizadas, _errores
 
@@ -2021,6 +2181,7 @@ async def eliminar_todas_las_quinielas(
                     (jornada,),
                 )
                 eliminadas = cur.rowcount
+                cur.execute("ALTER SEQUENCE quinielas_id_seq RESTART WITH 1")
         return eliminadas, resultados_borrados, snapshot
 
     try:

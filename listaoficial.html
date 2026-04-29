@@ -817,7 +817,6 @@ banner.classList.remove('visible');
 async function toggleBloqueo() {
 const nuevoBloqueado = !state.bloqueado;
 const accion = nuevoBloqueado ? 'Activar modo en espera' : 'Desactivar modo en espera';
-// FIX 7: Mensaje correcto — el registro siempre es pendiente
 if (!confirm(`¿${accion}? ${nuevoBloqueado
 ? 'Las quinielas confirmadas por el vendedor irán en espera y NO entrarán a la lista oficial.'
 : 'Las quinielas confirmadas por el vendedor volverán a entrar normal a la lista oficial.'
@@ -876,35 +875,37 @@ event.target.value = '';
 }
 }
 function descargarPlantilla() {
-const cols   = state.partidos.length || 9;
-const header = 'Folio,Nombre,Vendedor,' + Array.from({ length: cols }, (_, i) => `P${i+1}`).join(',');
+const cols = state.partidos.length || 9;
+const pickHeaders = Array.from({ length: cols }, (_, i) => `P${i + 1}`);
 const picks1 = Array.from({ length: cols }, (_, i) => ['L','E','V'][i % 3]).join(',');
 const picks2 = Array.from({ length: cols }, (_, i) => ['V','V','E','L'][i % 4]).join(',');
-descargarCSVBlob(`${header}\n451,Juan Pérez,Checo,${picks1}\n452,María López,Checo,${picks2}\n`, 'plantilla-quiniela.csv');
+descargarCSVBlob(
+`Folio,Nombre,Vendedor,${pickHeaders.join(',')},ID\n` +
+`1,Juan Pérez,Checo,${picks1},1\n` +
+`2,María López,Checo,${picks2},2`,
+'plantilla-quiniela.csv'
+);
 }
 function exportarExcel() {
 const numPartidos = state.partidos.length || 9;
 const pickHeaders = Array.from({ length: numPartidos }, (_, i) => `P${i + 1}`);
-const headers = ['ID', 'Folio', 'Nombre', 'Vendedor', ...pickHeaders];
-const csvLines    = [headers.join(',')];
-const porFolio    = {};
+const headers = ['Folio', 'Nombre', 'Vendedor', ...pickHeaders, 'ID'];  // ← orden correcto
+const csvLines = [headers.join(',')];
+const porFolio = {};
 state.datosOriginales.forEach(q => {
 const n = parseInt(q.folio);
 if (!isNaN(n)) porFolio[n] = q;
 });
-for (let i = 1; i <= 5000; i++) {
+for (let i = 1; i < 5000; i++) {
 const q = porFolio[i];
-if (q) {
+if (!q) break;
 const nombre   = (q.nombre   ?? '').replace(/"/g, '""');
 const vendedor = (q.vendedor ?? '').replace(/"/g, '""');
-const picks    = Array.from({ length: numPartidos }, (_, idx) => {
+const picks = Array.from({ length: numPartidos }, (_, idx) => {
 const v = Array.isArray(q.picks) ? q.picks[idx] : undefined;
 return (v && v !== '-') ? v : '';
 });
-csvLines.push([q.id, q.folio ?? i, `"${nombre}"`, `"${vendedor}"`, ...picks].join(','));
-} else {
-csvLines.push([i, '', '', '', ...Array(numPartidos).fill('')].join(','));
-}
+csvLines.push(`${q.folio ?? i},"${nombre}","${vendedor}",${picks.join(',')},${q.id}`);
 }
 descargarCSVBlob(
 csvLines.join('\n'),
