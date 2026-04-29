@@ -3453,6 +3453,15 @@ if (ENV?.isDev) console.log(`🔄 Sincronización completa: ${allQuinielas.lengt
 async function renderMyQuinielas() {
 const container = document.getElementById('myQuinielasList');
 if (!container) return;
+const jornadaNombre = window.jornadaActual?.nombre;
+if (!jornadaNombre) {
+container.innerHTML = `
+<div class="empty-state">
+<span class="empty-icon">⏳</span>
+<p>Cargando jornada...</p>
+</div>`;
+return;
+}
 let localResultados = {};
 try {
 const { data: dataResultados } = await fetchAPI('/api/resultados-oficiales');
@@ -3465,8 +3474,16 @@ officialResults = {};
 }
 await actualizarEstadosDesdeBackend();
 const partidos = AppState.getPartidos();
-const jornadaNombre = window.jornadaActual?.nombre ?? 'Jornada actual';
-const sent = AppState.getSent();
+let sent = AppState.getSent();
+let huboMigracion = false;
+sent = sent.map(q => {
+if (!q.jornada) {
+huboMigracion = true;
+return { ...q, jornada: jornadaNombre };
+}
+return q;
+});
+if (huboMigracion) AppState.replaceSent(sent);
 const deJornada = sent.filter(q => q.jornada === jornadaNombre);
 if (deJornada.length === 0) {
 container.innerHTML = `
@@ -4063,7 +4080,7 @@ clearTimeout(timeoutId);
 if (resp.ok) {
 let data;
 try { data = await resp.json(); } catch { data = {}; }
-servidorEnvioOk = data?.enviado === true; // el backend debe mandar { enviado: true }
+servidorEnvioOk = data?.enviado === true; 
 if (_validarWhatsAppUrl(data?.url)) {
 whatsappUrl = data.url;
 } else if (ENV?.isDev) {
@@ -4083,7 +4100,7 @@ if (servidorEnvioOk) {
 newBtn.textContent = '📲 Ver en WhatsApp';
 if (ENV?.isDev) console.log('ℹ️ Servidor ya envió el mensaje. Botón en modo "ver", no reenvío.');
 } else {
-newBtn.textContent = '📲 Enviar a WhatsApp';
+newBtn.textContent = 'Enviar a WhatsApp 📲';
 }
 newBtn.disabled = false;
 newBtn.addEventListener('click', () => {
@@ -4110,7 +4127,7 @@ if (totalPriceEl) totalPriceEl.textContent = '';
 if (mensajeEl)    mensajeEl.textContent    = '';
 if (btnEl) {                                
 btnEl.disabled    = false;
-btnEl.textContent = '📲 Enviar a WhatsApp';
+btnEl.textContent = 'Enviar a WhatsApp 📲';
 }
 }
 /*------------Esto de abajo se encarga de trabajar en nuestro archivo y se enfoca en trabajar el reglamento de nuestra quiniela ------------------------------------*/
