@@ -957,6 +957,15 @@ return String(str)
 .replace(/"/g, '&quot;')
 .replace(/'/g, '&#39;');
 }
+function isSafeImageUrl(url) {
+if (!url || typeof url !== 'string') return false;
+try {
+const parsed = new URL(url, window.location.origin);
+return ['http:', 'https:'].includes(parsed.protocol);
+} catch {
+return false;
+}
+}
 function renderQuinielaMatches() {
 const container = document.getElementById('quinielaMatches');
 if (!container) {
@@ -1488,19 +1497,19 @@ const NavigationManager = (() => {
 const PAGES_VALIDAS = new Set(['inicio', 'quiniela', 'resultados', 'analisis', 'ayuda', 'admin']);
 const PAGINA_INICIAL = 'inicio';
 const HERO_ID_MAP = {
-inicio:     'hero',
-quiniela:   'hero-quiniela',
+inicio: 'hero',
+quiniela: 'hero-quiniela',
 resultados: 'hero-resultados',
-analisis:   'hero-analisis',
-ayuda:      'hero-ayuda',
-admin:      'hero-admin',
+analisis: 'hero-analisis',
+ayuda: 'hero-ayuda',
+admin: 'hero-admin',
 };
-let navToggle        = null;
-let floatingNav      = null;
-let navItems         = [];
-let pages            = [];
+let navToggle = null;
+let floatingNav = null;
+let navItems = [];
+let pages = [];
 let _docClickCleanup = null;
-let _keydownCleanup  = null;
+let _keydownCleanup = null;
 function updateHero(page) {
 Object.values(HERO_ID_MAP).forEach(heroId => {
 const el = document.getElementById(heroId);
@@ -1551,16 +1560,16 @@ try {
 switch (page) {
 case 'quiniela':
 if (typeof renderQuinielaMatches === 'function') renderQuinielaMatches();
-if (typeof updateQuinielaCount   === 'function') updateQuinielaCount();
-if (typeof updatePrice           === 'function') updatePrice();
+if (typeof updateQuinielaCount === 'function') updateQuinielaCount();
+if (typeof updatePrice === 'function') updatePrice();
 break;
 case 'analisis':
-activateFirstTab('#pageAnalisis', 'horarios', 'tabHorarios');
-if (typeof renderMatchesHorarios    === 'function') renderMatchesHorarios();
+_activateFirstTab('#pageAnalisis', 'horarios', 'tabHorarios');
+if (typeof renderMatchesHorarios === 'function') renderMatchesHorarios();
 if (typeof renderMatchesPorcentajes === 'function') renderMatchesPorcentajes();
 break;
 case 'resultados':
-activateFirstTab('#pageResultados', 'misQuinielasJugadas', 'tabMisQuinielas');
+_activateFirstTab('#pageResultados', 'misQuinielasJugadas', 'tabMisQuinielas');
 if (typeof renderMyQuinielas === 'function') renderMyQuinielas();
 break;
 case 'admin':
@@ -1568,9 +1577,9 @@ setTimeout(() => {
 try {
 if (typeof actualizarContadorTotal === 'function') actualizarContadorTotal();
 if (typeof actualizarJornadaActual === 'function') actualizarJornadaActual();
-if (typeof mostrarAdminTab         === 'function') mostrarAdminTab('pendientes');
-if (typeof cargarJugandoTabla      === 'function') cargarJugandoTabla();
-if (typeof cargarEsperaTabla       === 'function') cargarEsperaTabla();
+if (typeof mostrarAdminTab === 'function') mostrarAdminTab('pendientes');
+if (typeof cargarJugandoTabla === 'function') cargarJugandoTabla();
+if (typeof cargarEsperaTabla === 'function') cargarEsperaTabla();
 } catch (e) {
 console.error('❌ NavigationManager: error en hooks de admin:', e);
 }
@@ -1607,15 +1616,15 @@ _closeNav();
 }
 }
 function init() {
-navToggle   = document.getElementById('navToggle');
+navToggle = document.getElementById('navToggle');
 floatingNav = document.getElementById('floatingNav');
-navItems    = Array.from(document.querySelectorAll('.nav-item'));
-pages       = Array.from(document.querySelectorAll('.page'));
+navItems = Array.from(document.querySelectorAll('.nav-item'));
+pages = Array.from(document.querySelectorAll('.page'));
 if (ENV?.isDev) {
-if (!navToggle)            console.warn('⚠️ NavigationManager: #navToggle no encontrado');
-if (!floatingNav)          console.warn('⚠️ NavigationManager: #floatingNav no encontrado');
+if (!navToggle) console.warn('⚠️ NavigationManager: #navToggle no encontrado');
+if (!floatingNav) console.warn('⚠️ NavigationManager: #floatingNav no encontrado');
 if (navItems.length === 0) console.warn('⚠️ NavigationManager: sin elementos .nav-item');
-if (pages.length === 0)    console.warn('⚠️ NavigationManager: sin elementos .page');
+if (pages.length === 0) console.warn('⚠️ NavigationManager: sin elementos .page');
 }
 if (navToggle && floatingNav) {
 const freshToggle = navToggle.cloneNode(true);

@@ -8,9 +8,24 @@ const ARCHIVOS = [
 ];
 self.addEventListener('install', e => {
 e.waitUntil(
-caches.open(CACHE_VERSION)
-.then(c => c.addAll(ARCHIVOS))
-.then(() => self.skipWaiting())
+caches.open(CACHE_VERSION).then(async cache => {
+const resultados = await Promise.allSettled(
+ARCHIVOS.map(async url => {
+try {
+await cache.add(url);
+if (self.registration && self.registration.scope) {
+console.log('[SW] Cacheado OK:', url);
+}
+} catch (err) {
+console.warn('[SW] No se pudo cachear:', url, err);
+}
+})
+);
+const ok = resultados.filter(r => r.status === 'fulfilled').length;
+const fail = resultados.filter(r => r.status === 'rejected').length;
+console.log(`[SW] Install terminado. OK: ${ok}, Fail: ${fail}`);
+return self.skipWaiting();
+})
 );
 });
 self.addEventListener('activate', e => {
@@ -45,13 +60,15 @@ return;
 e.respondWith(
 caches.match(e.request).then(cached => {
 if (cached) return cached;
-return fetch(e.request).then(response => {
+return fetch(e.request)
+.then(response => {
 if (response && response.status === 200) {
 const clone = response.clone();
 caches.open(CACHE_VERSION).then(c => c.put(e.request, clone));
 }
 return response;
-}).catch(() => cached || new Response('Sin conexión', { status: 503 }));
+})
+.catch(() => cached || new Response('Sin conexión', { status: 503 }));
 })
 );
 });
