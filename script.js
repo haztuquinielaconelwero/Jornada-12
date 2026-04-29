@@ -3601,20 +3601,12 @@ container.innerHTML = `<div class="empty-state"><span class="empty-icon">📋</s
 return;
 }
 const hayResultados = Object.keys(localResultados).length > 0;
-<<<<<<< HEAD
 const conDatos = deJornadaFinal
 .map(q => ({
-=======
-const conDatos = deJornada
-.map(q => {
-const meta = getEstadoMeta(q.estado);
-return {
->>>>>>> 74c3738fce8b5907a642ebcc9628d1e3048a244b
 q,
-meta,
+meta: getEstadoMeta(q.estado),
 puntos: hayResultados ? calcularPuntosQuiniela(q.predictions, localResultados) : 0,
-};
-})
+}))
 .sort((a, b) => {
 if (a.meta.order !== b.meta.order) return a.meta.order - b.meta.order;
 if (b.puntos !== a.puntos) return b.puntos - a.puntos;
@@ -3639,25 +3631,7 @@ const logoLocal = isSafeImageUrl(partido.localLogo) ? escapeHtml(partido.localLo
 const logoVisita = isSafeImageUrl(partido.visitanteLogo) ? escapeHtml(partido.visitanteLogo) : '';
 return `<div class="quiniela-row"><div class="quiniela-team"><img src="${logoLocal}" alt="${escapeHtml(partido.local)}" loading="lazy" width="20" height="20" onerror="this.style.visibility='hidden';this.onerror=null"><span>${escapeHtml(partido.local)}</span></div><div class="${pickClass}">${escapeHtml(pick)}</div><div class="quiniela-team" style="justify-content:flex-end;"><span style="text-align:right;">${escapeHtml(partido.visitante)}</span><img src="${logoVisita}" alt="${escapeHtml(partido.visitante)}" loading="lazy" width="20" height="20" onerror="this.style.visibility='hidden';this.onerror=null"></div></div>`;
 }).join('');
-<<<<<<< HEAD
-return `<div class="jugada-card ${cardClass}"><div class="jugada-header ${cardClass}"><div class="jugada-info"><div class="jugada-name">${escapeHtml(q.name || q.nombre || '')}</div><div class="jugada-vendedor">Vendedor: ${vendedorName} • ${escapeHtml(q.jornada)}</div>${folioHtml}</div><div class="jugada-status"><span class="status-badge ${cardClass}">${jugando ? 'Jugando ✓' : 'No jugando ✗'}</span></div></div>${miniQuiniela}<button class="btn-puntos">Puntos: ${puntos}</button></div>`;
-=======
-return `
-<div class="jugada-card ${cardClass}">
-<div class="jugada-header ${cardClass}">
-<div class="jugada-info">
-<div class="jugada-name">${escapeHtml(q.name)}</div>
-<div class="jugada-vendedor">Vendedor: ${vendedorName} • ${escapeHtml(q.jornada)}</div>
-${folioHtml}
-</div>
-<div class="jugada-status">
-<span class="status-badge ${cardClass}">${meta.label}</span>
-</div>
-</div>
-${miniQuiniela}
-<button class="btn-puntos">Puntos: ${puntos}</button>
-</div>`;
->>>>>>> 74c3738fce8b5907a642ebcc9628d1e3048a244b
+return `<div class="jugada-card ${cardClass}"><div class="jugada-header ${cardClass}"><div class="jugada-info"><div class="jugada-name">${escapeHtml(q.name || q.nombre || '')}</div><div class="jugada-vendedor">Vendedor: ${vendedorName} • ${escapeHtml(q.jornada)}</div>${folioHtml}</div><div class="jugada-status"><span class="status-badge ${cardClass}">${meta.label}</span></div></div>${miniQuiniela}<button class="btn-puntos">Puntos: ${puntos}</button></div>`;
 }).join('');
 if (ENV?.isDev) console.log(`✅ renderMyQuinielas: ${deJornadaFinal.length} quinielas renderizadas`);
 }
