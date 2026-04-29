@@ -3430,6 +3430,11 @@ if (resultado && pick && resultado === pick) puntos++;
 });
 return puntos;
 }
+function normalizarEstadoJugada(estado) {
+if (estado === 'jugando') return 'jugando';
+if (estado === 'espera')  return 'espera';
+return 'pendiente';
+}
 async function actualizarEstadosDesdeBackend() {
 const vendedor = VendedorManager.current;
 if (!vendedor) {
@@ -7387,6 +7392,7 @@ if (ENV?.isDev) console.log('✅ PWA: vendedor persistido antes de instalar:', v
 }
 }
 function _mostrarBanner() {
+if (typeof ls === 'undefined') return;
 if (_yaEstaInstalada()) return;
 const vendedor = VendedorManager?.current;
 if (!vendedor) return;
