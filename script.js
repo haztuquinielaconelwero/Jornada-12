@@ -3556,13 +3556,9 @@ if (ENV?.isDev) console.log(`🔄 Sincronización completa: ${allQuinielas.lengt
 }
 function getEstadoMeta(estado) {
 const e = normalizarEstadoJugada(estado);
-if (e === 'jugando') {
-return { estado: 'jugando', label: 'Jugando ✓', order: 0, cardClass: 'jugando' };
-}
-if (e === 'espera') {
-return { estado: 'espera', label: 'En espera', order: 1, cardClass: 'espera' };
-}
-return { estado: 'pendiente', label: 'Pendiente', order: 2, cardClass: 'pendiente' };
+if (e === 'jugando') return { estado: 'jugando', label: 'Jugando',    order: 0, cardClass: 'jugando'  };
+if (e === 'espera')  return { estado: 'espera',  label: 'En espera',  order: 1, cardClass: 'espera'   };
+return { estado: 'pendiente', label: 'No jugando', order: 2, cardClass: 'pendiente' };
 }
 async function renderMyQuinielas() {
 const container = document.getElementById('myQuinielasList');
