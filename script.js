@@ -1467,12 +1467,12 @@ if (typeof updateQuinielaCount   === 'function') updateQuinielaCount();
 if (typeof updatePrice           === 'function') updatePrice();
 break;
 case 'analisis':
-_activateFirstTab('#pageAnalisis', 'horarios', 'tabHorarios');
+activateFirstTab('#pageAnalisis', 'horarios', 'tabHorarios');
 if (typeof renderMatchesHorarios    === 'function') renderMatchesHorarios();
 if (typeof renderMatchesPorcentajes === 'function') renderMatchesPorcentajes();
 break;
 case 'resultados':
-_activateFirstTab('#pageResultados', 'misQuinielasJugadas', 'tabMisQuinielas');
+activateFirstTab('#pageResultados', 'misQuinielasJugadas', 'tabMisQuinielas');
 if (typeof renderMyQuinielas === 'function') renderMyQuinielas();
 break;
 case 'admin':
@@ -7231,7 +7231,7 @@ _initTabNavegacion(
 '#pageResultados .tab-btn',
 '#pageResultados .tab-content',
 {
-'jugadas': () => {
+'misQuinielasJugadas:': () => {
 if (typeof renderMyQuinielas === 'function') renderMyQuinielas();
 else if (ENV?.isDev) console.warn('⚠️ renderMyQuinielas no definida');
 },
