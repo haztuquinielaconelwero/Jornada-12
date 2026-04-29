@@ -385,38 +385,126 @@ _emit('savedChanged', { action: 'clear' });
 function getSent() {
 return [..._sentQuinielas];
 }
-function markAsSent(quinielas) {
-const items = Array.isArray(quinielas) ? quinielas : [quinielas];
+function normalizarEstadoJugada(estado) {
+const raw = typeof estado === 'string' ? estado.trim().toLowerCase() : '';
+if (raw === 'jugando') return 'jugando';
+if (raw === 'espera') return 'espera';
+if (raw === 'pendiente') return 'pendiente';
+return 'pendiente';
+}
+function normalizarPredictionsJugada(predictions = {}) {
+const out = {};
+for (const [matchId, picks] of Object.entries(predictions)) {
+if (Array.isArray(picks)) {
+out[String(matchId)] = [...new Set(
+picks
+.map(p => String(p).trim().toUpperCase())
+.filter(p => ['L', 'E', 'V'].includes(p))
+)];
+} else if (picks != null && picks !== '') {
+const pick = String(picks).trim().toUpperCase();
+out[String(matchId)] = ['L', 'E', 'V'].includes(pick) ? [pick] : [];
+} else {
+out[String(matchId)] = [];
+}
+}
+return out;
+}
+function buildSentContentKey(q, partidosRef = []) {
 const norm = s => (typeof s === 'string' ? s.trim().toLowerCase() : '');
-const contentKey = q => {
-const picks = Object.keys(q.predictions ?? {}).sort().map(k => {
-const v = (q.predictions ?? {})[k];
-return `${k}:${Array.isArray(v) ? [...v].sort().join('') : String(v).toUpperCase()}`;
+const predictions = q.predictions ?? {};
+const picks = partidosRef.length > 0
+? partidosRef.map(p => {
+const pred = predictions[String(p.id)];
+if (!pred || (Array.isArray(pred) && pred.length === 0)) return '-';
+return Array.isArray(pred) ? [...pred].sort().join('') : String(pred).trim().toUpperCase();
+}).join('|')
+: Object.keys(predictions).sort().map(k => {
+const v = predictions[k];
+return `${k}:${Array.isArray(v) ? [...v].sort().join('') : String(v).trim().toUpperCase()}`;
 }).join('|');
 return `${norm(q.name || q.nombre)}|${norm(q.vendedor)}|${norm(q.jornada)}|${picks}`;
-};
-const existingKeys = new Set(_sentQuinielas.map(contentKey));
-const novedades = items.filter(q => {
-const key = contentKey(q);
-if (existingKeys.has(key)) {
-if (ENV?.isDev) console.warn(`⚠️ markAsSent: duplicado bloqueado: "${q.name ?? q.nombre}"`);
-return false;
 }
-existingKeys.add(key);
-return true;
-});
-if (novedades.length === 0) {
-if (ENV?.isDev) console.warn('⚠️ markAsSent: todas las quinielas ya existían, nada que agregar');
+function getSentScore(q) {
+let score = 0;
+if (q.pythonId != null) score += 4;
+if (q.folio != null) score += 2;
+if (q.estado === 'jugando') score += 1;
+if (q.estado === 'espera') score += 1;
+return score;
+}
+function markAsSent(quinielas) {
+const items = Array.isArray(quinielas) ? quinielas : [quinielas];
+const partidosRef = _partidos ?? [];
+const jornadaActual = window.jornadaActual?.nombre ?? '';
+const normalizadas = items
+.filter(q => q && typeof q === 'object')
+.map(q => ({
+...q,
+name: typeof q.name === 'string' && q.name.trim()
+? q.name.trim()
+: String(q.nombre ?? '').trim(),
+vendedor: typeof q.vendedor === 'string' ? q.vendedor.trim() : '',
+predictions: normalizarPredictionsJugada(q.predictions ?? {}),
+folio: q.folio ?? null,
+pythonId: q.pythonId ?? null,
+estado: normalizarEstadoJugada(q.estado),
+jornada: typeof q.jornada === 'string' && q.jornada.trim()
+? q.jornada.trim()
+: jornadaActual,
+}))
+.filter(q => q.name && q.vendedor && q.jornada);
+if (normalizadas.length === 0) {
+if (ENV?.isDev) console.warn('⚠️ markAsSent: no hubo quinielas válidas para agregar');
 return;
 }
-if (_sentQuinielas.length + novedades.length > MAX_SENT) {
-const overflow = (_sentQuinielas.length + novedades.length) - MAX_SENT;
-_sentQuinielas.splice(0, overflow);
-console.warn(`⚠️ AppState: sentQuinielas rotado, se eliminaron ${overflow} entradas antiguas`);
+const mapa = new Map();
+[..._sentQuinielas, ...normalizadas].forEach(raw => {
+const q = {
+...raw,
+name: typeof raw.name === 'string' && raw.name.trim()
+? raw.name.trim()
+: String(raw.nombre ?? '').trim(),
+predictions: normalizarPredictionsJugada(raw.predictions ?? {}),
+folio: raw.folio ?? null,
+pythonId: raw.pythonId ?? null,
+estado: normalizarEstadoJugada(raw.estado),
+jornada: typeof raw.jornada === 'string' ? raw.jornada.trim() : jornadaActual,
+};
+const key = buildSentContentKey(q, partidosRef);
+const prev = mapa.get(key);
+if (!prev) {
+mapa.set(key, q);
+return;
 }
-_sentQuinielas.push(...novedades.map(q => ({ ...q })));
+const prevScore = getSentScore(prev);
+const currScore = getSentScore(q);
+if (currScore >= prevScore) {
+mapa.set(key, {
+...prev,
+...q,
+name: q.name || prev.name,
+folio: q.folio ?? prev.folio ?? null,
+pythonId: q.pythonId ?? prev.pythonId ?? null,
+estado: normalizarEstadoJugada(q.estado || prev.estado),
+});
+} else {
+mapa.set(key, {
+...q,
+...prev,
+name: prev.name || q.name,
+folio: prev.folio ?? q.folio ?? null,
+pythonId: prev.pythonId ?? q.pythonId ?? null,
+estado: normalizarEstadoJugada(prev.estado || q.estado),
+});
+}
+});
+_sentQuinielas = Array.from(mapa.values());
+if (_sentQuinielas.length > MAX_SENT) {
+_sentQuinielas = _sentQuinielas.slice(-MAX_SENT);
+}
 saveToStorage();
-_emit('sentChanged', { action: 'add', count: novedades.length });
+_emit('sentChanged', { action: 'replace', count: _sentQuinielas.length });
 }
 function replaceSent(newList) {
 if (!Array.isArray(newList)) return false;
@@ -3383,16 +3471,18 @@ if (Array.isArray(q.picks)) {
 q.picks.forEach((pick, idx) => {
 const p = partidos[idx];
 const key = p ? String(p.id) : String(idx);
-preds[key] = (pick && pick !== '-') ? [pick] : [];
+preds[key] = (pick && pick !== '-') ? [String(pick).trim().toUpperCase()] : [];
 });
 }
 return {
 id: q.id,
-nombre: q.nombre,
-vendedor: q.vendedor,
-folio: q.folio,
+pythonId: q.id ?? null,
+name: q.nombre ?? 'Sin nombre',
+nombre: q.nombre ?? 'Sin nombre',
+vendedor: q.vendedor ?? '',
+folio: q.folio ?? null,
 predictions: preds,
-estado,
+estado: normalizarEstadoJugada(estado),
 jornada: jornadaNombre,
 };
 }
@@ -3423,9 +3513,13 @@ return toKey(q.predictions) === toKey(qBackend.predictions);
 });
 }
 if (local) {
-local.estado = qBackend.estado;
-local.folio = qBackend.folio;
-local.pythonId = qBackend.id;
+local.name = local.name || qBackend.name || qBackend.nombre || 'Sin nombre';
+local.nombre = qBackend.nombre || qBackend.name || local.name;
+local.vendedor = qBackend.vendedor || local.vendedor;
+local.estado = normalizarEstadoJugada(qBackend.estado);
+local.folio = qBackend.folio ?? local.folio ?? null;
+local.pythonId = qBackend.pythonId ?? qBackend.id ?? local.pythonId ?? null;
+local.jornada = local.jornada || jornadaNombre;
 if (ENV?.isDev) console.log(`✅ Actualizada: ${local.name} → ${local.estado} (${local.folio ?? 'sin folio'})`);
 } else {
 if (ENV?.isDev) console.warn(`⚠️ No encontrado local para backend id=${qBackend.id} nombre="${qBackend.nombre}"`);
@@ -3445,6 +3539,16 @@ AppState.replaceSent(sent);
 deduplicarSentQuinielas();
 if (typeof updateHeroStats === 'function') updateHeroStats();
 if (ENV?.isDev) console.log(`🔄 Sincronización completa: ${allQuinielas.length} del backend`);
+}
+function getEstadoMeta(estado) {
+const e = normalizarEstadoJugada(estado);
+if (e === 'jugando') {
+return { estado: 'jugando', label: 'Jugando ✓', order: 0, cardClass: 'jugando' };
+}
+if (e === 'espera') {
+return { estado: 'espera', label: 'En espera', order: 1, cardClass: 'espera' };
+}
+return { estado: 'pendiente', label: 'Pendiente', order: 2, cardClass: 'pendiente' };
 }
 async function renderMyQuinielas() {
 const container = document.getElementById('myQuinielasList');
@@ -3497,22 +3601,32 @@ container.innerHTML = `<div class="empty-state"><span class="empty-icon">📋</s
 return;
 }
 const hayResultados = Object.keys(localResultados).length > 0;
+<<<<<<< HEAD
 const conDatos = deJornadaFinal
 .map(q => ({
+=======
+const conDatos = deJornada
+.map(q => {
+const meta = getEstadoMeta(q.estado);
+return {
+>>>>>>> 74c3738fce8b5907a642ebcc9628d1e3048a244b
 q,
-jugando: q.estado === 'jugando',
+meta,
 puntos: hayResultados ? calcularPuntosQuiniela(q.predictions, localResultados) : 0,
-}))
+};
+})
 .sort((a, b) => {
-if (a.jugando !== b.jugando) return a.jugando ? -1 : 1;
+if (a.meta.order !== b.meta.order) return a.meta.order - b.meta.order;
 if (b.puntos !== a.puntos) return b.puntos - a.puntos;
-const folioA = parseInt(a.q.folio) || 0;
-const folioB = parseInt(b.q.folio) || 0;
+const folioA = parseInt(a.q.folio, 10) || 0;
+const folioB = parseInt(b.q.folio, 10) || 0;
 return folioA - folioB;
 });
-container.innerHTML = conDatos.map(({ q, jugando, puntos }) => {
-const cardClass = jugando ? 'jugando' : 'no-jugando';
-const folioHtml = (jugando && q.folio) ? `<div class="jugada-folio">Folio: ${escapeHtml(String(q.folio))}</div>` : '';
+container.innerHTML = conDatos.map(({ q, meta, puntos }) => {
+const cardClass = meta.cardClass;
+const folioHtml = q.folio
+? `<div class="jugada-folio">Folio: ${escapeHtml(String(q.folio))}</div>`
+: '';
 const vendedorName = escapeHtml(q.vendedor || 'Sin vendedor');
 const miniQuiniela = partidos.map(partido => {
 const predArr = q.predictions?.[String(partido.id)];
@@ -3525,7 +3639,25 @@ const logoLocal = isSafeImageUrl(partido.localLogo) ? escapeHtml(partido.localLo
 const logoVisita = isSafeImageUrl(partido.visitanteLogo) ? escapeHtml(partido.visitanteLogo) : '';
 return `<div class="quiniela-row"><div class="quiniela-team"><img src="${logoLocal}" alt="${escapeHtml(partido.local)}" loading="lazy" width="20" height="20" onerror="this.style.visibility='hidden';this.onerror=null"><span>${escapeHtml(partido.local)}</span></div><div class="${pickClass}">${escapeHtml(pick)}</div><div class="quiniela-team" style="justify-content:flex-end;"><span style="text-align:right;">${escapeHtml(partido.visitante)}</span><img src="${logoVisita}" alt="${escapeHtml(partido.visitante)}" loading="lazy" width="20" height="20" onerror="this.style.visibility='hidden';this.onerror=null"></div></div>`;
 }).join('');
+<<<<<<< HEAD
 return `<div class="jugada-card ${cardClass}"><div class="jugada-header ${cardClass}"><div class="jugada-info"><div class="jugada-name">${escapeHtml(q.name || q.nombre || '')}</div><div class="jugada-vendedor">Vendedor: ${vendedorName} • ${escapeHtml(q.jornada)}</div>${folioHtml}</div><div class="jugada-status"><span class="status-badge ${cardClass}">${jugando ? 'Jugando ✓' : 'No jugando ✗'}</span></div></div>${miniQuiniela}<button class="btn-puntos">Puntos: ${puntos}</button></div>`;
+=======
+return `
+<div class="jugada-card ${cardClass}">
+<div class="jugada-header ${cardClass}">
+<div class="jugada-info">
+<div class="jugada-name">${escapeHtml(q.name)}</div>
+<div class="jugada-vendedor">Vendedor: ${vendedorName} • ${escapeHtml(q.jornada)}</div>
+${folioHtml}
+</div>
+<div class="jugada-status">
+<span class="status-badge ${cardClass}">${meta.label}</span>
+</div>
+</div>
+${miniQuiniela}
+<button class="btn-puntos">Puntos: ${puntos}</button>
+</div>`;
+>>>>>>> 74c3738fce8b5907a642ebcc9628d1e3048a244b
 }).join('');
 if (ENV?.isDev) console.log(`✅ renderMyQuinielas: ${deJornadaFinal.length} quinielas renderizadas`);
 }
@@ -3729,12 +3861,27 @@ showErrorModal('No se pudo enviar ninguna quiniela.');
 }
 return;
 }
-AppState.markAsSent(resultado.exitosas);
-AppState.clearSaved();
+const jornadaNombre = window.jornadaActual?.nombre ?? '';
+const exitosasNormalizadas = resultado.exitosas.map(q => ({
+...q,
+name: q.name ?? q.nombre ?? 'Sin nombre',
+jornada: q.jornada || jornadaNombre,
+estado: normalizarEstadoJugada(q.estado),
+folio: q.folio ?? null,
+pythonId: q.pythonId ?? null,
+}));
+AppState.markAsSent(exitosasNormalizadas);
+exitosasNormalizadas.forEach(q => {
+  if (q.id != null) AppState.removeSavedById(q.id);
+});
 if (typeof updateSavedBadge === 'function') updateSavedBadge();
-if (typeof renderMyQuinielas === 'function') renderMyQuinielas();
-if (typeof updateHeroStats === 'function') updateHeroStats();
 deduplicarSentQuinielas();
+if (typeof renderMyQuinielas === 'function') {
+await renderMyQuinielas();
+}
+if (typeof updateHeroStats === 'function') {
+updateHeroStats();
+}
 if (typeof mostrarConfirmacionEnvio === 'function') {
 try {
 await mostrarConfirmacionEnvio(resultado.exitosas.length, totalPrice, resultado.fallidas.length, resultado.exitosas);
