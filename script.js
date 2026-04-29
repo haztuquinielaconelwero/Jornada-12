@@ -3434,11 +3434,7 @@ if (ENV?.isDev) console.warn(`⚠️ No encontrado local para backend id=${qBack
 if (todosFetchsOk) {
 const idsEnBackend = allQuinielas.map(q => String(q.id));
 sent = sent.map(q => {
-if (
-q.jornada === jornadaNombre &&
-q.pythonId != null &&
-!idsEnBackend.includes(String(q.pythonId))
-) {
+if (q.jornada === jornadaNombre && q.pythonId != null && !idsEnBackend.includes(String(q.pythonId))) {
 if (ENV?.isDev) console.log(`🔄 Regresa a pendiente: ${q.name}`);
 return { ...q, estado: 'pendiente', folio: null, pythonId: null };
 }
@@ -3455,11 +3451,7 @@ const container = document.getElementById('myQuinielasList');
 if (!container) return;
 const jornadaNombre = window.jornadaActual?.nombre;
 if (!jornadaNombre) {
-container.innerHTML = `
-<div class="empty-state">
-<span class="empty-icon">⏳</span>
-<p>Cargando jornada...</p>
-</div>`;
+container.innerHTML = `<div class="empty-state"><span class="empty-icon">⏳</span><p>Cargando jornada...</p></div>`;
 return;
 }
 let localResultados = {};
@@ -3485,17 +3477,27 @@ return q;
 });
 if (huboMigracion) AppState.replaceSent(sent);
 const deJornada = sent.filter(q => q.jornada === jornadaNombre);
-if (deJornada.length === 0) {
-container.innerHTML = `
-<div class="empty-state">
-<span class="empty-icon">📋</span>
-<p>Aún no has enviado quinielas para la ${escapeHtml(jornadaNombre)}</p>
-<button class="btn-primary" onclick="navigateTo('quiniela')">Crear mi primera quiniela</button>
-</div>`;
+const toKeySaved = q => {
+const nombre = (q.name || q.nombre || '').trim().toLowerCase();
+const picks = partidos.map(p => {
+const pred = q.predictions?.[String(p.id)];
+if (!pred || (Array.isArray(pred) && pred.length === 0)) return '-';
+return Array.isArray(pred) ? [...pred].sort().join('') : String(pred).toUpperCase();
+}).join('|');
+return `${nombre}|${picks}`;
+};
+const sentKeys = new Set(deJornada.map(toKeySaved));
+const savedComoSent = AppState.getSaved()
+.filter(q => q.jornada === jornadaNombre)
+.map(q => ({ ...q, estado: 'pendiente' }))
+.filter(q => !sentKeys.has(toKeySaved(q)));
+const deJornadaFinal = [...savedComoSent, ...deJornada];
+if (deJornadaFinal.length === 0) {
+container.innerHTML = `<div class="empty-state"><span class="empty-icon">📋</span><p>Aún no has enviado quinielas para la ${escapeHtml(jornadaNombre)}</p><button class="btn-primary" onclick="navigateTo('quiniela')">Crear mi primera quiniela</button></div>`;
 return;
 }
 const hayResultados = Object.keys(localResultados).length > 0;
-const conDatos = deJornada
+const conDatos = deJornadaFinal
 .map(q => ({
 q,
 jugando: q.estado === 'jugando',
@@ -3521,36 +3523,11 @@ let pickClass = 'quiniela-pick';
 if (resultado) pickClass += pickSan === resultado ? ' correct' : ' incorrect';
 const logoLocal = isSafeImageUrl(partido.localLogo) ? escapeHtml(partido.localLogo) : '';
 const logoVisita = isSafeImageUrl(partido.visitanteLogo) ? escapeHtml(partido.visitanteLogo) : '';
-return `
-<div class="quiniela-row">
-<div class="quiniela-team">
-<img src="${logoLocal}" alt="${escapeHtml(partido.local)}" loading="lazy" width="20" height="20" onerror="this.style.visibility='hidden';this.onerror=null">
-<span>${escapeHtml(partido.local)}</span>
-</div>
-<div class="${pickClass}">${escapeHtml(pick)}</div>
-<div class="quiniela-team" style="justify-content:flex-end;">
-<span style="text-align:right;">${escapeHtml(partido.visitante)}</span>
-<img src="${logoVisita}" alt="${escapeHtml(partido.visitante)}" loading="lazy" width="20" height="20" onerror="this.style.visibility='hidden';this.onerror=null">
-</div>
-</div>`;
+return `<div class="quiniela-row"><div class="quiniela-team"><img src="${logoLocal}" alt="${escapeHtml(partido.local)}" loading="lazy" width="20" height="20" onerror="this.style.visibility='hidden';this.onerror=null"><span>${escapeHtml(partido.local)}</span></div><div class="${pickClass}">${escapeHtml(pick)}</div><div class="quiniela-team" style="justify-content:flex-end;"><span style="text-align:right;">${escapeHtml(partido.visitante)}</span><img src="${logoVisita}" alt="${escapeHtml(partido.visitante)}" loading="lazy" width="20" height="20" onerror="this.style.visibility='hidden';this.onerror=null"></div></div>`;
 }).join('');
-return `
-<div class="jugada-card ${cardClass}">
-<div class="jugada-header ${cardClass}">
-<div class="jugada-info">
-<div class="jugada-name">${escapeHtml(q.name)}</div>
-<div class="jugada-vendedor">Vendedor: ${vendedorName} • ${escapeHtml(q.jornada)}</div>
-${folioHtml}
-</div>
-<div class="jugada-status">
-<span class="status-badge ${cardClass}">${jugando ? 'Jugando ✓' : 'No jugando ✗'}</span>
-</div>
-</div>
-${miniQuiniela}
-<button class="btn-puntos">Puntos: ${puntos}</button>
-</div>`;
+return `<div class="jugada-card ${cardClass}"><div class="jugada-header ${cardClass}"><div class="jugada-info"><div class="jugada-name">${escapeHtml(q.name || q.nombre || '')}</div><div class="jugada-vendedor">Vendedor: ${vendedorName} • ${escapeHtml(q.jornada)}</div>${folioHtml}</div><div class="jugada-status"><span class="status-badge ${cardClass}">${jugando ? 'Jugando ✓' : 'No jugando ✗'}</span></div></div>${miniQuiniela}<button class="btn-puntos">Puntos: ${puntos}</button></div>`;
 }).join('');
-if (ENV?.isDev) console.log(`✅ renderMyQuinielas: ${deJornada.length} quinielas renderizadas`);
+if (ENV?.isDev) console.log(`✅ renderMyQuinielas: ${deJornadaFinal.length} quinielas renderizadas`);
 }
 /*------------Esto de abajo se encarga de trabajar en nuestro archivo y se enfoca en trabajar para no duplicar quinielas-----------------------------------*/
 function _generarKeyContenido(q, partidos) {
@@ -3839,11 +3816,11 @@ let data;
 try { data = await response.json(); } catch { data = {}; }
 if (response.ok && data.id != null) { 
 if (ENV?.isDev) console.log(`${current}/${total} Quiniela enviada (ID: ${data.id})`);
-return { ok: true, data: { pythonId: data.id, folio: data.folio ?? null, estado: data.estado ?? null } }; 
+return { ok: true, data: { pythonId: data.id, folio: data.folio ?? null, estado: data.estado ?? 'pendiente' } }; 
 }
 if (response.status === 409 && data.id != null) { 
 if (ENV?.isDev) console.log(`✅ Idempotente: quiniela ya existía (ID=${data.id})`);
-return { ok: true, data: { pythonId: data.id, folio: data.folio ?? null, estado: data.estado ?? null } }; 
+return { ok: true, data: { pythonId: data.id, folio: data.folio ?? null, estado: data.estado ?? 'pendiente' } }; 
 }
 if (response.status >= 400 && response.status < 500) {
 const razon = data.error || data.detail || `Error ${response.status}`;
