@@ -158,7 +158,6 @@ text-align:center; padding:8px 10px; font-size:13px; font-weight:600;
 letter-spacing:0.3px;
 }
 .bloqueo-banner.visible { display:block; }
-/* ── Esto de abajo trabaja con el Marcador ── */ /* ── Esto de abajo trabaja con el Marcador ── */ /* ── Esto de abajo trabaja con el Marcador ── */
 .resultado-marcador {
 display: flex; align-items: center; gap: 4px; margin: 4px 0 2px;
 }
@@ -166,7 +165,7 @@ display: flex; align-items: center; gap: 4px; margin: 4px 0 2px;
 width: 30px; height: 26px; border: 1px solid var(--gray-300); border-radius: 5px;
 text-align: center; font-size: 13px; font-weight: 700; color: var(--gray-900);
 background: white; outline: none;
-appearance: none;            
+appearance: none;
 transition: border-color .15s, box-shadow .15s;
 }
 .marcador-input::-webkit-inner-spin-button,
@@ -185,7 +184,7 @@ transition: border-color .15s, box-shadow .15s;
 </div>
 </div>
 <div class="bloqueo-banner" id="bloqueoBanner">
-Modo en espera activo — Las quinielas confirmadas por el vendedor no entrarán a la lista oficial ⏳ 
+Modo en espera activo — Las quinielas confirmadas por el vendedor no entrarán a la lista oficial ⏳
 </div>
 <div class="selection-bar" id="selectionBar">
 <span class="sel-count" id="selCount">0 seleccionadas</span>
@@ -245,7 +244,7 @@ const state = {
 datosOriginales: [],
 partidos:        [],
 resultados:      {},
-marcadores:      {},  
+marcadores:      {},
 primerPuntos:    -1,
 segundoPuntos:   -1,
 rowDataCache:    null,
@@ -256,7 +255,9 @@ jornada:         null
 };
 let gridApi = null;
 function toast(msg, tipo = 'success', ms = 4500) {
+if (!msg || typeof msg !== 'string') return;
 const container = document.getElementById('toastContainer');
+if (!container) return;
 const iconos = { success:'✅', error:'❌', warn:'⚠️' };
 const el = document.createElement('div');
 el.className = `toast toast-${tipo}`;
@@ -289,12 +290,12 @@ return String(str ?? '')
 .replace(/&/g,'&amp;').replace(/</g,'&lt;')
 .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-// ─── BARRA DE SELECCIÓN ───────────────────────────────────────────────────────
 function actualizarBarraSeleccion() {
 if (!gridApi) return;
 const sel = gridApi.getSelectedRows().filter(r => r.folio);
 const bar = document.getElementById('selectionBar');
 const cnt = document.getElementById('selCount');
+if (!bar || !cnt) return;
 if (sel.length > 0) {
 cnt.textContent = `${sel.length} quiniela${sel.length > 1 ? 's' : ''} seleccionada${sel.length > 1 ? 's' : ''}`;
 bar.classList.add('visible');
@@ -304,9 +305,9 @@ bar.classList.remove('visible');
 }
 function limpiarSeleccion() {
 if (gridApi) gridApi.deselectAll();
-document.getElementById('selectionBar').classList.remove('visible');
+const bar = document.getElementById('selectionBar');
+if (bar) bar.classList.remove('visible');
 }
-// ─── Esto de abajo trabaja en la tabla para poder seleccionar ─────────────────
 function initGrid() {
 const gridOptions = {
 columnDefs: [],
@@ -330,7 +331,6 @@ return '';
 };
 gridApi = agGrid.createGrid(document.getElementById('myGrid'), gridOptions);
 }
-// ─── Esto de abajo trabaja en la carga de datos ───────────────────────────────
 async function cargarDatos() {
 try {
 mostrarLoading(true);
@@ -351,8 +351,8 @@ const dataL = await resL.json();
 const dataR = await resR.json();
 state.partidos        = dataP.partidos   || [];
 state.datosOriginales = dataL.quinielas  || [];
-state.resultados = dataR.resultados || {};
-state.marcadores = dataR.marcadores || {};
+state.resultados      = dataR.resultados || {};
+state.marcadores      = dataR.marcadores || {};
 state.rowDataCache    = null;
 if (resBloq && resBloq.ok) {
 const dataBloq  = await resBloq.json();
@@ -387,7 +387,7 @@ fetch(`${API_BASE}/api/resultados-oficiales?jornada=${jornadaParam}`, { signal }
 if (!r1.ok || !r2.ok) return;
 const { quinielas: nuevas = []     } = await r1.json();
 const r2json = await r2.json();
-const nuevosRes      = r2json.resultados || {};
+const nuevosRes        = r2json.resultados || {};
 const nuevosMarcadores = r2json.marcadores || {};
 const sinCambios =
 nuevas.length === state.datosOriginales.length &&
@@ -397,7 +397,7 @@ JSON.stringify(nuevas)           === JSON.stringify(state.datosOriginales);
 if (sinCambios) return;
 state.datosOriginales = nuevas;
 state.resultados      = nuevosRes;
-state.marcadores      = nuevosMarcadores; 
+state.marcadores      = nuevosMarcadores;
 state.rowDataCache    = null;
 poblarFiltroVendedores();
 procesarDatos();
@@ -409,9 +409,9 @@ if (err.name !== 'AbortError') console.warn('Auto-refresh:', err.message);
 }
 }, 30000);
 });
-// ─── FILTROS ──────────────────────────────────────────────────────────────────
 function poblarFiltroVendedores() {
 const select = document.getElementById('filterVendedor');
+if (!select) return;
 const actual = select.value;
 const vendedores = [...new Set(state.datosOriginales.map(q => q.vendedor).filter(Boolean))].sort();
 select.innerHTML = '<option value="">Todos los vendedores</option>';
@@ -424,20 +424,20 @@ select.appendChild(opt);
 }
 function aplicarFiltros() {
 if (!gridApi) return;
-const termino  = document.getElementById('searchInput').value.trim().toLowerCase();
-const vendedor = document.getElementById('filterVendedor').value;
+const termino  = (document.getElementById('searchInput')?.value ?? '').trim().toLowerCase();
+const vendedor = document.getElementById('filterVendedor')?.value ?? '';
 const base = buildRowData();
 const filtradas = (termino || vendedor)
 ? base.filter(row => {
 if (!row.folio) return false;
-const matchTexto    = !termino   || (row.nombre||'').toLowerCase().includes(termino) || (row.vendedor||'').toLowerCase().includes(termino);
-const matchVendedor = !vendedor  || row.vendedor === vendedor;
+const matchTexto    = !termino  || (row.nombre||'').toLowerCase().includes(termino) || (row.vendedor||'').toLowerCase().includes(termino);
+const matchVendedor = !vendedor || row.vendedor === vendedor;
 return matchTexto && matchVendedor;
 })
 : base;
 gridApi.setGridOption('rowData', filtradas);
-document.getElementById('rowsCounter').textContent =
-(termino || vendedor ? filtradas.length : state.datosOriginales.length) + ' registros';
+const counter = document.getElementById('rowsCounter');
+if (counter) counter.textContent = (termino || vendedor ? filtradas.length : state.datosOriginales.length) + ' registros';
 }
 function procesarDatos() {
 const hayResultados = Object.values(state.resultados).some(Boolean);
@@ -461,7 +461,6 @@ const puntosUnicos  = [...new Set(state.datosOriginales.map(q => q.puntos))].sor
 state.segundoPuntos = puntosUnicos.length > 1 ? puntosUnicos[1] : -1;
 state.rowDataCache  = null;
 }
-// ── Esto de abajo trabaja con los resultados oficiales y la tabla ─────────────
 function buildColumnDefs() {
 const pickCols = state.partidos.map((_, idx) => ({
 headerName: `P${idx + 1}`,
@@ -532,7 +531,7 @@ if (state.rowDataCache) return state.rowDataCache;
 const rows = [];
 const porFolio = {};
 state.datosOriginales.forEach(q => {
-const n = parseInt(q.folio);
+const n = parseInt(q.folio, 10);
 if (!isNaN(n)) porFolio[n] = q;
 });
 for (let i = 1; i <= 5000; i++) {
@@ -560,18 +559,21 @@ state.rowDataCache = rows;
 return rows;
 }
 function renderTabla() {
+if (!gridApi) return;
 const rows = buildRowData();
 gridApi.setGridOption('columnDefs', buildColumnDefs());
 gridApi.setGridOption('rowData', rows);
 setTimeout(() => gridApi.sizeColumnsToFit(), 50);
-document.getElementById('rowsCounter').textContent = state.datosOriginales.length + ' registros';
+const counter = document.getElementById('rowsCounter');
+if (counter) counter.textContent = state.datosOriginales.length + ' registros';
 }
 function renderResultadosInputs() {
 const container = document.getElementById('resultadosGrid');
+if (!container) return;
 container.innerHTML = '';
 state.partidos.forEach((partido, idx) => {
-const curRes = state.resultados[String(idx)] || '';
-const curMarcador = state.marcadores[String(idx)] || { local: '', visita: '' };
+const curRes      = state.resultados[String(idx)] || '';
+const curMarcador = state.marcadores[String(idx)]  || { local: '', visita: '' };
 const grupo = document.createElement('div');
 grupo.className = 'resultado-input-group';
 const num = document.createElement('span');
@@ -583,13 +585,13 @@ logosWrap.className = 'resultado-logos';
 function crearLogo(src, nombreCorto) {
 const img = document.createElement('img');
 img.className = 'resultado-logo-img';
-img.src = src; img.alt = nombreCorto; img.title = nombreCorto;
+img.src = src || ''; img.alt = nombreCorto || ''; img.title = nombreCorto || '';
 img.width = 34; img.height = 34; img.loading = 'lazy';
 img.onerror = function () {
 const fb = document.createElement('span');
 fb.className = 'resultado-logo-fb';
-fb.textContent = nombreCorto.substring(0, 3).toUpperCase();
-fb.title = nombreCorto;
+fb.textContent = (nombreCorto || '?').substring(0, 3).toUpperCase();
+fb.title = nombreCorto || '';
 this.replaceWith(fb);
 };
 return img;
@@ -668,7 +670,6 @@ if (curRes) actualizarResaltado(inputLocal, inputVisita, btns);
 container.appendChild(grupo);
 });
 }
-// ─── Esto de abajo trabaja con la función de guardar los resultados ───────────
 async function guardarResultados() {
 await conGuard(async () => {
 const nuevos = {};
@@ -698,7 +699,7 @@ mostrarLoading(true);
 const url = state.jornada
 ? `${API_BASE}/api/resultados-oficiales?jornada=${encodeURIComponent(state.jornada)}`
 : `${API_BASE}/api/resultados-oficiales`;
-const res = await fetch(url, { method:'DELETE', headers: getAuthHeaders() });
+const res  = await fetch(url, { method:'DELETE', headers: getAuthHeaders() });
 const data = await res.json();
 if (!res.ok || !data.success) throw new Error(data.mensaje || 'Error al limpiar');
 state.resultados   = {};
@@ -707,8 +708,8 @@ await cargarDatos();
 toast('Resultados limpiados correctamente', 'success');
 }, ['btnLimpiar']);
 }
-// ─── Esto de abajo trabaja con la eliminación de la quiniela individual ───────
 async function eliminarQuiniela(folio) {
+if (!folio) return;
 if (!confirm(`Eliminar la quiniela con folio ${folio}?`)) return;
 const quiniela = state.datosOriginales.find(q => String(q.folio) === String(folio));
 if (!quiniela) { toast('No se encontró la quiniela', 'error'); return; }
@@ -727,7 +728,6 @@ actualizarEstadisticas();
 toast(`Folio ${folio} eliminado`, 'success');
 });
 }
-// ─── Esto de abajo trabaja con la eliminación de varias quinielas ─────────────
 async function eliminarSeleccionadas() {
 if (!gridApi) return;
 const seleccionadas = gridApi.getSelectedRows().filter(r => r.folio);
@@ -759,11 +759,10 @@ toast(`${ok} eliminadas, ${fallos} con error. Ver consola.`, 'warn');
 }
 }, []);
 }
-// ─── Esto de abajo trabaja con la eliminación de todas las quinielas ──────────
 async function eliminarTodasLasQuinielas() {
-const LOTE = 50;
+const LOTE     = 50;
 const PAUSA_MS = 300;
-const targets = state.datosOriginales.filter(q => q.id);
+const targets  = state.datosOriginales.filter(q => q.id);
 if (!targets.length) { toast('No hay quinielas en la lista para eliminar', 'warn'); return; }
 if (!confirm(`¿Eliminar las ${targets.length} quinielas de la lista actual? Las quinielas en espera o pendientes NO se eliminarán. ⚠️`)) return;
 if (!confirm(`Última confirmación: ¿Eliminar ${targets.length} quinielas jugando? 🚨`)) return;
@@ -772,8 +771,8 @@ mostrarLoading(true);
 let okTotal = 0;
 let fallosTotal = 0;
 for (let i = 0; i < targets.length; i += LOTE) {
-const lote = targets.slice(i, i + LOTE);
-const loteNum = Math.floor(i / LOTE) + 1;
+const lote       = targets.slice(i, i + LOTE);
+const loteNum    = Math.floor(i / LOTE) + 1;
 const totalLotes = Math.ceil(targets.length / LOTE);
 const loadingMsg = document.getElementById('loadingText');
 if (loadingMsg) loadingMsg.textContent = `Eliminando... lote ${loteNum}/${totalLotes} (${Math.min(i + LOTE, targets.length)}/${targets.length})`;
@@ -799,7 +798,6 @@ toast(`${okTotal} eliminadas, ${fallosTotal} con error. Intenta de nuevo.`, 'war
 }
 }, ['btnEliminarTodas']);
 }
-// ─── Esto de abajo trabaja con el modo espera ─────────────────────────────────
 function actualizarUIBloqueo() {
 const btn    = document.getElementById('btnEspera');
 const banner = document.getElementById('bloqueoBanner');
@@ -837,10 +835,9 @@ nuevoBloqueado ? 'warn' : 'success'
 );
 }, ['btnEspera']);
 }
-// ─── Esto de abajo trabaja con la importación y exportación del archivo ───────
 async function recargarDatos() { await cargarDatos(); }
 async function importarCSV(event) {
-const file = event.target.files[0];
+const file = event.target.files?.[0];
 if (!file) return;
 const formData = new FormData();
 formData.append('file',   file);
@@ -887,69 +884,77 @@ descargarCSVBlob(
 );
 }
 function exportarExcel() {
+const MAX_FOLIO   = 5000;
 const numPartidos = state.partidos.length || 9;
+if (!state.datosOriginales.length && !confirm('No hay quinielas cargadas. ¿Exportar de todas formas los 5000 folios vacíos?')) return;
 const pickHeaders = Array.from({ length: numPartidos }, (_, i) => `P${i + 1}`);
-const headers = ['Folio', 'Nombre', 'Vendedor', ...pickHeaders, 'Puntos', 'ID'];
-const csvLines = [headers.join(',')];
-const sorted = [...state.datosOriginales].sort((a, b) => {
-const fa = parseInt(a.folio) || 0;
-const fb = parseInt(b.folio) || 0;
-return fa - fb;
+const headers     = ['Folio', 'Nombre', 'Vendedor', ...pickHeaders, 'Puntos', 'ID'];
+const csvLines    = [headers.join(',')];
+// Construir mapa rápido folio(número) → quiniela
+const porFolio = {};
+state.datosOriginales.forEach(q => {
+const n = parseInt(q.folio, 10);
+if (!isNaN(n) && n >= 1 && n <= MAX_FOLIO) porFolio[n] = q;
 });
-sorted.forEach(q => {
-const nombre = (q.nombre ?? '').replace(/,/g, ' ');
+let exportadas = 0;
+for (let i = 1; i <= MAX_FOLIO; i++) {
+const q = porFolio[i];
+if (q) {
+// Folio CON quiniela registrada
+const nombre   = (q.nombre   ?? '').replace(/,/g, ' ');
 const vendedor = (q.vendedor ?? '').replace(/,/g, ' ');
-const picks = Array.from({ length: numPartidos }, (_, idx) => {
+const picks    = Array.from({ length: numPartidos }, (_, idx) => {
 const v = Array.isArray(q.picks) ? q.picks[idx] : undefined;
 return (v && v !== '-') ? v : '';
 });
-csvLines.push(`${q.folio ?? ''},${nombre},${vendedor},${picks.join(',')},${q.puntos ?? 0},${q.id ?? ''}`);
-});
-if (csvLines.length <= 1) {
-toast('No hay quinielas para exportar', 'warn');
-return;
+csvLines.push(`${q.folio ?? i},${nombre},${vendedor},${picks.join(',')},${q.puntos ?? 0},${q.id ?? ''}`);
+exportadas++;
+} else {
+const vacios = Array(numPartidos).fill('').join(',');
+csvLines.push(`${i},,,${vacios},,`);
+}
 }
 const fecha = new Date().toISOString().split('T')[0];
 descargarCSVBlob(csvLines.join('\n'), `lista-oficial-${fecha}.csv`);
-toast(`${sorted.length} quinielas exportadas`, 'success');
+toast(`✅ Exportado: ${exportadas} quinielas + ${MAX_FOLIO - exportadas} folios vacíos (total ${MAX_FOLIO})`, 'success', 6000);
 }
 function descargarCSVBlob(csv, filename) {
-const bom = '\uFEFF';
+if (!csv || !filename) return;
+const bom  = '\uFEFF';
 const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8;' });
-const url = URL.createObjectURL(blob);
-const a = document.createElement('a');
-a.href = url;
+const url  = URL.createObjectURL(blob);
+const a    = document.createElement('a');
+a.href     = url;
 a.download = filename;
 document.body.appendChild(a);
 a.click();
 document.body.removeChild(a);
 setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-// ─── Esto de abajo trabaja con las estadísticas ───────────────────────────────
 function actualizarEstadisticas() {
 const { datosOriginales: datos, primerPuntos: p1, segundoPuntos: p2 } = state;
+const ids = ['totalStat','firstStat','secondStat','vendedoresStat'];
 if (!datos.length) {
-['totalStat','firstStat','secondStat','vendedoresStat'].forEach(id =>
-document.getElementById(id).textContent = '0');
+ids.forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '0'; });
 return;
 }
 const hayRes = p1 >= 0;
 const c1 = hayRes ? datos.filter(q => q.puntos === p1).length : 0;
 const c2 = (hayRes && p2 >= 0) ? datos.filter(q => q.puntos === p2).length : 0;
 const cv = new Set(datos.map(q => q.vendedor).filter(Boolean)).size;
-document.getElementById('totalStat').textContent      = datos.length;
-document.getElementById('firstStat').textContent      = c1;
-document.getElementById('secondStat').textContent     = c2;
-document.getElementById('vendedoresStat').textContent = cv;
+const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+set('totalStat',      datos.length);
+set('firstStat',      c1);
+set('secondStat',     c2);
+set('vendedoresStat', cv);
 }
-// ─── Esto de abajo trabaja en el loading de la página con el error ────────────
 function mostrarLoading(show) {
 document.getElementById('loadingOverlay')?.classList.toggle('show', show);
 }
 function mostrarError(mensaje) {
 if (gridApi) gridApi.setGridOption('rowData', []);
 console.error('Error:', mensaje);
-toast('Error al cargar datos: ' + mensaje, 'error', 7000);
+toast('Error al cargar datos: ' + (mensaje || 'Error desconocido'), 'error', 7000);
 }
 </script>
 </body>

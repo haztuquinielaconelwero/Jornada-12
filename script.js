@@ -6535,7 +6535,7 @@ _cerrarModalConfirmar();
 if (result.success) {
 if (result.estado === 'espera') {
 if (typeof showToast === 'function') {
-showToast(`${nombre} fue a En Espera (límite alcanzado ⏸️)`, 'warning');
+showToast(`${nombre} fue a espera (límite alcanzado ⏸️)`, 'warning');
 }
 } else {
 const folio = result.quiniela?.folio;
