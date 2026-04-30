@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'quinielas-v2';
+const CACHE_VERSION = 'quinielas-v3';
 const ARCHIVOS = [
 '/',
 '/index.html',
@@ -10,16 +10,17 @@ self.addEventListener('install', e => {
 e.waitUntil(
 caches.open(CACHE_VERSION).then(async cache => {
 const resultados = await Promise.allSettled(
-ARCHIVOS.map(async url => {
-try {
-await cache.add(url);
-if (self.registration && self.registration.scope) {
+ARCHIVOS.map(url =>
+cache.add(url)
+.then(() => {
 console.log('[SW] Cacheado OK:', url);
-}
-} catch (err) {
-console.warn('[SW] No se pudo cachear:', url, err);
-}
+return url;
 })
+.catch(err => {
+console.warn('[SW] No se pudo cachear:', url, err.message);
+throw err;
+})
+)
 );
 const ok = resultados.filter(r => r.status === 'fulfilled').length;
 const fail = resultados.filter(r => r.status === 'rejected').length;
@@ -52,14 +53,14 @@ caches.open(CACHE_VERSION).then(c => c.put('/', clone));
 return response;
 })
 .catch(() =>
-caches.match('/') || caches.match('/index.html')
+caches.match('/').then(c => c || caches.match('/index.html'))
 )
 );
 return;
 }
 e.respondWith(
-caches.match(e.request).then(cached => {
-if (cached) return cached;
+caches.match(e.request).then(cachedResponse => {
+if (cachedResponse) return cachedResponse;
 return fetch(e.request)
 .then(response => {
 if (response && response.status === 200) {
@@ -68,7 +69,7 @@ caches.open(CACHE_VERSION).then(c => c.put(e.request, clone));
 }
 return response;
 })
-.catch(() => cached || new Response('Sin conexión', { status: 503 }));
+.catch(() => cachedResponse || new Response('Sin conexión', { status: 503 }));
 })
 );
 });

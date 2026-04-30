@@ -889,35 +889,37 @@ descargarCSVBlob(
 function exportarExcel() {
 const numPartidos = state.partidos.length || 9;
 const pickHeaders = Array.from({ length: numPartidos }, (_, i) => `P${i + 1}`);
-const headers = ['Folio', 'Nombre', 'Vendedor', ...pickHeaders, 'ID'];  // ← orden correcto
+const headers = ['Folio', 'Nombre', 'Vendedor', ...pickHeaders, 'Puntos', 'ID'];
 const csvLines = [headers.join(',')];
-const porFolio = {};
-state.datosOriginales.forEach(q => {
-const n = parseInt(q.folio);
-if (!isNaN(n)) porFolio[n] = q;
+const sorted = [...state.datosOriginales].sort((a, b) => {
+const fa = parseInt(a.folio) || 0;
+const fb = parseInt(b.folio) || 0;
+return fa - fb;
 });
-for (let i = 1; i < 5000; i++) {
-const q = porFolio[i];
-if (!q) break;
-const nombre   = (q.nombre   ?? '').replace(/"/g, '""');
-const vendedor = (q.vendedor ?? '').replace(/"/g, '""');
+sorted.forEach(q => {
+const nombre = (q.nombre ?? '').replace(/,/g, ' ');
+const vendedor = (q.vendedor ?? '').replace(/,/g, ' ');
 const picks = Array.from({ length: numPartidos }, (_, idx) => {
 const v = Array.isArray(q.picks) ? q.picks[idx] : undefined;
 return (v && v !== '-') ? v : '';
 });
-csvLines.push(`${q.folio ?? i},"${nombre}","${vendedor}",${picks.join(',')},${q.id}`);
+csvLines.push(`${q.folio ?? ''},${nombre},${vendedor},${picks.join(',')},${q.puntos ?? 0},${q.id ?? ''}`);
+});
+if (csvLines.length <= 1) {
+toast('No hay quinielas para exportar', 'warn');
+return;
 }
-descargarCSVBlob(
-csvLines.join('\n'),
-`lista-oficial-${new Date().toISOString().split('T')[0]}.csv`
-);
+const fecha = new Date().toISOString().split('T')[0];
+descargarCSVBlob(csvLines.join('\n'), `lista-oficial-${fecha}.csv`);
+toast(`${sorted.length} quinielas exportadas`, 'success');
 }
 function descargarCSVBlob(csv, filename) {
-const bom  = '\uFEFF';
+const bom = '\uFEFF';
 const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8;' });
-const url  = URL.createObjectURL(blob);
-const a    = document.createElement('a');
-a.href = url; a.download = filename;
+const url = URL.createObjectURL(blob);
+const a = document.createElement('a');
+a.href = url;
+a.download = filename;
 document.body.appendChild(a);
 a.click();
 document.body.removeChild(a);

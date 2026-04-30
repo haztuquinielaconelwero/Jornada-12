@@ -1577,9 +1577,8 @@ box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);
 }
 .jugada-card.no-jugando {
 border-color: #dc2626;
-background: linear-gradient(135deg, #fee2e2 0%, #ffffff 100%);
-background: -webkit-linear-gradient(135deg, #fee2e2 0%, #ffffff 100%);
-box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+background: linear-gradient(135deg, #450a0a 0%, #1a0000 100%);
+box-shadow: 0 4px 12px rgba(220, 38, 38, 0.45);
 }
 .jugada-card:active {
 transform: scale(0.98);
@@ -1603,7 +1602,7 @@ padding: 8px 10px;
 margin: -6px -6px 8px -6px;
 }
 .jugada-header.no-jugando {
-background: #fef2f2;
+background: #991b1b;
 border-radius: 10px;
 padding: 8px 10px;
 margin: -6px -6px 8px -6px;
@@ -4354,4 +4353,12 @@ flex: 1;
 #adminEspera .results-table {
 table-layout: fixed;
 width: 100%;
+}
+#adminEspera .table-container {
+overflow-x: auto;
+overflow-y: visible;
+}
+#adminEspera .results-table tbody tr.empty-row td {
+background: transparent;
+padding: 1rem;
 }

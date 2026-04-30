@@ -4331,12 +4331,12 @@ top: 0;
 left: 0;
 width: 100%;
 height: 100%;
-background: rgba(0, 0, 0, 0.9);
+background: rgba(0, 0, 0, 0.85);
 display: flex;
 align-items: center;
 justify-content: center;
 z-index: 9999;
-padding: 20px;
+padding: 12px;
 overflow-y: auto;
 -webkit-overflow-scrolling: touch;
 `;
@@ -4345,14 +4345,15 @@ modalContent.style.cssText = `
 background: #0a0a0a;
 border: 2px solid var(--verde);
 border-radius: 12px;
-padding: 24px;
-max-width: 600px;
+padding: 16px;
+max-width: 360px;
 width: 100%;
-max-height: 90vh;
+max-height: 85vh;
 overflow-y: auto;
 -webkit-overflow-scrolling: touch;
 position: relative;
 color: var(--blanco);
+margin: auto;
 `;
 if (typeof content === 'string') {
 modalContent.innerHTML = content;
@@ -4365,9 +4366,9 @@ closeBtn.setAttribute('aria-label', 'Cerrar ventana');
 closeBtn.setAttribute('type', 'button');
 closeBtn.onclick = closeModal;
 closeBtn.style.cssText = `
-margin-top: 20px;
+margin-top: 14px;
 width: 100%;
-padding: 12px;
+padding: 10px;
 background: var(--verde);
 color: white;
 border: none;
@@ -6534,7 +6535,7 @@ _cerrarModalConfirmar();
 if (result.success) {
 if (result.estado === 'espera') {
 if (typeof showToast === 'function') {
-showToast(`⏸️ ${nombre} fue a En Espera (límite alcanzado)`, 'warning');
+showToast(`${nombre} fue a En Espera (límite alcanzado ⏸️)`, 'warning');
 }
 } else {
 const folio = result.quiniela?.folio;
@@ -6810,11 +6811,13 @@ tdNombre.className = 'col-name';
 tdNombre.textContent = q.nombre ?? '-';
 tr.appendChild(tdNombre);
 const picks = Array.isArray(q.picks) ? q.picks : [];
-picks.forEach(pick => {
+picks.forEach((pick, i) => {
+const resultado = (officialResults ?? {})[String(i)];
+const cls = !resultado ? 'pending' : pick === resultado ? 'correct' : 'incorrect';
 const td = document.createElement('td');
 td.className = 'col-match';
 const span = document.createElement('span');
-span.className = 'result-cell';
+span.className = 'result-cell ' + cls;
 span.textContent = pick ?? '-';
 td.appendChild(span);
 tr.appendChild(td);
@@ -6934,11 +6937,13 @@ tdNombre.className = 'col-name';
 tdNombre.textContent = q.nombre ?? '-';
 tr.appendChild(tdNombre);
 const picks = Array.isArray(q.picks) ? q.picks : [];
-picks.forEach(pick => {
+picks.forEach((pick, i) => {
+const resultado = (officialResults ?? {})[String(i)];
+const cls = !resultado ? 'pending' : pick === resultado ? 'correct' : 'incorrect';
 const td = document.createElement('td');
 td.className = 'col-match';
 const span = document.createElement('span');
-span.className = 'result-cell';
+span.className = 'result-cell ' + cls;
 span.textContent = pick ?? '-';
 td.appendChild(span);
 tr.appendChild(td);
@@ -6947,7 +6952,7 @@ const tdAcciones = document.createElement('td');
 tdAcciones.className = 'col-actions';
 const badge = document.createElement('span');
 badge.className = 'admin-espera-badge';
-badge.textContent = 'En espera ⏳';
+badge.textContent = '⏳';
 tdAcciones.appendChild(badge);
 tr.appendChild(tdAcciones);
 return tr;
@@ -7376,55 +7381,97 @@ document.addEventListener('DOMContentLoaded', initNavegacionTabs, { once: true }
 const PWA = (() => {
 let _prompt = null;
 let _bannerTimer = null;
+let _retryTimer = null;
 let _isInstalando = false;
+let _promptGuardado = false;
 function _yaEstaInstalada() {
+try {
 return window.matchMedia?.('(display-mode: standalone)').matches
 || window.navigator.standalone === true;
+} catch (e) {
+return false;
+}
 }
 function _ocultarBanner() {
-if (_bannerTimer) {
-clearTimeout(_bannerTimer);
-_bannerTimer = null;
-}
+if (_bannerTimer) { clearTimeout(_bannerTimer); _bannerTimer = null; }
+if (_retryTimer) { clearTimeout(_retryTimer); _retryTimer = null; }
+try {
 const banner = document.getElementById('pwaBanner');
 if (banner) banner.style.display = 'none';
+} catch (e) {}
 }
 function _persistirVendedorActual() {
+try {
 const vendedor = VendedorManager?.current;
-if (vendedor) {
+if (vendedor && typeof ls !== 'undefined') {
 ls.set('vendedor', vendedor);
-if (ENV?.isDev) console.log('✅ PWA: vendedor persistido antes de instalar:', vendedor);
+if (ENV?.isDev) console.log('✅ PWA: vendedor persistido:', vendedor);
 }
+} catch (e) {}
 }
 function _mostrarBanner() {
+try {
 if (typeof ls === 'undefined') return;
 if (_yaEstaInstalada()) return;
+if (!_prompt) return;
 const vendedor = VendedorManager?.current;
-if (!vendedor) return;
-if (ls.get('pwaDismissed_' + vendedor)) return;
-if (_bannerTimer) {
-clearTimeout(_bannerTimer);
-_bannerTimer = null;
+if (!vendedor) {
+if (!_retryTimer) {
+let intentos = 0;
+const MAX_INTENTOS = 20;
+const retry = () => {
+intentos++;
+const v = VendedorManager?.current;
+if (v) {
+_retryTimer = null;
+_mostrarBanner();
+return;
 }
+if (intentos < MAX_INTENTOS) {
+_retryTimer = setTimeout(retry, 500);
+} else {
+_retryTimer = null;
+if (ENV?.isDev) console.warn('PWA: vendedor nunca cargó tras reintentos');
+}
+};
+_retryTimer = setTimeout(retry, 500);
+}
+return;
+}
+if (ls.get('pwaDismissed_' + vendedor)) return;
+if (_bannerTimer) { clearTimeout(_bannerTimer); _bannerTimer = null; }
 _bannerTimer = setTimeout(() => {
 _bannerTimer = null;
+try {
 const banner = document.getElementById('pwaBanner');
 if (banner) banner.style.display = 'flex';
+} catch (e) {}
 }, 4000);
+} catch (err) {
+if (ENV?.isDev) console.error('❌ PWA._mostrarBanner:', err);
+}
 }
 window.addEventListener('beforeinstallprompt', e => {
+try {
 e.preventDefault();
 _prompt = e;
+_promptGuardado = true;
+if (ENV?.isDev) console.log('✅ PWA: beforeinstallprompt capturado');
 _mostrarBanner();
-});
-window.addEventListener('appinstalled', () => {
-_prompt = null;
-_persistirVendedorActual();
-_ocultarBanner();
-if (typeof showToast === 'function') {
-showToast('¡App instalada! 🎉', 'success');
+} catch (err) {
+if (ENV?.isDev) console.error('❌ PWA beforeinstallprompt:', err);
 }
 });
+window.addEventListener('appinstalled', () => {
+try {
+_prompt = null;
+_promptGuardado = false;
+_persistirVendedorActual();
+_ocultarBanner();
+if (typeof showToast === 'function') showToast('¡App instalada! 🎉', 'success');
+} catch (e) {}
+});
+
 if ('serviceWorker' in navigator) {
 window.addEventListener('load', () => {
 navigator.serviceWorker.register('/service-worker.js')
@@ -7449,13 +7496,29 @@ if (ENV?.isDev) console.log('PWA: prompt descartado por el usuario');
 if (ENV?.isDev) console.error('❌ PWA instalarPWA:', err);
 } finally {
 _prompt = null;
+_promptGuardado = false;
 _isInstalando = false;
 }
 }
 function cerrarBanner() {
+try {
 const vendedor = VendedorManager?.current;
 _ocultarBanner();
+if (typeof ls !== 'undefined') {
 ls.set('pwaDismissed_' + (vendedor || 'sin_vendedor'), '1');
 }
-return Object.freeze({ instalarPWA, cerrarBanner });
+} catch (e) {}
+}
+function mostrarBannerManual() {
+if (_promptGuardado) _mostrarBanner();
+}
+function resetDismissed() {
+try {
+Object.keys(localStorage)
+.filter(k => k.startsWith('pwaDismissed_'))
+.forEach(k => localStorage.removeItem(k));
+if (ENV?.isDev) console.log('✅ PWA: pwaDismissed limpiado');
+} catch (e) {}
+}
+return Object.freeze({ instalarPWA, cerrarBanner, mostrarBannerManual, resetDismissed });
 })();
