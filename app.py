@@ -457,7 +457,7 @@ app.add_middleware(
     max_age=3600,
 )
 # ║     ⚽ Configuracion semanal ⚽       ║ # ║     ⚽ Configuracion semanal ⚽       ║ # ║     ⚽ Configuracion semanal ⚽       ║
-JORNADA_ACTUAL     = "Jornada 15"
+JORNADA_ACTUAL     = "Cuartos 1"
 MAX_DOBLES         = 4
 MAX_TRIPLES        = 3
 PRECIO_NORMAL      = 30
@@ -471,13 +471,14 @@ if PRECIO_DESCUENTO >= PRECIO_NORMAL:
     )
 
 JORNADA_CONFIG = {
-    "numero":       15,
-    "nombre":       "Jornada 15",
-    "codigo_grupo": "J15",
-    "link_grupo":   "https://chat.whatsapp.com/I6FE9D06ooKFQrtR3WpVAo",
-    "inicio":       "2026-04-14T18:00:00-06:00",
-    "fin":          "2026-04-19T19:00:00-06:00",
+    "numero":       1,
+    "nombre":       "Cuartos 1",
+    "codigo_grupo": "C1",
+    "link_grupo":   "https://chat.whatsapp.com/HBVcupu5GfK4T5G1hzUrND",
+    "inicio":       "2026-04-29T20:00:00-06:00",
+    "fin":          "2026-05-02T17:00:00-06:00",
 }
+
 
 _inicio_dt = datetime.fromisoformat(JORNADA_CONFIG["inicio"])
 _fin_dt    = datetime.fromisoformat(JORNADA_CONFIG["fin"])
@@ -488,78 +489,79 @@ if _fin_dt <= _inicio_dt:
     )
 JORNADA_CONFIG["findt"] = _fin_dt
 
+
 PARTIDOS = [
     {
         "id": 0,
-        "local": "San Luis",       "localLogo": "/logos/san-luis.png",
-        "visitante": "Pumas",      "visitanteLogo": "/logos/pumas.png",
-        "horario": "Viernes 7 PM",
+        "local": "Tigres",         "localLogo": "/logos/tigres.png",
+        "visitante": "Chivas",     "visitanteLogo": "/logos/chivas.png",
+        "horario": "Sáb 2 Mayo 7 PM",
         "televisora": "TUDN",      "televisionLogo": "/logos/tudn.png",
-        "kickoff": "2026-04-17T19:00:00-06:00",
+        "kickoff": "2026-05-02T19:00:00-06:00",
     },
     {
         "id": 1,
-        "local": "Mazatlán",       "localLogo": "/logos/mazatlan.png",
-        "visitante": "Querétaro",  "visitanteLogo": "/logos/queretaro.png",
-        "horario": "Viernes 7 PM",
-        "televisora": "TV Azteca", "televisionLogo": "/logos/tv-azteca.png",
-        "kickoff": "2026-04-17T19:00:00-06:00",
+        "local": "Atlas",          "localLogo": "/logos/atlas.png",
+        "visitante": "Cruz Azul",  "visitanteLogo": "/logos/cruz-azul.png",
+        "horario": "Sáb 2 Mayo 9:15 PM",
+        "televisora": "Fox Sports","televisionLogo": "/logos/fox-sports.png",
+        "kickoff": "2026-05-02T21:15:00-06:00",
     },
     {
         "id": 2,
-        "local": "Necaxa",         "localLogo": "/logos/necaxa.png",
-        "visitante": "Tigres",     "visitanteLogo": "/logos/tigres.png",
-        "horario": "Sábado 5 PM",
-        "televisora": "Fox Sports", "televisionLogo": "/logos/fox-sports.png",
-        "kickoff": "2026-04-18T17:00:00-06:00",
+        "local": "Man Utd",        "localLogo": "/logos/man-utd.png",
+        "visitante": "Liverpool",  "visitanteLogo": "/logos/liverpool.png",
+        "horario": "Dom 3 Mayo 8:30 AM",
+        "televisora": "ESPN",      "televisionLogo": "/logos/espn.png",
+        "kickoff": "2026-05-03T08:30:00-06:00",
     },
     {
         "id": 3,
-        "local": "Cruz Azul",      "localLogo": "/logos/cruz-azul.png",
-        "visitante": "Tijuana",    "visitanteLogo": "/logos/tijuana.png",
-        "horario": "Sábado 5 PM",
-        "televisora": "TUDN",      "televisionLogo": "/logos/tudn.png",
-        "kickoff": "2026-04-18T17:00:00-06:00",
+        "local": "Aston Villa",    "localLogo": "/logos/aston-villa.png",
+        "visitante": "Tottenham",  "visitanteLogo": "/logos/tottenham.png",
+        "horario": "Dom 3 Mayo 12 PM",
+        "televisora": "ESPN",      "televisionLogo": "/logos/espn.png",
+        "kickoff": "2026-05-03T12:00:00-06:00",
     },
     {
         "id": 4,
-        "local": "Chivas",         "localLogo": "/logos/chivas.png",
-        "visitante": "Puebla",     "visitanteLogo": "/logos/puebla.png",
-        "horario": "Sábado 7 PM",
-        "televisora": "TV Azteca", "televisionLogo": "/logos/tv-azteca.png",
-        "kickoff": "2026-04-18T19:00:00-06:00",
+        "local": "Espanyol",       "localLogo": "/logos/espanyol.png",
+        "visitante": "Real M.",    "visitanteLogo": "/logos/real-madrid.png",
+        "horario": "Dom 3 Mayo 1 PM",
+        "televisora": "ESPN",      "televisionLogo": "/logos/espn.png",
+        "kickoff": "2026-05-03T13:00:00-06:00",
     },
     {
         "id": 5,
-        "local": "Monterrey",      "localLogo": "/logos/monterrey.png",
-        "visitante": "Pachuca",    "visitanteLogo": "/logos/pachuca.png",
-        "horario": "Sábado 7:05 PM",
+        "local": "América",        "localLogo": "/logos/america.png",
+        "visitante": "Pumas",      "visitanteLogo": "/logos/pumas.png",
+        "horario": "Dom 3 Mayo 5 PM",
         "televisora": "TUDN",      "televisionLogo": "/logos/tudn.png",
-        "kickoff": "2026-04-18T19:05:00-06:00",
+        "kickoff": "2026-05-03T17:00:00-06:00",
     },
     {
         "id": 6,
-        "local": "León",           "localLogo": "/logos/leon.png",
-        "visitante": "Juárez",     "visitanteLogo": "/logos/juarez.png",
-        "horario": "Sábado 9 PM",
-        "televisora": "Fox Sports", "televisionLogo": "/logos/fox-sports.png",
-        "kickoff": "2026-04-18T21:00:00-06:00",
+        "local": "Toluca",         "localLogo": "/logos/toluca.png",
+        "visitante": "Pachuca",    "visitanteLogo": "/logos/pachuca.png",
+        "horario": "Dom 3 Mayo 7:15 PM",
+        "televisora": "Fox Sports","televisionLogo": "/logos/fox-sports.png",
+        "kickoff": "2026-05-03T19:15:00-06:00",
     },
     {
         "id": 7,
-        "local": "América",        "localLogo": "/logos/america.png",
-        "visitante": "Toluca",     "visitanteLogo": "/logos/toluca.png",
-        "horario": "Sábado 9 PM",
-        "televisora": "TUDN",      "televisionLogo": "/logos/tudn.png",
-        "kickoff": "2026-04-18T21:00:00-06:00",
+        "local": "Chelsea",        "localLogo": "/logos/chelsea.png",
+        "visitante": "Forest",     "visitanteLogo": "/logos/nottm-forest.png",
+        "horario": "Lun 4 Mayo 8 AM",
+        "televisora": "ESPN",      "televisionLogo": "/logos/espn.png",
+        "kickoff": "2026-05-04T08:00:00-06:00",
     },
     {
         "id": 8,
-        "local": "Santos",         "localLogo": "/logos/santos.png",
-        "visitante": "Atlas",      "visitanteLogo": "/logos/atlas.png",
-        "horario": "Domingo 5 PM",
-        "televisora": "TUDN",      "televisionLogo": "/logos/tudn.png",
-        "kickoff": "2026-04-19T17:00:00-06:00",
+        "local": "Everton",        "localLogo": "/logos/everton.png",
+        "visitante": "Man City",   "visitanteLogo": "/logos/man-city.png",
+        "horario": "Lun 4 Mayo 1 PM",
+        "televisora": "ESPN",      "televisionLogo": "/logos/espn.png",
+        "kickoff": "2026-05-04T13:00:00-06:00",
     },
 ]
 _total_especiales = MAX_DOBLES + MAX_TRIPLES
