@@ -612,11 +612,11 @@ if _static_dir.is_dir():
 
 @app.get("/styles.css", include_in_schema=False, response_class=FileResponse)
 async def get_styles():
-    return _file_response("styles.css", "text/css", cache_seconds=86400)
+    return _file_response("styles.css", "text/css", cache_seconds=0)
 
 @app.get("/script.js", include_in_schema=False, response_class=FileResponse)
 async def get_script():
-    return _file_response("script.js", "text/javascript", cache_seconds=86400)
+    return _file_response("script.js", "text/javascript", cache_seconds=0)
 
 @app.get("/espera", include_in_schema=False, response_class=FileResponse)
 async def get_espera():
