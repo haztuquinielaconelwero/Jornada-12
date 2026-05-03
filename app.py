@@ -193,7 +193,7 @@ NOMBRE_A_ESPN: dict[str, tuple[str, str]] = {
     "América":     ("America",                  "liga_mx"),
     "Toluca":      ("Toluca",                   "liga_mx"),
     "Santos":      ("Santos Laguna",            "liga_mx"),
-    "Atlas":       ("Atlas FC",                 "liga_mx"),
+    "Atlas":       ("Atlas",                    "liga_mx"),
 
 # ── Premier League ────────────────────────────────────────────────
     "Man Utd":     ("Manchester United",        "premier"),
