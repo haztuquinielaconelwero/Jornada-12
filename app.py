@@ -166,7 +166,7 @@ def init_db() -> None:
 
 # ── IDs de ligas en TheSportsDB ───────────────────────────────────────
 LIGAS_SPORTSDB: dict[str, str] = {
-    "liga_mx":    "4403",
+    "liga_mx":    "4350",
     "premier":    "4328",
     "la_liga":    "4335",
     "bundesliga": "4331",
@@ -178,24 +178,24 @@ LIGAS_SPORTSDB: dict[str, str] = {
 NOMBRE_A_SPORTSDB: dict[str, tuple[str, str]] = {
 
     # ── Liga MX ──────────────────────────────────────────────────────
-    "San Luis":    ("Atletico San Luis",   "4403"),
-    "Pumas":       ("Pumas UNAM",          "4403"),
-    "Mazatlán":    ("Mazatlan FC",         "4403"),
-    "Querétaro":   ("Queretaro FC",        "4403"),
-    "Necaxa":      ("Necaxa",              "4403"),
-    "Tigres":      ("Tigres UANL",         "4403"),
-    "Cruz Azul":   ("Cruz Azul",           "4403"),
-    "Tijuana":     ("Club Tijuana",        "4403"),
-    "Chivas":      ("Guadalajara",         "4403"),
-    "Puebla":      ("Puebla FC",           "4403"),
-    "Monterrey":   ("Monterrey",           "4403"),
-    "Pachuca":     ("Pachuca",             "4403"),
-    "León":        ("Leon",                "4403"),
-    "Juárez":      ("FC Juarez",           "4403"),
-    "América":     ("America",             "4403"),
-    "Toluca":      ("Toluca",              "4403"),
-    "Santos":      ("Santos Laguna",       "4403"),
-    "Atlas":       ("Atlas FC",            "4403"),
+    "San Luis":    ("Atletico San Luis",   "4350"),
+    "Pumas":       ("Pumas UNAM",          "4350"),
+    "Mazatlán":    ("Mazatlan FC",         "4350"),
+    "Querétaro":   ("Queretaro FC",        "4350"),
+    "Necaxa":      ("Necaxa",              "4350"),
+    "Tigres":      ("Tigres UANL",         "4350"),
+    "Cruz Azul":   ("Cruz Azul",           "4350"),
+    "Tijuana":     ("Club Tijuana",        "4350"),
+    "Chivas":      ("Guadalajara",         "4350"),
+    "Puebla":      ("Puebla FC",           "4350"),
+    "Monterrey":   ("Monterrey",           "4350"),
+    "Pachuca":     ("Pachuca",             "4350"),
+    "León":        ("Leon",                "4350"),
+    "Juárez":      ("FC Juarez",           "4350"),
+    "América":     ("America",             "4350"),
+    "Toluca":      ("Toluca",              "4350"),
+    "Santos":      ("Santos Laguna",       "4350"),
+    "Atlas":       ("Atlas FC",            "4350"),
 
     # ── Premier League ────────────────────────────────────────────────
     "Man Utd":     ("Manchester United",   "4328"),
