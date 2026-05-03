@@ -174,150 +174,194 @@ LIGAS_SPORTSDB: dict[str, str] = {
     "ligue_1":    "4334",
     "champions":  "4480",
 }
+
 NOMBRE_A_SPORTSDB: dict[str, tuple[str, str]] = {
 
-    # ── Liga MX ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-    "San Luis":    ("Atletico San Luis",  "4403"),
-    "Pumas":       ("Pumas UNAM",         "4403"),
-    "Mazatlán":    ("Mazatlan FC",        "4403"),
-    "Querétaro":   ("Queretaro FC",       "4403"),
-    "Necaxa":      ("Necaxa",             "4403"),
-    "Tigres":      ("Tigres UANL",        "4403"),
-    "Cruz Azul":   ("Cruz Azul",          "4403"),
-    "Tijuana":     ("Club Tijuana",       "4403"),
-    "Chivas":      ("Guadalajara",        "4403"),
-    "Puebla":      ("Puebla FC",          "4403"),
-    "Monterrey":   ("Monterrey",          "4403"),
-    "Pachuca":     ("Pachuca",            "4403"),
-    "León":        ("Leon",               "4403"),
-    "Juárez":      ("FC Juarez",          "4403"),
-    "América":     ("America",            "4403"),
-    "Toluca":      ("Toluca",             "4403"),
-    "Santos":      ("Santos Laguna",      "4403"),
-    "Atlas":       ("Atlas FC",           "4403"),
+    # ── Liga MX ──────────────────────────────────────────────────────
+    "San Luis":    ("Atletico San Luis",   "4403"),
+    "Pumas":       ("Pumas UNAM",          "4403"),
+    "Mazatlán":    ("Mazatlan FC",         "4403"),
+    "Querétaro":   ("Queretaro FC",        "4403"),
+    "Necaxa":      ("Necaxa",              "4403"),
+    "Tigres":      ("Tigres UANL",         "4403"),
+    "Cruz Azul":   ("Cruz Azul",           "4403"),
+    "Tijuana":     ("Club Tijuana",        "4403"),
+    "Chivas":      ("Guadalajara",         "4403"),
+    "Puebla":      ("Puebla FC",           "4403"),
+    "Monterrey":   ("Monterrey",           "4403"),
+    "Pachuca":     ("Pachuca",             "4403"),
+    "León":        ("Leon",                "4403"),
+    "Juárez":      ("FC Juarez",           "4403"),
+    "América":     ("America",             "4403"),
+    "Toluca":      ("Toluca",              "4403"),
+    "Santos":      ("Santos Laguna",       "4403"),
+    "Atlas":       ("Atlas FC",            "4403"),
 
-    # ── Premier League ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-    "Man Utd":     ("Manchester United",  "4328"),
-    "Liverpool":   ("Liverpool",          "4328"),
-    "Aston Villa": ("Aston Villa",        "4328"),
-    "Tottenham":   ("Tottenham Hotspur",  "4328"),
-    "Chelsea":     ("Chelsea",            "4328"),
-    "Everton":     ("Everton",            "4328"),
-    "Man City":    ("Manchester City",    "4328"),
-    "Forest":      ("Nottingham Forest",  "4328"),
-    "Arsenal":     ("Arsenal",            "4328"),
-    "Brighton":    ("Brighton",           "4328"),
-    "Newcastle":   ("Newcastle United",   "4328"),
-    "West Ham":    ("West Ham United",    "4328"),
-    "Wolves":      ("Wolverhampton",      "4328"),
-    "Fulham":      ("Fulham",             "4328"),
+    # ── Premier League ────────────────────────────────────────────────
+    "Man Utd":     ("Manchester United",   "4328"),
+    "Liverpool":   ("Liverpool",           "4328"),
+    "Aston Villa": ("Aston Villa",         "4328"),
+    "Tottenham":   ("Tottenham Hotspur",   "4328"),
+    "Chelsea":     ("Chelsea",             "4328"),
+    "Everton":     ("Everton",             "4328"),
+    "Man City":    ("Manchester City",     "4328"),
+    "Forest":      ("Nottingham Forest",   "4328"),
+    "Arsenal":     ("Arsenal",             "4328"),
+    "Brighton":    ("Brighton",            "4328"),
+    "Newcastle":   ("Newcastle United",    "4328"),
+    "West Ham":    ("West Ham United",     "4328"),
+    "Wolves":      ("Wolverhampton",       "4328"),
+    "Fulham":      ("Fulham",              "4328"),
 
-    # ── La Liga ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-    "Real M.":     ("Real Madrid",        "4335"),
-    "Espanyol":    ("Espanyol",           "4335"),
-    "Barcelona":   ("Barcelona",          "4335"),
-    "Atlético":    ("Atletico Madrid",    "4335"),
-    "Villarreal":  ("Villarreal",         "4335"),
-    "Sevilla":     ("Sevilla",            "4335"),
-    "Betis":       ("Real Betis",         "4335"),
-    "Valencia":    ("Valencia",           "4335"),
-    "Sociedad":    ("Real Sociedad",      "4335"),
-    "Bilbao":      ("Athletic Club",      "4335"),
+    # ── La Liga ───────────────────────────────────────────────────────
+    "Real M.":     ("Real Madrid",         "4335"),
+    "Espanyol":    ("Espanyol",            "4335"),
+    "Barcelona":   ("Barcelona",           "4335"),
+    "Atlético":    ("Atletico Madrid",     "4335"),
+    "Villarreal":  ("Villarreal",          "4335"),
+    "Sevilla":     ("Sevilla",             "4335"),
+    "Betis":       ("Real Betis",          "4335"),
+    "Valencia":    ("Valencia",            "4335"),
+    "Sociedad":    ("Real Sociedad",       "4335"),
+    "Bilbao":      ("Athletic Club",       "4335"),
 
-    # ── Bundesliga ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-    "Bayern":      ("Bayern Munich",      "4331"),
-    "Dortmund":    ("Borussia Dortmund",  "4331"),
-    "Leverkusen":  ("Bayer Leverkusen",   "4331"),
-    "Leipzig":     ("RB Leipzig",         "4331"),
-    "Frankfurt":   ("Eintracht Frankfurt","4331"),
+    # ── Bundesliga ────────────────────────────────────────────────────
+    "Bayern":      ("Bayern Munich",       "4331"),
+    "Dortmund":    ("Borussia Dortmund",   "4331"),
+    "Leverkusen":  ("Bayer Leverkusen",    "4331"),
+    "Leipzig":     ("RB Leipzig",          "4331"),
+    "Frankfurt":   ("Eintracht Frankfurt", "4331"),
 
-    # ── Serie A ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-    "Juventus":    ("Juventus",           "4332"),
-    "Inter":       ("Inter Milan",        "4332"),
-    "Milan":       ("AC Milan",           "4332"),
-    "Napoli":      ("Napoli",             "4332"),
-    "Roma":        ("AS Roma",            "4332"),
-    "Lazio":       ("Lazio",              "4332"),
+    # ── Serie A ───────────────────────────────────────────────────────
+    "Juventus":    ("Juventus",            "4332"),
+    "Inter":       ("Inter Milan",         "4332"),
+    "Milan":       ("AC Milan",            "4332"),
+    "Napoli":      ("Napoli",              "4332"),
+    "Roma":        ("AS Roma",             "4332"),
+    "Lazio":       ("Lazio",               "4332"),
 
-    # ── Ligue 1 ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-    "PSG":         ("Paris Saint-Germain","4334"),
-    "Marsella":    ("Marseille",          "4334"),
-    "Monaco":      ("Monaco",             "4334"),
+    # ── Ligue 1 ───────────────────────────────────────────────────────
+    "PSG":         ("Paris Saint-Germain", "4334"),
+    "Marsella":    ("Marseille",           "4334"),
+    "Monaco":      ("Monaco",              "4334"),
 }
+
 async def auto_sync_loop() -> None:
     """
-    Consulta TheSportsDB cada 10 min tras el fin de jornada.
-    Soporta múltiples ligas (Liga MX, Premier, La Liga, etc.)
-    usando eventsday.php por fecha + liga_id.
-    Solo guarda resultados de partidos cuyo kickoff ya pasó.
+    Consulta TheSportsDB cada 10 min.
+    - Arranca inmediatamente sin esperar fin_jornada.
+    - Consulta solo partidos cuyo kickoff + 105 min ya pasó.
+    - No se congela si hay resultados parciales.
+    - lookup y fechas se calculan una sola vez fuera del while.
     """
     await asyncio.sleep(15)
-    logger.info("auto_sync_loop v2 (multi-liga) iniciado")
+    logger.info("auto_sync_loop v3 (por-kickoff) iniciado")
 
     kickoff_por_id: dict[int, datetime] = {}
     for p in PARTIDOS:
         ko_str = p.get("kickoff")
-        if ko_str:
-            try:
-                kickoff_por_id[p["id"]] = datetime.fromisoformat(ko_str)
-            except (ValueError, TypeError):
-                logger.warning(
-                    "auto_sync: kickoff inválido para partido_id=%s — '%s'",
-                    p["id"], ko_str,
-                )
+        if not ko_str:
+            continue
+        try:
+            ko_dt = datetime.fromisoformat(ko_str)
+            if ko_dt.tzinfo is None:
+                ko_dt = ko_dt.replace(tzinfo=timezone.utc)
+            else:
+                ko_dt = ko_dt.astimezone(timezone.utc)
+            kickoff_por_id[p["id"]] = ko_dt
+        except (ValueError, TypeError):
+            logger.warning(
+                "auto_sync: kickoff inválido para partido_id=%s — '%s'",
+                p["id"], ko_str,
+            )
+
+    local_lookup: dict[str, int]       = {}
+    liga_a_ids:   dict[str, list[int]] = {}
+
+    for p in PARTIDOS:
+        entry = NOMBRE_A_SPORTSDB.get(p["local"])
+        if entry:
+            sdb_nombre, liga_id = entry
+            local_lookup[sdb_nombre.lower()] = p["id"]
+            liga_a_ids.setdefault(liga_id, []).append(p["id"])
+        else:
+            local_lookup[p["local"].lower()] = p["id"]
+            logger.warning(
+                "auto_sync: '%s' no está en NOMBRE_A_SPORTSDB — usando nombre directo",
+                p["local"],
+            )
+
+    fin_jornada:    datetime = JORNADA_CONFIG["findt"]
+    inicio_jornada: datetime = JORNADA_CONFIG.get(
+        "iniciodt", fin_jornada - timedelta(days=8)
+    )
+
+    fechas_jornada: list[str] = []
+    d = inicio_jornada.date()
+    while d <= fin_jornada.date():
+        fechas_jornada.append(d.strftime("%Y-%m-%d"))
+        d += timedelta(days=1)
+
+    ligas_usadas = list(liga_a_ids.keys())
+
+    logger.info(
+        "auto_sync: %d partido(s) | %d liga(s) | %d fecha(s) en scope",
+        len(PARTIDOS), len(ligas_usadas), len(fechas_jornada),
+    )
 
     while True:
         try:
-            now          = datetime.now(timezone.utc)
-            fin_jornada  = JORNADA_CONFIG["findt"]
-            inicio_jornada: datetime = JORNADA_CONFIG.get(
-                "iniciodt", fin_jornada - timedelta(days=8)
-            )
+            now = datetime.now(timezone.utc)
 
-            if now < fin_jornada:
-                secs = min((fin_jornada - now).total_seconds() + 120, 600)
-                await asyncio.sleep(secs)
+            ids_listos: set[int] = {
+                pid
+                for pid, ko_dt in kickoff_por_id.items()
+                if now >= ko_dt + timedelta(minutes=105)
+            }
+
+            if not ids_listos:
+                proximos = sorted(
+                    ko_dt + timedelta(minutes=105)
+                    for ko_dt in kickoff_por_id.values()
+                    if now < ko_dt + timedelta(minutes=105)
+                )
+                espera = min((proximos[0] - now).total_seconds() + 60, 600) if proximos else 600
+                logger.info(
+                    "auto_sync: ningún partido terminado aún — esperando %.0fs", espera
+                )
+                await asyncio.sleep(espera)
                 continue
 
             resultados, _ = get_resultados_db(JORNADA_ACTUAL)
-            if all(r is not None for r in resultados):
-                await asyncio.sleep(3600)
+            ids_sin_resultado: set[int] = {
+                pid for pid in ids_listos
+                if resultados[pid] is None
+            }
+
+            if not ids_sin_resultado:
+                todos_terminaron = (ids_listos == set(kickoff_por_id.keys()))
+                ultimo_kickoff   = max(kickoff_por_id.values())
+                if todos_terminaron and now > ultimo_kickoff + timedelta(hours=3):
+                    logger.info("auto_sync: jornada completa ✅ — durmiendo 1h")
+                    await asyncio.sleep(3600)
+                else:
+                    logger.info(
+                        "auto_sync: %d/%d partidos con resultado — recheck en 10min",
+                        len(ids_listos), len(kickoff_por_id),
+                    )
+                    await asyncio.sleep(600)
                 continue
 
-            local_lookup: dict[str, int]       = {}
-            liga_a_ids:   dict[str, list[int]] = {}
-
-            for p in PARTIDOS:
-                entry = NOMBRE_A_SPORTSDB.get(p["local"])
-                if entry:
-                    sdb_nombre, liga_id = entry
-                    local_lookup[sdb_nombre.lower()] = p["id"]
-                    liga_a_ids.setdefault(liga_id, []).append(p["id"])
-                else:
-                    local_lookup[p["local"].lower()] = p["id"]
-                    logger.warning(
-                        "auto_sync: '%s' no está en NOMBRE_A_SPORTSDB — usando nombre directo",
-                        p["local"],
-                    )
-
-            fechas: list[str] = []
-            d = inicio_jornada.date()
-            while d <= fin_jornada.date():
-                fechas.append(d.strftime("%Y-%m-%d"))
-                d += timedelta(days=1)
-
-            ligas_usadas = list(liga_a_ids.keys())
-            actualizados = 0
-
             logger.info(
-                "auto_sync: buscando en %d liga(s) × %d fecha(s)",
-                len(ligas_usadas), len(fechas),
+                "auto_sync: %d partido(s) sin resultado de %d terminados — consultando API",
+                len(ids_sin_resultado), len(ids_listos),
             )
 
-            async with httpx.AsyncClient(timeout=10) as client:
+            actualizados = 0
 
+            async with httpx.AsyncClient(timeout=10) as client:
                 for liga_id in ligas_usadas:
-                    for fecha_str in fechas:
+                    for fecha_str in fechas_jornada:
 
                         url = (
                             f"https://www.thesportsdb.com/api/v1/json/3/"
@@ -326,10 +370,10 @@ async def auto_sync_loop() -> None:
 
                         try:
                             resp = await client.get(url)
-                        except Exception as e:
+                        except Exception as exc:
                             logger.warning(
                                 "auto_sync: red error liga=%s fecha=%s — %s",
-                                liga_id, fecha_str, e,
+                                liga_id, fecha_str, exc,
                             )
                             await asyncio.sleep(2)
                             continue
@@ -364,16 +408,7 @@ async def auto_sync_loop() -> None:
                             if pid is None:
                                 continue
 
-                            kickoff_dt = kickoff_por_id.get(pid)
-                            if kickoff_dt is not None and now < kickoff_dt:
-                                logger.info(
-                                    "auto_sync: partido_id=%s (%s) aún no ha iniciado "
-                                    "(kickoff: %s, ahora: %s) — ignorando resultado %s-%s",
-                                    pid, home,
-                                    kickoff_dt.isoformat(),
-                                    now.isoformat(),
-                                    score_h, score_a,
-                                )
+                            if pid not in ids_listos:
                                 continue
 
                             gh, ga    = int(score_h), int(score_a)
@@ -401,23 +436,25 @@ async def auto_sync_loop() -> None:
                                     "auto_sync ✔ partido_id=%s  %s-%s  res=%s  (%s)",
                                     pid, gh, ga, resultado, fecha_str,
                                 )
-                            except Exception as e:
+                            except Exception as exc:
                                 logger.error(
-                                    "auto_sync: DB error partido_id=%s — %s", pid, e
+                                    "auto_sync: DB error partido_id=%s — %s", pid, exc
                                 )
 
                         await asyncio.sleep(0.5)
 
             if actualizados:
-                logger.info("auto_sync: %s partido(s) actualizados en esta pasada", actualizados)
+                logger.info(
+                    "auto_sync: %d partido(s) actualizados en esta pasada ✅", actualizados
+                )
             else:
                 logger.info("auto_sync: ningún resultado nuevo encontrado")
 
         except asyncio.CancelledError:
             logger.info("auto_sync_loop detenido")
             return
-        except Exception as e:
-            logger.error("auto_sync_loop: error inesperado — %s", e)
+        except Exception as exc:
+            logger.error("auto_sync_loop: error inesperado — %s", exc)
 
         await asyncio.sleep(600)
 
@@ -500,7 +537,7 @@ JORNADA_CONFIG = {
     "codigo_grupo": "C1",
     "link_grupo":   "https://chat.whatsapp.com/HBVcupu5GfK4T5G1hzUrND",
     "inicio":       "2026-04-29T20:00:00-06:00",
-    "fin":          "2026-05-02T17:00:00-06:00",
+    "fin":          "2026-05-04T16:00:00-06:00",
 }
 
 
@@ -511,7 +548,8 @@ if _fin_dt <= _inicio_dt:
         f"❌ JORNADA_CONFIG: 'fin' ({JORNADA_CONFIG['fin']}) debe ser "
         f"posterior a 'inicio' ({JORNADA_CONFIG['inicio']})"
     )
-JORNADA_CONFIG["findt"] = _fin_dt
+JORNADA_CONFIG["iniciodt"] = _inicio_dt
+JORNADA_CONFIG["findt"]    = _fin_dt
 
 
 PARTIDOS = [
