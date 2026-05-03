@@ -308,7 +308,14 @@ async def auto_sync_loop() -> None:
         "auto_sync: %d partido(s) | %d liga(s) | %d fecha(s) en scope",
         len(PARTIDOS), len(ligas_usadas), len(fechas_jornada),
     )
-
+    # ── DEBUG TEMPORAL — borrar después ──────────────────────────────
+    logger.info("DEBUG ligas_usadas: %s", ligas_usadas)
+    logger.info("DEBUG local_lookup: %s", list(local_lookup.keys()))
+    logger.info(
+        "DEBUG sin match: %s",
+        [p["local"] for p in PARTIDOS if NOMBRE_A_SPORTSDB.get(p["local"]) is None]
+    )
+    # ─────────────────────────────────────────────────────────────────
     while True:
         try:
             now = datetime.now(timezone.utc)
