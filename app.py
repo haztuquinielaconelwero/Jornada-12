@@ -164,98 +164,143 @@ def init_db() -> None:
 
     logger.info("Base de datos PostgreSQL inicializada correctamente")
 
-# ── IDs de ligas en TheSportsDB ───────────────────────────────────────
-LIGAS_SPORTSDB: dict[str, str] = {
-    "liga_mx":    "4350",
-    "premier":    "4328",
-    "la_liga":    "4335",
-    "bundesliga": "4331",
-    "serie_a":    "4332",
-    "ligue_1":    "4334",
-    "champions":  "4480",
+# ──ESPN por liga ─────────────────────────────────────────────
+LIGAS_ESPN: dict[str, str] = {
+    "liga_mx":    "mex.1",
+    "premier":    "eng.1",
+    "la_liga":    "esp.1",
+    "bundesliga": "ger.1",
+    "serie_a":    "ita.1",
+    "ligue_1":    "fra.1",
+    "champions":  "uefa.champions",
 }
 
-NOMBRE_A_SPORTSDB: dict[str, tuple[str, str]] = {
 
-    # ── Liga MX ──────────────────────────────────────────────────────
-    "San Luis":    ("Atletico San Luis",   "4350"),
-    "Pumas":       ("Pumas UNAM",          "4350"),
-    "Mazatlán":    ("Mazatlan FC",         "4350"),
-    "Querétaro":   ("Queretaro FC",        "4350"),
-    "Necaxa":      ("Necaxa",              "4350"),
-    "Tigres":      ("Tigres UANL",         "4350"),
-    "Cruz Azul":   ("Cruz Azul",           "4350"),
-    "Tijuana":     ("Club Tijuana",        "4350"),
-    "Chivas":      ("Guadalajara",         "4350"),
-    "Puebla":      ("Puebla FC",           "4350"),
-    "Monterrey":   ("Monterrey",           "4350"),
-    "Pachuca":     ("Pachuca",             "4350"),
-    "León":        ("Leon",                "4350"),
-    "Juárez":      ("FC Juarez",           "4350"),
-    "América":     ("America",             "4350"),
-    "Toluca":      ("Toluca",              "4350"),
-    "Santos":      ("Santos Laguna",       "4350"),
-    "Atlas":       ("Atlas FC",            "4350"),
+NOMBRE_A_ESPN: dict[str, tuple[str, str]] = {
+
+ # ── Liga MX ──────────────────────────────────────────────────────
+    "San Luis":    ("Atletico San Luis",        "liga_mx"),
+    "Pumas":       ("Pumas UNAM",               "liga_mx"),
+    "Mazatlán":    ("Mazatlan FC",              "liga_mx"),
+    "Querétaro":   ("Queretaro FC",             "liga_mx"),
+    "Necaxa":      ("Necaxa",                   "liga_mx"),
+    "Tigres":      ("Tigres UANL",              "liga_mx"),
+    "Cruz Azul":   ("Cruz Azul",                "liga_mx"),
+    "Tijuana":     ("Club Tijuana",             "liga_mx"),
+    "Chivas":      ("Guadalajara",              "liga_mx"),
+    "Puebla":      ("Puebla FC",                "liga_mx"),
+    "Monterrey":   ("Monterrey",                "liga_mx"),
+    "Pachuca":     ("Pachuca",                  "liga_mx"),
+    "León":        ("Leon",                     "liga_mx"),
+    "Juárez":      ("FC Juarez",                "liga_mx"),
+    "América":     ("America",                  "liga_mx"),
+    "Toluca":      ("Toluca",                   "liga_mx"),
+    "Santos":      ("Santos Laguna",            "liga_mx"),
+    "Atlas":       ("Atlas FC",                 "liga_mx"),
 
     # ── Premier League ────────────────────────────────────────────────
-    "Man Utd":     ("Manchester United",   "4328"),
-    "Liverpool":   ("Liverpool",           "4328"),
-    "Aston Villa": ("Aston Villa",         "4328"),
-    "Tottenham":   ("Tottenham Hotspur",   "4328"),
-    "Chelsea":     ("Chelsea",             "4328"),
-    "Everton":     ("Everton",             "4328"),
-    "Man City":    ("Manchester City",     "4328"),
-    "Forest":      ("Nottingham Forest",   "4328"),
-    "Arsenal":     ("Arsenal",             "4328"),
-    "Brighton":    ("Brighton",            "4328"),
-    "Newcastle":   ("Newcastle United",    "4328"),
-    "West Ham":    ("West Ham United",     "4328"),
-    "Wolves":      ("Wolverhampton",       "4328"),
-    "Fulham":      ("Fulham",              "4328"),
+    "Man Utd":     ("Manchester United",        "premier"),
+    "Liverpool":   ("Liverpool",                "premier"),
+    "Aston Villa": ("Aston Villa",              "premier"),
+    "Tottenham":   ("Tottenham Hotspur",        "premier"),
+    "Chelsea":     ("Chelsea",                  "premier"),
+    "Everton":     ("Everton",                  "premier"),
+    "Man City":    ("Manchester City",          "premier"),
+    "Forest":      ("Nottingham Forest",        "premier"),
+    "Arsenal":     ("Arsenal",                  "premier"),
+    "Brighton":    ("Brighton & Hove Albion",   "premier"),
+    "Newcastle":   ("Newcastle United",         "premier"),
+    "West Ham":    ("West Ham United",          "premier"),
+    "Wolves":      ("Wolverhampton Wanderers",  "premier"),
+    "Fulham":      ("Fulham",                   "premier"),
 
     # ── La Liga ───────────────────────────────────────────────────────
-    "Real M.":     ("Real Madrid",         "4335"),
-    "Espanyol":    ("Espanyol",            "4335"),
-    "Barcelona":   ("Barcelona",           "4335"),
-    "Atlético":    ("Atletico Madrid",     "4335"),
-    "Villarreal":  ("Villarreal",          "4335"),
-    "Sevilla":     ("Sevilla",             "4335"),
-    "Betis":       ("Real Betis",          "4335"),
-    "Valencia":    ("Valencia",            "4335"),
-    "Sociedad":    ("Real Sociedad",       "4335"),
-    "Bilbao":      ("Athletic Club",       "4335"),
+    "Real M.":     ("Real Madrid",              "la_liga"),
+    "Espanyol":    ("Espanyol",                 "la_liga"),
+    "Barcelona":   ("Barcelona",                "la_liga"),
+    "Atlético":    ("Atletico de Madrid",       "la_liga"),
+    "Villarreal":  ("Villarreal",               "la_liga"),
+    "Sevilla":     ("Sevilla",                  "la_liga"),
+    "Betis":       ("Real Betis",               "la_liga"),
+    "Valencia":    ("Valencia",                 "la_liga"),
+    "Sociedad":    ("Real Sociedad",            "la_liga"),
+    "Bilbao":      ("Athletic Club",            "la_liga"),
 
     # ── Bundesliga ────────────────────────────────────────────────────
-    "Bayern":      ("Bayern Munich",       "4331"),
-    "Dortmund":    ("Borussia Dortmund",   "4331"),
-    "Leverkusen":  ("Bayer Leverkusen",    "4331"),
-    "Leipzig":     ("RB Leipzig",          "4331"),
-    "Frankfurt":   ("Eintracht Frankfurt", "4331"),
+    "Bayern":      ("Bayern Munich",            "bundesliga"),
+    "Dortmund":    ("Borussia Dortmund",        "bundesliga"),
+    "Leverkusen":  ("Bayer Leverkusen",         "bundesliga"),
+    "Leipzig":     ("RB Leipzig",               "bundesliga"),
+    "Frankfurt":   ("Eintracht Frankfurt",      "bundesliga"),
 
     # ── Serie A ───────────────────────────────────────────────────────
-    "Juventus":    ("Juventus",            "4332"),
-    "Inter":       ("Inter Milan",         "4332"),
-    "Milan":       ("AC Milan",            "4332"),
-    "Napoli":      ("Napoli",              "4332"),
-    "Roma":        ("AS Roma",             "4332"),
-    "Lazio":       ("Lazio",               "4332"),
+    "Juventus":    ("Juventus",                 "serie_a"),
+    "Inter":       ("Inter Milan",              "serie_a"),
+    "Milan":       ("AC Milan",                 "serie_a"),
+    "Napoli":      ("Napoli",                   "serie_a"),
+    "Roma":        ("AS Roma",                  "serie_a"),
+    "Lazio":       ("Lazio",                    "serie_a"),
 
     # ── Ligue 1 ───────────────────────────────────────────────────────
-    "PSG":         ("Paris Saint-Germain", "4334"),
-    "Marsella":    ("Marseille",           "4334"),
-    "Monaco":      ("Monaco",              "4334"),
+    "PSG":         ("Paris Saint-Germain",      "ligue_1"),
+    "Marsella":    ("Marseille",                "ligue_1"),
+    "Monaco":      ("Monaco",                   "ligue_1"),
 }
+
+def _parsear_eventos_espn(
+    data: dict,
+    local_lookup: dict[str, int],
+    ids_listos: set[int],
+) -> list[tuple[int, int, int, str]]:
+    """
+    Parsea la respuesta JSON del scoreboard de ESPN.
+    Solo procesa partidos con state == "post" (terminados).
+    Devuelve lista de (partido_id, goles_local, goles_visita, resultado).
+    """
+    encontrados = []
+    for ev in (data.get("events") or []):
+        for comp in (ev.get("competitions") or []):
+            state = comp.get("status", {}).get("type", {}).get("state", "")
+            if state != "post":
+                continue
+
+            home_name = home_score = away_score = None
+            for team in (comp.get("competitors") or []):
+                nombre = (team.get("team", {}).get("displayName") or "").lower()
+                score  = team.get("score")
+                if team.get("homeAway") == "home":
+                    home_name  = nombre
+                    home_score = score
+                else:
+                    away_score = score
+
+            if home_name is None or home_score is None or away_score is None:
+                continue
+
+            pid = local_lookup.get(home_name)
+            if pid is None or pid not in ids_listos:
+                continue
+
+            try:
+                gh, ga = int(home_score), int(away_score)
+            except (ValueError, TypeError):
+                continue
+
+            res = "L" if gh > ga else ("E" if gh == ga else "V")
+            encontrados.append((pid, gh, ga, res))
+
+    return encontrados
 
 async def auto_sync_loop() -> None:
     """
-    Consulta TheSportsDB cada 10 min.
+    Sincroniza resultados automáticamente cada 10 min usando ESPN.
     - Arranca inmediatamente sin esperar fin_jornada.
     - Consulta solo partidos cuyo kickoff + 105 min ya pasó.
     - No se congela si hay resultados parciales.
-    - lookup y fechas se calculan una sola vez fuera del while.
+    - Un solo request por liga — ESPN devuelve todos los partidos del día.
     """
     await asyncio.sleep(15)
-    logger.info("auto_sync_loop v3 (por-kickoff) iniciado")
+    logger.info("auto_sync_loop v4 (ESPN) iniciado")
 
     kickoff_por_id: dict[int, datetime] = {}
     for p in PARTIDOS:
@@ -274,48 +319,29 @@ async def auto_sync_loop() -> None:
                 "auto_sync: kickoff inválido para partido_id=%s — '%s'",
                 p["id"], ko_str,
             )
-
-    local_lookup: dict[str, int]       = {}
-    liga_a_ids:   dict[str, list[int]] = {}
+    local_lookup:  dict[str, int]       = {}
+    liga_a_ids:    dict[str, list[int]] = {}
 
     for p in PARTIDOS:
-        entry = NOMBRE_A_SPORTSDB.get(p["local"])
+        entry = NOMBRE_A_ESPN.get(p["local"])
         if entry:
-            sdb_nombre, liga_id = entry
-            local_lookup[sdb_nombre.lower()] = p["id"]
-            liga_a_ids.setdefault(liga_id, []).append(p["id"])
+            espn_nombre, liga_key = entry
+            local_lookup[espn_nombre.lower()] = p["id"]
+            liga_a_ids.setdefault(liga_key, []).append(p["id"])
         else:
             local_lookup[p["local"].lower()] = p["id"]
             logger.warning(
-                "auto_sync: '%s' no está en NOMBRE_A_SPORTSDB — usando nombre directo",
+                "auto_sync: '%s' no está en NOMBRE_A_ESPN — usando nombre directo",
                 p["local"],
             )
-
-    fin_jornada:    datetime = JORNADA_CONFIG["findt"]
-    inicio_jornada: datetime = JORNADA_CONFIG.get(
-        "iniciodt", fin_jornada - timedelta(days=8)
-    )
-
-    fechas_jornada: list[str] = []
-    d = inicio_jornada.date()
-    while d <= fin_jornada.date():
-        fechas_jornada.append(d.strftime("%Y-%m-%d"))
-        d += timedelta(days=1)
 
     ligas_usadas = list(liga_a_ids.keys())
 
     logger.info(
-        "auto_sync: %d partido(s) | %d liga(s) | %d fecha(s) en scope",
-        len(PARTIDOS), len(ligas_usadas), len(fechas_jornada),
+        "auto_sync: %d partido(s) | ligas=%s",
+        len(PARTIDOS), ligas_usadas,
     )
-    # ── DEBUG TEMPORAL — borrar después ──────────────────────────────
-    logger.info("DEBUG ligas_usadas: %s", ligas_usadas)
-    logger.info("DEBUG local_lookup: %s", list(local_lookup.keys()))
-    logger.info(
-        "DEBUG sin match: %s",
-        [p["local"] for p in PARTIDOS if NOMBRE_A_SPORTSDB.get(p["local"]) is None]
-    )
-    # ─────────────────────────────────────────────────────────────────
+
     while True:
         try:
             now = datetime.now(timezone.utc)
@@ -332,17 +358,20 @@ async def auto_sync_loop() -> None:
                     for ko_dt in kickoff_por_id.values()
                     if now < ko_dt + timedelta(minutes=105)
                 )
-                espera = min((proximos[0] - now).total_seconds() + 60, 600) if proximos else 600
+                espera = (
+                    min((proximos[0] - now).total_seconds() + 60, 600)
+                    if proximos else 600
+                )
                 logger.info(
                     "auto_sync: ningún partido terminado aún — esperando %.0fs", espera
                 )
                 await asyncio.sleep(espera)
                 continue
 
-            resultados, _ = get_resultados_db(JORNADA_ACTUAL)
+            resultados_db, _ = get_resultados_db(JORNADA_ACTUAL)
             ids_sin_resultado: set[int] = {
                 pid for pid in ids_listos
-                if resultados[pid] is None
+                if resultados_db[pid] is None
             }
 
             if not ids_sin_resultado:
@@ -360,95 +389,76 @@ async def auto_sync_loop() -> None:
                 continue
 
             logger.info(
-                "auto_sync: %d partido(s) sin resultado de %d terminados — consultando API",
+                "auto_sync: %d partido(s) sin resultado de %d terminados — consultando ESPN",
                 len(ids_sin_resultado), len(ids_listos),
             )
 
             actualizados = 0
 
             async with httpx.AsyncClient(timeout=10) as client:
-                for liga_id in ligas_usadas:
-                    for fecha_str in fechas_jornada:
+                for liga_key in ligas_usadas:
+                    slug = LIGAS_ESPN.get(liga_key)
+                    if not slug:
+                        logger.warning("auto_sync: liga_key '%s' sin slug ESPN — omitiendo", liga_key)
+                        continue
 
-                        url = (
-                            f"https://www.thesportsdb.com/api/v1/json/3/"
-                            f"eventsday.php?d={fecha_str}&l={liga_id}"
+                    url = (
+                        f"https://site.api.espn.com/apis/site/v2/sports/"
+                        f"soccer/{slug}/scoreboard"
+                    )
+
+                    try:
+                        resp = await client.get(url)
+                    except Exception as exc:
+                        logger.warning(
+                            "auto_sync: red error liga=%s — %s", liga_key, exc
                         )
+                        await asyncio.sleep(2)
+                        continue
 
+                    if resp.status_code != 200:
+                        logger.warning(
+                            "auto_sync: HTTP %s liga=%s", resp.status_code, liga_key
+                        )
+                        continue
+
+                    try:
+                        data = resp.json()
+                    except Exception:
+                        logger.warning("auto_sync: JSON inválido liga=%s", liga_key)
+                        continue
+
+                    for pid, gh, ga, res in _parsear_eventos_espn(
+                        data, local_lookup, ids_sin_resultado
+                    ):
                         try:
-                            resp = await client.get(url)
+                            with get_db() as conn:
+                                with conn.cursor() as cur:
+                                    cur.execute(
+                                        """
+                                        INSERT INTO resultados
+                                            (partido_id, jornada, resultado,
+                                             marcador_local, marcador_visita)
+                                        VALUES (%s, %s, %s, %s, %s)
+                                        ON CONFLICT (partido_id, jornada) DO UPDATE SET
+                                            resultado           = EXCLUDED.resultado,
+                                            marcador_local      = EXCLUDED.marcador_local,
+                                            marcador_visita     = EXCLUDED.marcador_visita,
+                                            fecha_actualizacion = NOW()
+                                        """,
+                                        (pid, JORNADA_ACTUAL, res, gh, ga),
+                                    )
+                            actualizados += 1
+                            logger.info(
+                                "auto_sync ✔ partido_id=%s  %s-%s  res=%s  (liga=%s)",
+                                pid, gh, ga, res, liga_key,
+                            )
                         except Exception as exc:
-                            logger.warning(
-                                "auto_sync: red error liga=%s fecha=%s — %s",
-                                liga_id, fecha_str, exc,
+                            logger.error(
+                                "auto_sync: DB error partido_id=%s — %s", pid, exc
                             )
-                            await asyncio.sleep(2)
-                            continue
 
-                        if resp.status_code != 200:
-                            logger.warning(
-                                "auto_sync: HTTP %s liga=%s fecha=%s",
-                                resp.status_code, liga_id, fecha_str,
-                            )
-                            continue
-
-                        try:
-                            data = resp.json()
-                        except Exception:
-                            logger.warning(
-                                "auto_sync: JSON inválido liga=%s fecha=%s",
-                                liga_id, fecha_str,
-                            )
-                            continue
-
-                        events = data.get("events") or []
-
-                        for ev in events:
-                            home    = (ev.get("strHomeTeam") or "").lower()
-                            score_h = ev.get("intHomeScore")
-                            score_a = ev.get("intAwayScore")
-
-                            if score_h is None or score_a is None:
-                                continue
-
-                            pid = local_lookup.get(home)
-                            if pid is None:
-                                continue
-
-                            if pid not in ids_listos:
-                                continue
-
-                            gh, ga    = int(score_h), int(score_a)
-                            resultado = "L" if gh > ga else ("E" if gh == ga else "V")
-
-                            try:
-                                with get_db() as conn:
-                                    with conn.cursor() as cur:
-                                        cur.execute(
-                                            """
-                                            INSERT INTO resultados
-                                                (partido_id, jornada, resultado,
-                                                 marcador_local, marcador_visita)
-                                            VALUES (%s, %s, %s, %s, %s)
-                                            ON CONFLICT (partido_id, jornada) DO UPDATE SET
-                                                resultado           = EXCLUDED.resultado,
-                                                marcador_local      = EXCLUDED.marcador_local,
-                                                marcador_visita     = EXCLUDED.marcador_visita,
-                                                fecha_actualizacion = NOW()
-                                            """,
-                                            (pid, JORNADA_ACTUAL, resultado, gh, ga),
-                                        )
-                                actualizados += 1
-                                logger.info(
-                                    "auto_sync ✔ partido_id=%s  %s-%s  res=%s  (%s)",
-                                    pid, gh, ga, resultado, fecha_str,
-                                )
-                            except Exception as exc:
-                                logger.error(
-                                    "auto_sync: DB error partido_id=%s — %s", pid, exc
-                                )
-
-                        await asyncio.sleep(0.5)
+                    await asyncio.sleep(0.5)
 
             if actualizados:
                 logger.info(
@@ -480,6 +490,7 @@ async def lifespan(app: FastAPI):
     except asyncio.CancelledError:
         pass
     close_pool()
+
 
 app = FastAPI(
     title="Quinielas El Wero API",
