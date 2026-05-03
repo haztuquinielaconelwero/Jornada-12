@@ -88,7 +88,6 @@ def get_db():
     finally:
         _pool.putconn(conn)
 
-
 def init_db() -> None:
     with get_db() as conn:
         with conn.cursor() as cur:
@@ -164,7 +163,7 @@ def init_db() -> None:
 
     logger.info("Base de datos PostgreSQL inicializada correctamente")
 
-# ──ESPN por liga ─────────────────────────────────────────────
+# ──ESPN por ligas ─────────────────────────────────────────────
 LIGAS_ESPN: dict[str, str] = {
     "liga_mx":    "mex.1",
     "premier":    "eng.1",
@@ -174,8 +173,6 @@ LIGAS_ESPN: dict[str, str] = {
     "ligue_1":    "fra.1",
     "champions":  "uefa.champions",
 }
-
-
 NOMBRE_A_ESPN: dict[str, tuple[str, str]] = {
 
  # ── Liga MX ──────────────────────────────────────────────────────
@@ -198,7 +195,7 @@ NOMBRE_A_ESPN: dict[str, tuple[str, str]] = {
     "Santos":      ("Santos Laguna",            "liga_mx"),
     "Atlas":       ("Atlas FC",                 "liga_mx"),
 
-    # ── Premier League ────────────────────────────────────────────────
+# ── Premier League ────────────────────────────────────────────────
     "Man Utd":     ("Manchester United",        "premier"),
     "Liverpool":   ("Liverpool",                "premier"),
     "Aston Villa": ("Aston Villa",              "premier"),
@@ -214,7 +211,7 @@ NOMBRE_A_ESPN: dict[str, tuple[str, str]] = {
     "Wolves":      ("Wolverhampton Wanderers",  "premier"),
     "Fulham":      ("Fulham",                   "premier"),
 
-    # ── La Liga ───────────────────────────────────────────────────────
+# ── La Liga ───────────────────────────────────────────────────────
     "Real M.":     ("Real Madrid",              "la_liga"),
     "Espanyol":    ("Espanyol",                 "la_liga"),
     "Barcelona":   ("Barcelona",                "la_liga"),
@@ -226,14 +223,14 @@ NOMBRE_A_ESPN: dict[str, tuple[str, str]] = {
     "Sociedad":    ("Real Sociedad",            "la_liga"),
     "Bilbao":      ("Athletic Club",            "la_liga"),
 
-    # ── Bundesliga ────────────────────────────────────────────────────
+# ── Bundesliga ────────────────────────────────────────────────────
     "Bayern":      ("Bayern Munich",            "bundesliga"),
     "Dortmund":    ("Borussia Dortmund",        "bundesliga"),
     "Leverkusen":  ("Bayer Leverkusen",         "bundesliga"),
     "Leipzig":     ("RB Leipzig",               "bundesliga"),
     "Frankfurt":   ("Eintracht Frankfurt",      "bundesliga"),
 
-    # ── Serie A ───────────────────────────────────────────────────────
+# ── Serie A ───────────────────────────────────────────────────────
     "Juventus":    ("Juventus",                 "serie_a"),
     "Inter":       ("Inter Milan",              "serie_a"),
     "Milan":       ("AC Milan",                 "serie_a"),
@@ -241,7 +238,7 @@ NOMBRE_A_ESPN: dict[str, tuple[str, str]] = {
     "Roma":        ("AS Roma",                  "serie_a"),
     "Lazio":       ("Lazio",                    "serie_a"),
 
-    # ── Ligue 1 ───────────────────────────────────────────────────────
+# ── Ligue 1 ───────────────────────────────────────────────────────
     "PSG":         ("Paris Saint-Germain",      "ligue_1"),
     "Marsella":    ("Marseille",                "ligue_1"),
     "Monaco":      ("Monaco",                   "ligue_1"),
@@ -490,7 +487,6 @@ async def lifespan(app: FastAPI):
     except asyncio.CancelledError:
         pass
     close_pool()
-
 
 app = FastAPI(
     title="Quinielas El Wero API",
