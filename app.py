@@ -249,9 +249,22 @@ async def auto_sync_loop() -> None:
     Consulta TheSportsDB cada 10 min tras el fin de jornada.
     Soporta múltiples ligas (Liga MX, Premier, La Liga, etc.)
     usando eventsday.php por fecha + liga_id.
+    Solo guarda resultados de partidos cuyo kickoff ya pasó.
     """
     await asyncio.sleep(15)
     logger.info("auto_sync_loop v2 (multi-liga) iniciado")
+
+    kickoff_por_id: dict[int, datetime] = {}
+    for p in PARTIDOS:
+        ko_str = p.get("kickoff")
+        if ko_str:
+            try:
+                kickoff_por_id[p["id"]] = datetime.fromisoformat(ko_str)
+            except (ValueError, TypeError):
+                logger.warning(
+                    "auto_sync: kickoff inválido para partido_id=%s — '%s'",
+                    p["id"], ko_str,
+                )
 
     while True:
         try:
@@ -271,8 +284,8 @@ async def auto_sync_loop() -> None:
                 await asyncio.sleep(3600)
                 continue
 
-            local_lookup: dict[str, int]        = {}   
-            liga_a_ids:   dict[str, list[int]]  = {} 
+            local_lookup: dict[str, int]       = {}
+            liga_a_ids:   dict[str, list[int]] = {}
 
             for p in PARTIDOS:
                 entry = NOMBRE_A_SPORTSDB.get(p["local"])
@@ -281,7 +294,6 @@ async def auto_sync_loop() -> None:
                     local_lookup[sdb_nombre.lower()] = p["id"]
                     liga_a_ids.setdefault(liga_id, []).append(p["id"])
                 else:
-                    # Fallback: usar el nombre tal cual en minúsculas
                     local_lookup[p["local"].lower()] = p["id"]
                     logger.warning(
                         "auto_sync: '%s' no está en NOMBRE_A_SPORTSDB — usando nombre directo",
@@ -350,6 +362,18 @@ async def auto_sync_loop() -> None:
 
                             pid = local_lookup.get(home)
                             if pid is None:
+                                continue
+
+                            kickoff_dt = kickoff_por_id.get(pid)
+                            if kickoff_dt is not None and now < kickoff_dt:
+                                logger.info(
+                                    "auto_sync: partido_id=%s (%s) aún no ha iniciado "
+                                    "(kickoff: %s, ahora: %s) — ignorando resultado %s-%s",
+                                    pid, home,
+                                    kickoff_dt.isoformat(),
+                                    now.isoformat(),
+                                    score_h, score_a,
+                                )
                                 continue
 
                             gh, ga    = int(score_h), int(score_a)
