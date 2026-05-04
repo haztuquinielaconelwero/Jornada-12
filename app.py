@@ -190,7 +190,7 @@ NOMBRE_A_ESPN: dict[str, tuple[str, str]] = {
     "Pachuca":     ("Pachuca",                  "liga_mx"),
     "León":        ("Leon",                     "liga_mx"),
     "Juárez":      ("FC Juarez",                "liga_mx"),
-    "América":     ("America",                  "liga_mx"),
+    "América":     ("América",                  "liga_mx"),
     "Toluca":      ("Toluca",                   "liga_mx"),
     "Santos":      ("Santos Laguna",            "liga_mx"),
     "Atlas":       ("Atlas",                    "liga_mx"),
