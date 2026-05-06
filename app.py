@@ -585,7 +585,7 @@ PARTIDOS = [
     },
     {
         "id": 2,
-        "local": "A. Madrid",        "localLogo": "logos/atletico-madrid.png",
+        "local": "A. Madrid",        "localLogo": "logos/a.-madrid.png",
         "visitante": "Celta",        "visitanteLogo": "logos/celta.png",
         "horario": "Sáb 9 mayo 10:30 am",
         "televisora": "ESPN",        "televisionLogo": "logos/espn.png",
