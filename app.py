@@ -175,75 +175,76 @@ LIGAS_ESPN: dict[str, str] = {
 }
 NOMBRE_A_ESPN: dict[str, tuple[str, str]] = {
 
- # ── Liga MX ──────────────────────────────────────────────────────
-    "San Luis":    ("Atletico San Luis",        "liga_mx"),
-    "Pumas":       ("Pumas UNAM",               "liga_mx"),
-    "Mazatlán":    ("Mazatlan FC",              "liga_mx"),
-    "Querétaro":   ("Queretaro FC",             "liga_mx"),
-    "Necaxa":      ("Necaxa",                   "liga_mx"),
-    "Tigres":      ("Tigres UANL",              "liga_mx"),
-    "Cruz Azul":   ("Cruz Azul",                "liga_mx"),
-    "Tijuana":     ("Club Tijuana",             "liga_mx"),
-    "Chivas":      ("Guadalajara",              "liga_mx"),
-    "Puebla":      ("Puebla FC",                "liga_mx"),
-    "Monterrey":   ("Monterrey",                "liga_mx"),
-    "Pachuca":     ("Pachuca",                  "liga_mx"),
-    "León":        ("Leon",                     "liga_mx"),
-    "Juárez":      ("FC Juarez",                "liga_mx"),
-    "América":     ("América",                  "liga_mx"),
-    "Toluca":      ("Toluca",                   "liga_mx"),
-    "Santos":      ("Santos Laguna",            "liga_mx"),
-    "Atlas":       ("Atlas",                    "liga_mx"),
-
-# ── Premier League ────────────────────────────────────────────────
-    "Man Utd":     ("Manchester United",        "premier"),
-    "Liverpool":   ("Liverpool",                "premier"),
-    "Aston Villa": ("Aston Villa",              "premier"),
-    "Tottenham":   ("Tottenham Hotspur",        "premier"),
-    "Chelsea":     ("Chelsea",                  "premier"),
-    "Everton":     ("Everton",                  "premier"),
-    "Man City":    ("Manchester City",          "premier"),
-    "Forest":      ("Nottingham Forest",        "premier"),
-    "Arsenal":     ("Arsenal",                  "premier"),
-    "Brighton":    ("Brighton & Hove Albion",   "premier"),
-    "Newcastle":   ("Newcastle United",         "premier"),
-    "West Ham":    ("West Ham United",          "premier"),
-    "Wolves":      ("Wolverhampton Wanderers",  "premier"),
-    "Fulham":      ("Fulham",                   "premier"),
-
-# ── La Liga ───────────────────────────────────────────────────────
-    "Real M.":     ("Real Madrid",              "la_liga"),
-    "Espanyol":    ("Espanyol",                 "la_liga"),
-    "Barcelona":   ("Barcelona",                "la_liga"),
-    "Atlético":    ("Atletico de Madrid",       "la_liga"),
-    "Villarreal":  ("Villarreal",               "la_liga"),
-    "Sevilla":     ("Sevilla",                  "la_liga"),
-    "Betis":       ("Real Betis",               "la_liga"),
-    "Valencia":    ("Valencia",                 "la_liga"),
-    "Sociedad":    ("Real Sociedad",            "la_liga"),
-    "Bilbao":      ("Athletic Club",            "la_liga"),
-
-# ── Bundesliga ────────────────────────────────────────────────────
+ # ── Bundesliga ────────────────────────────────────────────────
     "Bayern":      ("Bayern Munich",            "bundesliga"),
     "Dortmund":    ("Borussia Dortmund",        "bundesliga"),
+    "Frankfurt":   ("Eintracht Frankfurt",      "bundesliga"),
     "Leverkusen":  ("Bayer Leverkusen",         "bundesliga"),
     "Leipzig":     ("RB Leipzig",               "bundesliga"),
-    "Frankfurt":   ("Eintracht Frankfurt",      "bundesliga"),
 
-# ── Serie A ───────────────────────────────────────────────────────
-    "Juventus":    ("Juventus",                 "serie_a"),
+    # ── La Liga ───────────────────────────────────────────────────
+    "A. Madrid":   ("Atletico de Madrid",       "la_liga"), 
+    "Barcelona":   ("Barcelona",                "la_liga"),
+    "Betis":       ("Real Betis",               "la_liga"),
+    "Bilbao":      ("Athletic Club",            "la_liga"),
+    "Celta":       ("Celta Vigo",               "la_liga"),   
+    "Espanyol":    ("Espanyol",                 "la_liga"),
+    "Real M.":     ("Real Madrid",              "la_liga"),
+    "Sevilla":     ("Sevilla",                  "la_liga"),
+    "Sociedad":    ("Real Sociedad",            "la_liga"),
+    "Valencia":    ("Valencia",                 "la_liga"),
+    "Villarreal":  ("Villarreal",               "la_liga"),
+
+    # ── Liga MX ───────────────────────────────────────────────────
+    "América":     ("América",                  "liga_mx"),
+    "Atlas":       ("Atlas",                    "liga_mx"),
+    "Chivas":      ("Guadalajara",              "liga_mx"),
+    "Cruz Azul":   ("Cruz Azul",                "liga_mx"),
+    "Juárez":      ("FC Juarez",                "liga_mx"),
+    "León":        ("Leon",                     "liga_mx"),
+    "Mazatlán":    ("Mazatlan FC",              "liga_mx"),
+    "Monterrey":   ("Monterrey",                "liga_mx"),
+    "Necaxa":      ("Necaxa",                   "liga_mx"),
+    "Pachuca":     ("Pachuca",                  "liga_mx"),
+    "Puebla":      ("Puebla FC",                "liga_mx"),
+    "Pumas":       ("Pumas UNAM",               "liga_mx"),
+    "Querétaro":   ("Queretaro FC",             "liga_mx"),
+    "San Luis":    ("Atletico San Luis",        "liga_mx"),
+    "Santos":      ("Santos Laguna",            "liga_mx"),
+    "Tigres":      ("Tigres UANL",              "liga_mx"),
+    "Tijuana":     ("Club Tijuana",             "liga_mx"),
+    "Toluca":      ("Toluca",                   "liga_mx"),
+
+    # ── Ligue 1 ───────────────────────────────────────────────────
+    "Marsella":    ("Marseille",                "ligue_1"),
+    "Monaco":      ("Monaco",                   "ligue_1"),
+    "PSG":         ("Paris Saint-Germain",      "ligue_1"),
+
+    # ── Premier League ────────────────────────────────────────────
+    "Arsenal":     ("Arsenal",                  "premier"),
+    "Aston Villa": ("Aston Villa",              "premier"),
+    "Brentford":   ("Brentford",                "premier"),
+    "Brighton":    ("Brighton & Hove Albion",   "premier"),
+    "Chelsea":     ("Chelsea",                  "premier"),
+    "Everton":     ("Everton",                  "premier"),
+    "Forest":      ("Nottingham Forest",        "premier"),
+    "Fulham":      ("Fulham",                   "premier"),
+    "Liverpool":   ("Liverpool",                "premier"),
+    "Man City":    ("Manchester City",          "premier"),
+    "Man Utd":     ("Manchester United",        "premier"),
+    "Newcastle":   ("Newcastle United",         "premier"),
+    "Tottenham":   ("Tottenham Hotspur",        "premier"),
+    "West Ham":    ("West Ham United",          "premier"),
+    "Wolves":      ("Wolverhampton Wanderers",  "premier"),
+
+    # ── Serie A ───────────────────────────────────────────────────
     "Inter":       ("Inter Milan",              "serie_a"),
+    "Juventus":    ("Juventus",                 "serie_a"),
+    "Lazio":       ("Lazio",                    "serie_a"),
     "Milan":       ("AC Milan",                 "serie_a"),
     "Napoli":      ("Napoli",                   "serie_a"),
     "Roma":        ("AS Roma",                  "serie_a"),
-    "Lazio":       ("Lazio",                    "serie_a"),
-
-# ── Ligue 1 ───────────────────────────────────────────────────────
-    "PSG":         ("Paris Saint-Germain",      "ligue_1"),
-    "Marsella":    ("Marseille",                "ligue_1"),
-    "Monaco":      ("Monaco",                   "ligue_1"),
 }
-
 def _parsear_eventos_espn(
     data: dict,
     local_lookup: dict[str, int],
@@ -532,7 +533,7 @@ app.add_middleware(
     max_age=3600,
 )
 # ║     ⚽ Configuracion semanal ⚽       ║ # ║     ⚽ Configuracion semanal ⚽       ║ # ║     ⚽ Configuracion semanal ⚽       ║
-JORNADA_ACTUAL     = "Cuartos 1"
+JORNADA_ACTUAL     = "Cuartos 2"
 MAX_DOBLES         = 4
 MAX_TRIPLES        = 3
 PRECIO_NORMAL      = 30
@@ -546,12 +547,12 @@ if PRECIO_DESCUENTO >= PRECIO_NORMAL:
     )
 
 JORNADA_CONFIG = {
-    "numero":       1,
-    "nombre":       "Cuartos 1",
-    "codigo_grupo": "C1",
-    "link_grupo":   "https://chat.whatsapp.com/HBVcupu5GfK4T5G1hzUrND",
-    "inicio":       "2026-04-29T20:00:00-06:00",
-    "fin":          "2026-05-04T16:00:00-06:00",
+    "numero":       2,
+    "nombre":       "Cuartos 2",
+    "codigo_grupo": "C2",
+    "link_grupo":   "https://chat.whatsapp.com/BmEd3BtG0I10ErU4OADAFN",
+    "inicio":       "2026-05-05T18:00:00-06:00",
+    "fin":          "2026-05-10T21:30:00-06:00",
 }
 
 
@@ -565,79 +566,78 @@ if _fin_dt <= _inicio_dt:
 JORNADA_CONFIG["iniciodt"] = _inicio_dt
 JORNADA_CONFIG["findt"]    = _fin_dt
 
-
 PARTIDOS = [
     {
         "id": 0,
-        "local": "Tigres",         "localLogo": "/logos/tigres.png",
-        "visitante": "Chivas",     "visitanteLogo": "/logos/chivas.png",
-        "horario": "Sáb 2 Mayo 7 PM",
-        "televisora": "TUDN",      "televisionLogo": "/logos/tudn.png",
-        "kickoff": "2026-05-02T19:00:00-06:00",
+        "local": "Liverpool",        "localLogo": "logos/liverpool.png",
+        "visitante": "Chelsea",      "visitanteLogo": "logos/chelsea.png",
+        "horario": "Sáb 9 mayo 6:30 am",
+        "televisora": "ESPN",        "televisionLogo": "logos/espn.png",
+        "kickoff": "2026-05-09T06:30:00-06:00",
     },
     {
         "id": 1,
-        "local": "Atlas",          "localLogo": "/logos/atlas.png",
-        "visitante": "Cruz Azul",  "visitanteLogo": "/logos/cruz-azul.png",
-        "horario": "Sáb 2 Mayo 9:15 PM",
-        "televisora": "Fox Sports","televisionLogo": "/logos/fox-sports.png",
-        "kickoff": "2026-05-02T21:15:00-06:00",
+        "local": "Man City",         "localLogo": "logos/man-city.png",
+        "visitante": "Brentford",    "visitanteLogo": "logos/brentford.png",
+        "horario": "Sáb 9 mayo 10:30 am",
+        "televisora": "ESPN",        "televisionLogo": "logos/espn.png",
+        "kickoff": "2026-05-09T10:30:00-06:00",
     },
     {
         "id": 2,
-        "local": "Man Utd",        "localLogo": "/logos/man-utd.png",
-        "visitante": "Liverpool",  "visitanteLogo": "/logos/liverpool.png",
-        "horario": "Dom 3 Mayo 8:30 AM",
-        "televisora": "ESPN",      "televisionLogo": "/logos/espn.png",
-        "kickoff": "2026-05-03T08:30:00-06:00",
+        "local": "A. Madrid",        "localLogo": "logos/atletico-madrid.png",
+        "visitante": "Celta",        "visitanteLogo": "logos/celta.png",
+        "horario": "Sáb 9 mayo 10:30 am",
+        "televisora": "ESPN",        "televisionLogo": "logos/espn.png",
+        "kickoff": "2026-05-09T10:30:00-06:00",
     },
     {
         "id": 3,
-        "local": "Aston Villa",    "localLogo": "/logos/aston-villa.png",
-        "visitante": "Tottenham",  "visitanteLogo": "/logos/tottenham.png",
-        "horario": "Dom 3 Mayo 12 PM",
-        "televisora": "ESPN",      "televisionLogo": "/logos/espn.png",
-        "kickoff": "2026-05-03T12:00:00-06:00",
+        "local": "Chivas",           "localLogo": "logos/chivas.png",
+        "visitante": "Tigres",       "visitanteLogo": "logos/tigres.png",
+        "horario": "Sáb 9 mayo 7:07 pm",
+        "televisora": "Amazon Prime","televisionLogo": "logos/amazon-prime.png",
+        "kickoff": "2026-05-09T19:07:00-06:00",
     },
     {
         "id": 4,
-        "local": "Espanyol",       "localLogo": "/logos/espanyol.png",
-        "visitante": "Real M.",    "visitanteLogo": "/logos/real-madrid.png",
-        "horario": "Dom 3 Mayo 1 PM",
-        "televisora": "ESPN",      "televisionLogo": "/logos/espn.png",
-        "kickoff": "2026-05-03T13:00:00-06:00",
+        "local": "Cruz Azul",        "localLogo": "logos/cruz-azul.png",
+        "visitante": "Atlas",        "visitanteLogo": "logos/atlas.png",
+        "horario": "Sáb 9 mayo 9:15 pm",
+        "televisora": "TUDN",        "televisionLogo": "logos/tudn.png",
+        "kickoff": "2026-05-09T21:15:00-06:00",
     },
     {
         "id": 5,
-        "local": "América",        "localLogo": "/logos/america.png",
-        "visitante": "Pumas",      "visitanteLogo": "/logos/pumas.png",
-        "horario": "Dom 3 Mayo 5 PM",
-        "televisora": "TUDN",      "televisionLogo": "/logos/tudn.png",
-        "kickoff": "2026-05-03T17:00:00-06:00",
+        "local": "West Ham",         "localLogo": "logos/west-ham.png",
+        "visitante": "Arsenal",      "visitanteLogo": "logos/arsenal.png",
+        "horario": "Dom 10 mayo 9:30 am",
+        "televisora": "ESPN",        "televisionLogo": "logos/espn.png",
+        "kickoff": "2026-05-10T09:30:00-06:00",
     },
     {
         "id": 6,
-        "local": "Toluca",         "localLogo": "/logos/toluca.png",
-        "visitante": "Pachuca",    "visitanteLogo": "/logos/pachuca.png",
-        "horario": "Dom 3 Mayo 7:15 PM",
-        "televisora": "Fox Sports","televisionLogo": "/logos/fox-sports.png",
-        "kickoff": "2026-05-03T19:15:00-06:00",
+        "local": "Barcelona",        "localLogo": "logos/barcelona.png",
+        "visitante": "Real M.",      "visitanteLogo": "logos/real-madrid.png",
+        "horario": "Dom 10 mayo 1 pm",
+        "televisora": "ESPN",        "televisionLogo": "logos/espn.png",
+        "kickoff": "2026-05-10T13:00:00-06:00",
     },
     {
         "id": 7,
-        "local": "Chelsea",        "localLogo": "/logos/chelsea.png",
-        "visitante": "Forest",     "visitanteLogo": "/logos/nottm-forest.png",
-        "horario": "Lun 4 Mayo 8 AM",
-        "televisora": "ESPN",      "televisionLogo": "/logos/espn.png",
-        "kickoff": "2026-05-04T08:00:00-06:00",
+        "local": "Pachuca",          "localLogo": "logos/pachuca.png",
+        "visitante": "Toluca",       "visitanteLogo": "logos/toluca.png",
+        "horario": "Dom 10 mayo 5 pm",
+        "televisora": "Fox Sports",  "televisionLogo": "logos/fox-sports.png",
+        "kickoff": "2026-05-10T17:00:00-06:00",
     },
     {
         "id": 8,
-        "local": "Everton",        "localLogo": "/logos/everton.png",
-        "visitante": "Man City",   "visitanteLogo": "/logos/man-city.png",
-        "horario": "Lun 4 Mayo 1 PM",
-        "televisora": "ESPN",      "televisionLogo": "/logos/espn.png",
-        "kickoff": "2026-05-04T13:00:00-06:00",
+        "local": "Pumas",            "localLogo": "logos/pumas.png",
+        "visitante": "America",      "visitanteLogo": "logos/america.png",
+        "horario": "Dom 10 mayo 7:15 pm",
+        "televisora": "TUDN",        "televisionLogo": "logos/tudn.png",
+        "kickoff": "2026-05-10T19:15:00-06:00",
     },
 ]
 _total_especiales = MAX_DOBLES + MAX_TRIPLES
