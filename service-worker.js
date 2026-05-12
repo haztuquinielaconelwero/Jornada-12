@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'quinielas-v5';
+const CACHE_VERSION = 'quinielas-v7';
 const ARCHIVOS = [
 '/',
 '/index.html',
