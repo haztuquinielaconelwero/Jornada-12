@@ -3426,6 +3426,18 @@ if (typeof updateSavedBadge    === 'function') updateSavedBadge();
 }
 /*------------Esto de abajo se encarga de trabajar en nuestro archivo y se enfoca en las Quinielas Enviadas - Sección Jugadas -----------------------------------*/
 let officialResults = {};
+function generarKeyUnificada(q, partidos) {
+const normalizar = s => (s || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+const nombre = normalizar(q.name || q.nombre);
+const vendedor = normalizar(q.vendedor);
+const jornada = normalizar(q.jornada);
+const picks = partidos.map(p => {
+const pred = q.predictions?.[String(p.id)];
+if (!pred || (Array.isArray(pred) && pred.length === 0)) return '-';
+return Array.isArray(pred) ? [...pred].sort().join('') : String(pred).toUpperCase();
+}).join('|');
+return `${nombre}|${vendedor}|${jornada}|${picks}`;
+}
 function calcularPuntosQuiniela(predictionsObj, resultados) {
 const res = resultados ?? officialResults;
 if (!res || Object.keys(res).length === 0) return 0;
@@ -3539,16 +3551,6 @@ if (ENV?.isDev) console.log(`✅ Actualizada: ${local.name} → ${local.estado} 
 if (ENV?.isDev) console.warn(`⚠️ No encontrado local para backend id=${qBackend.id} nombre="${qBackend.nombre}"`);
 }
 });
-if (todosFetchsOk) {
-const idsEnBackend = allQuinielas.map(q => String(q.id));
-sent = sent.map(q => {
-if (q.jornada === jornadaNombre && q.pythonId != null && !idsEnBackend.includes(String(q.pythonId))) {
-if (ENV?.isDev) console.log(`🔄 Regresa a pendiente: ${q.name}`);
-return { ...q, estado: 'pendiente', folio: null, pythonId: null };
-}
-return q;
-});
-}
 AppState.replaceSent(sent);
 deduplicarSentQuinielas();
 if (typeof updateHeroStats === 'function') updateHeroStats();
@@ -3591,20 +3593,11 @@ return q;
 });
 if (huboMigracion) AppState.replaceSent(sent);
 const deJornada = sent.filter(q => q.jornada === jornadaNombre);
-const toKeySaved = q => {
-const nombre = (q.name || q.nombre || '').trim().toLowerCase();
-const picks = partidos.map(p => {
-const pred = q.predictions?.[String(p.id)];
-if (!pred || (Array.isArray(pred) && pred.length === 0)) return '-';
-return Array.isArray(pred) ? [...pred].sort().join('') : String(pred).toUpperCase();
-}).join('|');
-return `${nombre}|${picks}`;
-};
-const sentKeys = new Set(deJornada.map(toKeySaved));
+const sentKeys = new Set(deJornada.map(q => generarKeyUnificada(q, partidos)));
 const savedComoSent = AppState.getSaved()
 .filter(q => q.jornada === jornadaNombre)
 .map(q => ({ ...q, estado: 'pendiente' }))
-.filter(q => !sentKeys.has(toKeySaved(q)));
+.filter(q => !sentKeys.has(generarKeyUnificada(q, partidos)));
 const deJornadaFinal = [...savedComoSent, ...deJornada];
 if (deJornadaFinal.length === 0) {
 container.innerHTML = `<div class="empty-state"><span class="empty-icon">📋</span><p>Aún no has enviado quinielas para la ${escapeHtml(jornadaNombre)}</p><button class="btn-primary" onclick="navigateTo('quiniela')">Crear mi primera quiniela</button></div>`;
@@ -3646,22 +3639,6 @@ return `<div class="jugada-card ${cardClass}"><div class="jugada-header ${cardCl
 if (ENV?.isDev) console.log(`✅ renderMyQuinielas: ${deJornadaFinal.length} quinielas renderizadas`);
 }
 /*------------Esto de abajo se encarga de trabajar en nuestro archivo y se enfoca en trabajar para no duplicar quinielas-----------------------------------*/
-function _generarKeyContenido(q, partidos) {
-const nombre = (q.name || q.nombre || '').trim().toLowerCase();
-const vendedor = (q.vendedor || '').trim().toLowerCase();
-const jornada = (q.jornada || '').trim().toLowerCase();
-const picks = partidos.length > 0
-? partidos.map(p => {
-const pred = q.predictions?.[String(p.id)];
-if (!pred || (Array.isArray(pred) && pred.length === 0)) return '-';
-return Array.isArray(pred) ? [...pred].sort().join('') : String(pred).trim().toUpperCase();
-}).join('|')
-: Object.keys(q.predictions ?? {}).sort().map(k => {
-const v = (q.predictions ?? {})[k];
-return `${k}:${Array.isArray(v) ? [...v].sort().join('') : String(v).toUpperCase()}`;
-}).join('|');
-return `cnt:${nombre}|${vendedor}|${jornada}|${picks}`;
-}
 function deduplicarSentQuinielas() {
 const current = AppState.getSent();
 if (current.length === 0) {
@@ -3716,7 +3693,7 @@ console.warn(`⚠️ Duplicado (pase 1) eliminado: folio=${q.folio}, nombre="${q
 if (partidos.length > 0) {
 const porContenido = new Map();
 for (const q of limpias) {
-const ckey = _generarKeyContenido(q, partidos);
+const ckey = generarKeyUnificada(q, partidos);
 if (!porContenido.has(ckey)) {
 porContenido.set(ckey, q);
 } else {

@@ -48,7 +48,7 @@ IS_PRODUCTION = True
 API_VERSION   = "0.3.0"
 
 logger = logging.getLogger(__name__)
-# ║     ⚽ Base de datos y conexiones simultaneamente ⚽       ║ # ║     ⚽ Base de datos y conexiones simultaneamente ⚽       ║
+# ║     ⚽ Base de datos y conexiones simultaneamente ⚽       ║                                   # ║     ⚽ Base de datos y conexiones simultaneamente ⚽       ║
 _pool: ThreadedConnectionPool | None = None
 
 def init_pool() -> None:
@@ -163,7 +163,7 @@ def init_db() -> None:
 
     logger.info("Base de datos PostgreSQL inicializada correctamente")
 
-# ──ESPN por ligas ─────────────────────────────────────────────
+# ──ESPN por ligas                                                                                            ─────────────────────────────────────────────
 LIGAS_ESPN: dict[str, str] = {
     "liga_mx":    "mex.1",
     "premier":    "eng.1",
@@ -175,7 +175,7 @@ LIGAS_ESPN: dict[str, str] = {
 }
 NOMBRE_A_ESPN: dict[str, tuple[str, str]] = {
 
- # ── Liga MX ──────────────────────────────────────────────────────
+ # ── Liga MX                                                                                          ──────────────────────────────────────────────────────
     "San Luis":    ("Atletico San Luis",        "liga_mx"),
     "Pumas":       ("Pumas UNAM",               "liga_mx"),
     "Mazatlán":    ("Mazatlan FC",              "liga_mx"),
@@ -195,7 +195,7 @@ NOMBRE_A_ESPN: dict[str, tuple[str, str]] = {
     "Santos":      ("Santos Laguna",            "liga_mx"),
     "Atlas":       ("Atlas",                    "liga_mx"),
 
-# ── Premier League ────────────────────────────────────────────────
+# ── Premier League                                                                                         ────────────────────────────────────────────────
     "Man Utd":     ("Manchester United",        "premier"),
     "Liverpool":   ("Liverpool",                "premier"),
     "Aston Villa": ("Aston Villa",              "premier"),
@@ -211,7 +211,7 @@ NOMBRE_A_ESPN: dict[str, tuple[str, str]] = {
     "Wolves":      ("Wolverhampton Wanderers",  "premier"),
     "Fulham":      ("Fulham",                   "premier"),
 
-# ── La Liga ───────────────────────────────────────────────────────
+# ── La Liga                                                                                                 ───────────────────────────────────────────────────────
     "Real M.":     ("Real Madrid",              "la_liga"),
     "Espanyol":    ("Espanyol",                 "la_liga"),
     "Barcelona":   ("Barcelona",                "la_liga"),
@@ -223,14 +223,14 @@ NOMBRE_A_ESPN: dict[str, tuple[str, str]] = {
     "Sociedad":    ("Real Sociedad",            "la_liga"),
     "Bilbao":      ("Athletic Club",            "la_liga"),
 
-# ── Bundesliga ────────────────────────────────────────────────────
+# ── Bundesliga                                                                                                ────────────────────────────────────────────────────
     "Bayern":      ("Bayern Munich",            "bundesliga"),
     "Dortmund":    ("Borussia Dortmund",        "bundesliga"),
     "Leverkusen":  ("Bayer Leverkusen",         "bundesliga"),
     "Leipzig":     ("RB Leipzig",               "bundesliga"),
     "Frankfurt":   ("Eintracht Frankfurt",      "bundesliga"),
 
-# ── Serie A ───────────────────────────────────────────────────────
+# ── Serie A                                                                                                   ───────────────────────────────────────────────────────
     "Juventus":    ("Juventus",                 "serie_a"),
     "Inter":       ("Inter Milan",              "serie_a"),
     "Milan":       ("AC Milan",                 "serie_a"),
@@ -238,7 +238,7 @@ NOMBRE_A_ESPN: dict[str, tuple[str, str]] = {
     "Roma":        ("AS Roma",                  "serie_a"),
     "Lazio":       ("Lazio",                    "serie_a"),
 
-# ── Ligue 1 ───────────────────────────────────────────────────────
+# ── Ligue 1                                                                                              ───────────────────────────────────────────────────────
     "PSG":         ("Paris Saint-Germain",      "ligue_1"),
     "Marsella":    ("Marseille",                "ligue_1"),
     "Monaco":      ("Monaco",                   "ligue_1"),
@@ -532,7 +532,7 @@ app.add_middleware(
     max_age=3600,
 )
 # ║     ⚽ Configuracion semanal ⚽       ║ # ║     ⚽ Configuracion semanal ⚽       ║ # ║     ⚽ Configuracion semanal ⚽       ║
-JORNADA_ACTUAL     = "Cuartos 1"
+JORNADA_ACTUAL     = "Semifinales 1"
 MAX_DOBLES         = 4
 MAX_TRIPLES        = 3
 PRECIO_NORMAL      = 30
@@ -547,11 +547,11 @@ if PRECIO_DESCUENTO >= PRECIO_NORMAL:
 
 JORNADA_CONFIG = {
     "numero":       1,
-    "nombre":       "Cuartos 1",
-    "codigo_grupo": "C1",
-    "link_grupo":   "https://chat.whatsapp.com/HBVcupu5GfK4T5G1hzUrND",
-    "inicio":       "2026-04-29T20:00:00-06:00",
-    "fin":          "2026-05-04T16:00:00-06:00",
+    "nombre":       "Semifinales 1",
+    "codigo_grupo": "S1",
+    "link_grupo":   "https://chat.whatsapp.com/EKbfApX7sRv574tJPxFbGd",
+    "inicio":       "2026-05-11T16:00:00-06:00",
+    "fin":          "2026-05-17T21:30:00-06:00",
 }
 
 
@@ -565,79 +565,78 @@ if _fin_dt <= _inicio_dt:
 JORNADA_CONFIG["iniciodt"] = _inicio_dt
 JORNADA_CONFIG["findt"]    = _fin_dt
 
-
 PARTIDOS = [
     {
         "id": 0,
-        "local": "Tigres",         "localLogo": "/logos/tigres.png",
-        "visitante": "Chivas",     "visitanteLogo": "/logos/chivas.png",
-        "horario": "Sáb 2 Mayo 7 PM",
-        "televisora": "TUDN",      "televisionLogo": "/logos/tudn.png",
-        "kickoff": "2026-05-02T19:00:00-06:00",
+        "local": "Pachuca",          "localLogo": "/logos/pachuca.png",
+        "visitante": "Pumas",        "visitanteLogo": "/logos/pumas.png",
+        "horario": "Jueves 14 mayo 7 pm",
+        "televisora": "Fox Sports",  "televisionLogo": "/logos/fox-sports.png",
+        "kickoff": "2026-05-14T19:00:00-06:00",
     },
     {
         "id": 1,
-        "local": "Atlas",          "localLogo": "/logos/atlas.png",
-        "visitante": "Cruz Azul",  "visitanteLogo": "/logos/cruz-azul.png",
-        "horario": "Sáb 2 Mayo 9:15 PM",
-        "televisora": "Fox Sports","televisionLogo": "/logos/fox-sports.png",
-        "kickoff": "2026-05-02T21:15:00-06:00",
+        "local": "Cruz Azul",        "localLogo": "/logos/cruz-azul.png",
+        "visitante": "Chivas",       "visitanteLogo": "/logos/chivas.png",
+        "horario": "Miércoles 13 mayo 8 pm",
+        "televisora": "TUDN",        "televisionLogo": "/logos/tudn.png",  # también Canal 5 y ViX+
+        "kickoff": "2026-05-13T20:00:00-06:00",
     },
     {
         "id": 2,
-        "local": "Man Utd",        "localLogo": "/logos/man-utd.png",
-        "visitante": "Liverpool",  "visitanteLogo": "/logos/liverpool.png",
-        "horario": "Dom 3 Mayo 8:30 AM",
-        "televisora": "ESPN",      "televisionLogo": "/logos/espn.png",
-        "kickoff": "2026-05-03T08:30:00-06:00",
+        "local": "Aston Villa",      "localLogo": "/logos/aston-villa.png",
+        "visitante": "Liverpool",    "visitanteLogo": "/logos/liverpool.png",
+        "horario": "Viernes 15 mayo 1 pm",
+        "televisora": "ESPN",        "televisionLogo": "/logos/espn.png",
+        "kickoff": "2026-05-15T13:00:00-06:00",
     },
     {
         "id": 3,
-        "local": "Aston Villa",    "localLogo": "/logos/aston-villa.png",
-        "visitante": "Tottenham",  "visitanteLogo": "/logos/tottenham.png",
-        "horario": "Dom 3 Mayo 12 PM",
-        "televisora": "ESPN",      "televisionLogo": "/logos/espn.png",
-        "kickoff": "2026-05-03T12:00:00-06:00",
+        "local": "Chelsea",          "localLogo": "/logos/chelsea.png",
+        "visitante": "Man City",     "visitanteLogo": "/logos/man-city.png",
+        "horario": "Sábado 16 mayo 10 am",
+        "televisora": "ESPN",        "televisionLogo": "/logos/espn.png",
+        "kickoff": "2026-05-16T10:00:00-06:00",
     },
     {
         "id": 4,
-        "local": "Espanyol",       "localLogo": "/logos/espanyol.png",
-        "visitante": "Real M.",    "visitanteLogo": "/logos/real-madrid.png",
-        "horario": "Dom 3 Mayo 1 PM",
-        "televisora": "ESPN",      "televisionLogo": "/logos/espn.png",
-        "kickoff": "2026-05-03T13:00:00-06:00",
+        "local": "Newcastle",        "localLogo": "/logos/newcastle.png",
+        "visitante": "West Ham",     "visitanteLogo": "/logos/west-ham.png",
+        "horario": "Domingo 17 mayo 10:30 am",
+        "televisora": "ESPN",        "televisionLogo": "/logos/espn.png",
+        "kickoff": "2026-05-17T10:30:00-06:00",
     },
     {
         "id": 5,
-        "local": "América",        "localLogo": "/logos/america.png",
-        "visitante": "Pumas",      "visitanteLogo": "/logos/pumas.png",
-        "horario": "Dom 3 Mayo 5 PM",
-        "televisora": "TUDN",      "televisionLogo": "/logos/tudn.png",
-        "kickoff": "2026-05-03T17:00:00-06:00",
+        "local": "Sevilla",          "localLogo": "/logos/sevilla.png",
+        "visitante": "Real M.",      "visitanteLogo": "/logos/real-madrid.png",
+        "horario": "Domingo 17 mayo 1 pm",
+        "televisora": "ESPN",        "televisionLogo": "/logos/espn.png",
+        "kickoff": "2026-05-17T13:00:00-06:00",
     },
     {
         "id": 6,
-        "local": "Toluca",         "localLogo": "/logos/toluca.png",
-        "visitante": "Pachuca",    "visitanteLogo": "/logos/pachuca.png",
-        "horario": "Dom 3 Mayo 7:15 PM",
-        "televisora": "Fox Sports","televisionLogo": "/logos/fox-sports.png",
-        "kickoff": "2026-05-03T19:15:00-06:00",
+        "local": "Barcelona",        "localLogo": "/logos/barcelona.png",
+        "visitante": "Betis",        "visitanteLogo": "/logos/betis.png",
+        "horario": "Domingo 17 mayo 1 pm",
+        "televisora": "ESPN",        "televisionLogo": "/logos/espn.png",
+        "kickoff": "2026-05-17T13:00:00-06:00",
     },
     {
         "id": 7,
-        "local": "Chelsea",        "localLogo": "/logos/chelsea.png",
-        "visitante": "Forest",     "visitanteLogo": "/logos/nottm-forest.png",
-        "horario": "Lun 4 Mayo 8 AM",
-        "televisora": "ESPN",      "televisionLogo": "/logos/espn.png",
-        "kickoff": "2026-05-04T08:00:00-06:00",
+        "local": "Pumas",            "localLogo": "/logos/pumas.png",
+        "visitante": "Pachuca",      "visitanteLogo": "/logos/pachuca.png",
+        "horario": "Domingo 17 mayo 7 pm",
+        "televisora": "TUDN",        "televisionLogo": "/logos/tudn.png", 
+        "kickoff": "2026-05-17T19:00:00-06:00",
     },
     {
         "id": 8,
-        "local": "Everton",        "localLogo": "/logos/everton.png",
-        "visitante": "Man City",   "visitanteLogo": "/logos/man-city.png",
-        "horario": "Lun 4 Mayo 1 PM",
-        "televisora": "ESPN",      "televisionLogo": "/logos/espn.png",
-        "kickoff": "2026-05-04T13:00:00-06:00",
+        "local": "Chivas",           "localLogo": "/logos/chivas.png",
+        "visitante": "Cruz Azul",    "visitanteLogo": "/logos/cruz-azul.png",
+        "horario": "Sábado 16 mayo 7:07 pm",
+        "televisora": "TUDN",        "televisionLogo": "/logos/tudn.png", 
+        "kickoff": "2026-05-16T19:07:00-06:00",
     },
 ]
 _total_especiales = MAX_DOBLES + MAX_TRIPLES
@@ -1990,6 +1989,30 @@ async def obtener_lista_oficial(jornada: str = Query(default=JORNADA_ACTUAL)):
         "jornada":   jornada,
         "quinielas": lista,
     }
+
+@app.post("/api/quinielas-bulk-delete")
+async def eliminar_quinielas_bulk(body: dict):
+    jornada = body.get("jornada", "").strip()
+    if not jornada:
+        raise HTTPException(status_code=400, detail="Falta jornada")
+
+    def _ejecutar():
+        with get_db() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "DELETE FROM quinielas WHERE jornada = %s AND estado = 'jugando'",
+                    (jornada,)
+                )
+                return cur.rowcount
+
+    try:
+        eliminadas = await asyncio.to_thread(_ejecutar)
+    except Exception as e:
+        logger.error("Error bulk delete jornada '%s': %s", jornada, e)
+        raise HTTPException(status_code=500, detail="Error al eliminar")
+
+    logger.warning("🗑️ Bulk delete — jornada='%s' | eliminadas=%s", jornada, eliminadas)
+    return {"success": True, "eliminadas": eliminadas}
 
 @app.get("/lista")
 async def get_lista():
