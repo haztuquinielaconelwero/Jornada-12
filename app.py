@@ -52,20 +52,20 @@ logger = logging.getLogger(__name__)
 _pool: ThreadedConnectionPool | None = None
 
 def init_pool() -> None:
-    global pool
-    if pool is not None:
+    global _pool
+    if _pool is not None:
         logger.warning("init_pool llamado pero el pool ya existe, ignorando")
         return
     if not DATABASE_URL:
         raise RuntimeError("DATABASE_URL no está configurada")
-    pool = ThreadedConnectionPool(
-        minconn=5,     
-        maxconn=30,     
+    _pool = ThreadedConnectionPool(
+        minconn=5,
+        maxconn=30,
         dsn=DATABASE_URL,
         cursor_factory=RealDictCursor,
         connect_timeout=10,
     )
-    logger.info("Pool de conexiones iniciado max=30") 
+    logger.info("Pool de conexiones iniciado max=30")
 
 def close_pool() -> None:
     global _pool
@@ -76,15 +76,15 @@ def close_pool() -> None:
 
 @contextmanager
 def get_db():
-    if pool is None:
+    if _pool is None:
         raise RuntimeError("Pool no inicializado, llama a init_pool() primero")
-    
+
     conn = None
     last_error = None
     for attempt in range(3):
         try:
-            conn = pool.getconn()
-            break  
+            conn = _pool.getconn()
+            break
         except Exception as e:
             last_error = e
             if attempt < 2:
@@ -107,7 +107,7 @@ def get_db():
         raise
     finally:
         if conn:
-            pool.putconn(conn)
+            _pool.putconn(conn)
 
 def init_db() -> None:
     with get_db() as conn:
@@ -183,7 +183,6 @@ def init_db() -> None:
             """)
 
     logger.info("Base de datos PostgreSQL inicializada correctamente")
-
 # ──ESPN por ligas                                                                                            ─────────────────────────────────────────────
 LIGAS_ESPN: dict[str, str] = {
     "liga_mx":    "mex.1",
