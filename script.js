@@ -6720,13 +6720,9 @@ if (ENV?.isDev) console.warn('⚠️ cargarPendientesTabla: cargarPartidos fall�
 }
 }
 _actualizarHeadersPendientes();
-const params = new URLSearchParams({
-vendedor,
-jornada: jornadaActual?.nombre ?? window.jornadaActual?.nombre ?? '',
-});
-const response = await _fetchConTimeout(`${API_BASE}/api/pendientes?${params.toString()}`);
-if (!response.ok) throw new Error(`HTTP ${response.status}`);
-const data = await response.json();
+const jornada = jornadaActual?.nombre ?? window.jornadaActual?.nombre ?? '';
+const { data, error } = await fetchAPI('api/pendientes', 10000, 1, { vendedor, jornada });
+if (error || !data) throw new Error(error ?? 'Respuesta vacía');
 const lista = data.pendientes ?? [];
 if (!lista.length) {
 _renderEstadoPendientes(tbody, 'vacio', 'No hay quinielas por confirmar ✅');
@@ -6869,13 +6865,9 @@ if (ENV?.isDev) console.warn('⚠️ cargarEsperaTabla: cargarPartidos falló:',
 }
 }
 _actualizarHeadersEspera();
-const params = new URLSearchParams({
-vendedor,
-jornada: jornadaActual?.nombre ?? window.jornadaActual?.nombre ?? '',
-});
-const response = await _fetchConTimeout(`${API_BASE}/api/espera?${params.toString()}`);
-if (!response.ok) throw new Error(`HTTP ${response.status}`);
-const data = await response.json();
+const jornada = jornadaActual?.nombre ?? window.jornadaActual?.nombre ?? '';
+const { data, error } = await fetchAPI('api/espera', 10000, 1, { vendedor, jornada });
+if (error || !data) throw new Error(error ?? 'Respuesta vacía');
 const lista = data.espera ?? [];
 if (!lista.length) {
 _renderEstadoTabla(tbody, 'vacio', 'No hay quinielas en espera ✅');
@@ -6989,7 +6981,9 @@ return null;
 }
 }
 function getVendedorAdmin() {
-return VendedorManager?.current ?? '';
+return VendedorManager?.current 
+?? ls.get('vendedor') 
+?? null;
 }
 /*-------Esto de abajo se encarga de trabajar en nuestro archivo y se usa la Tabla que trabaja en las quinielas jugando-------------------------------------------------*/
 async function cargarJugandoTabla() {
@@ -7017,24 +7011,20 @@ if (ENV?.isDev) console.warn('⚠️ cargarJugandoTabla: cargarPartidos falló:'
 }
 }
 _actualizarHeadersJugando();
-const params = new URLSearchParams({
-vendedor,
-jornada: jornadaActual?.nombre ?? window.jornadaActual?.nombre ?? '',
-});
+// ✅ DESPUÉS
+const jornada = jornadaActual?.nombre ?? window.jornadaActual?.nombre ?? '';
 const [resJugando, resResultados] = await Promise.allSettled([
-_fetchConTimeout(`${API_BASE}/api/jugando?${params.toString()}`),
-_fetchConTimeout(`${API_BASE}/api/resultados-oficiales`),
+fetchAPI('api/jugando', 10000, 1, { vendedor, jornada }),
+fetchAPI('api/resultados-oficiales', 10000, 1, {}),
 ]);
-if (resJugando.status === 'rejected' || !resJugando.value?.ok) {
-throw new Error('Error al cargar quinielas jugando');
-}
-const dataJugando = await resJugando.value.json();
-const lista = dataJugando.jugando ?? [];
+const jugandoResult = resJugando.status === 'fulfilled' ? resJugando.value : null;
+if (!jugandoResult?.data || jugandoResult.error) throw new Error(jugandoResult?.error ?? 'Error al cargar quinielas jugando');
+const lista = jugandoResult.data.jugando ?? [];
 let resultadosObj = {};
-if (resResultados.status === 'fulfilled' && resResultados.value?.ok) {
-const dataResultados = await resResultados.value.json();
-resultadosObj = dataResultados.resultados ?? {};
-} else {
+if (resResultados.status === 'fulfilled' && resResultados.value?.data) {
+resultadosObj = resResultados.value.data.resultados ?? {};
+}
+else {
 if (ENV?.isDev) console.warn('⚠️ cargarJugandoTabla: resultados-oficiales no disponibles — scoring desactivado');
 }
 if (!lista.length) {
