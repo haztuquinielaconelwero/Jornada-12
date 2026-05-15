@@ -173,8 +173,8 @@ getFromURL,
 isKnown: (name) => typeof name === 'string' && VENDEDORES_VALIDOS.has(name.trim()),
 });
 })();
-const currentVendedor = VendedorManager.current;
 /*-------------------------Esto de abajo se encarga de trabajar en nuestro archivo y se enfoca en las Funciones globales -------------------------------------*/
+const currentVendedor = VendedorManager.current;
 const AppState = (() => {
 const SCHEMA_VERSION = 2;
 const STORAGE_KEY = 'quinielasData';
@@ -411,6 +411,7 @@ out[String(matchId)] = [];
 return out;
 }
 function buildSentContentKey(q, partidosRef = []) {
+if (q.pythonId != null) return `py-${q.pythonId}`;
 const norm = s => (typeof s === 'string' ? s.trim().toLowerCase() : '');
 const predictions = q.predictions ?? {};
 const picks = partidosRef.length > 0
@@ -517,10 +518,6 @@ function getPartidos() {
 return _partidos;
 }
 function setPartidos(data) {
-if (_partidos.length > 0) {
-console.warn('⚠️ AppState.setPartidos: los partidos ya están cargados. Ignorando.');
-return false;
-}
 if (!Array.isArray(data) || data.length === 0) {
 console.error('❌ AppState.setPartidos: data vacío o inválido', data);
 return false;
@@ -567,24 +564,56 @@ let partidos = AppState.getPartidos();
 AppState.on('savedChanged', () => { savedQuinielas = AppState.getSaved(); });
 AppState.on('sentChanged', () => { sentQuinielas = AppState.getSent(); });
 AppState.on('partidosLoaded', () => { partidos = AppState.getPartidos(); });
+AppState.on('partidosLoaded', () => {
+document.dispatchEvent(
+new CustomEvent('partidosCargados', {
+detail: { count: AppState.getPartidos().length },
+bubbles: false
+})
+);
+});
 /*-------------------------Esto de abajo se encarga de trabajar en nuestro archivo y se enfoca en el guardado y las alertas -------------------------------------*/
 const userId = (() => {
 const KEY = 'userId';
-const VALID_FORMAT = /^u_[0-9a-f]{16,}$/i;
+const VALID_FORMAT = /^u[0-9a-f]{16,}$/i;
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 365; 
 function generateId() {
 if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-return 'u_' + crypto.randomUUID().replace(/-/g, '');
+return 'u' + crypto.randomUUID().replace(/-/g, '');
 }
 const array = new Uint8Array(8);
 crypto.getRandomValues(array);
-return 'u_' + Array.from(array, b => b.toString(16).padStart(2, '0')).join('');
+return 'u' + Array.from(array, b => b.toString(16).padStart(2, '0')).join('');
 }
-const existing = _ls.get(KEY);
-if (existing && VALID_FORMAT.test(existing)) {
-return existing;
+function setCookie(id) {
+try {
+document.cookie = `userId=${encodeURIComponent(id)};max-age=${COOKIE_MAX_AGE};path=/;SameSite=Lax`;
+} catch (e) {
+if (ENV?.isDev) console.warn('userId: no se pudo guardar cookie', e);
+}
+}
+function getCookie() {
+try {
+const match = document.cookie.match(/(?:^|;\s*)userId=([^;]+)/);
+return match ? decodeURIComponent(match[1]) : null;
+} catch (e) {
+return null;
+}
+}
+const fromStorage = ls.get(KEY);
+if (fromStorage && VALID_FORMAT.test(fromStorage)) {
+setCookie(fromStorage); 
+return fromStorage;
+}
+const fromCookie = getCookie();
+if (fromCookie && VALID_FORMAT.test(fromCookie)) {
+ls.set(KEY, fromCookie); 
+if (ENV?.isDev) console.log('%c userId recuperado desde cookie:', 'color:#4ade80;font-weight:bold', fromCookie);
+return fromCookie;
 }
 const newId = generateId();
-_ls.set(KEY, newId);
+ls.set(KEY, newId);
+setCookie(newId);
 return newId;
 })();
 function deleteQuiniela(id) {
@@ -861,8 +890,14 @@ if (_partidosLoading) {
 if (ENV?.isDev) console.warn('⚠️ cargarPartidos: ya hay una carga en progreso, ignorando.');
 return false;
 }
-if (AppState.getPartidos().length > 0) {
-if (ENV?.isDev) console.log('⚽ cargarPartidos: partidos ya en AppState, saltando fetch.');
+if (AppState.getPartidos().length >= PARTIDOSESPERADOS) {
+if (ENV?.isDev) console.log(`cargarPartidos: partidos completos en AppState, saltando fetch.`);
+document.dispatchEvent(
+new CustomEvent('partidosCargados', {
+detail: { count: AppState.getPartidos().length, cached: true },
+bubbles: false
+})
+);
 return true;
 }
 _partidosLoading = true;
@@ -873,6 +908,7 @@ console.error('❌ cargarPartidos: URL inválida, abortando');
 return false;
 }
 let lastError = null;
+try {
 for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
 if (attempt > 1) {
 const delay = (attempt - 1) * 800;
@@ -925,10 +961,13 @@ if (!ok) {
 lastError = 'AppState.setPartidos rechazó los datos';
 break;
 }
-if (ENV?.isDev) {
-console.log(`✅ cargarPartidos: ${validos.length} partidos cargados correctamente`);
-}
-_partidosLoading = false;
+if (ENV?.isDev) console.log(`cargarPartidos: ${validos.length} partidos cargados correctamente`);
+document.dispatchEvent(
+new CustomEvent('partidosCargados', {
+detail: { count: validos.length },
+bubbles: false
+})
+);
 return true;
 } catch (networkError) {
 if (networkError.name === 'AbortError') {
@@ -940,12 +979,14 @@ if (ENV?.isDev) console.warn(`🔌 cargarPartidos (intento ${attempt}):`, lastEr
 }
 }
 }
-_partidosLoading = false;
 console.error(`❌ cargarPartidos: falló tras ${maxRetries + 1} intentos. Último error: ${lastError}`);
 if (notify) {
 showToast('No se pudieron cargar los partidos. Verifica tu conexión.', 'error');
 }
 return false;
+} finally {
+_partidosLoading = false;
+}
 }
 /*-------------------------Esto de abajo se encarga de trabajar en nuestro archivo y se enfoca en Funciones de la pagina quiniela --------------------------------*/
 function escapeHtml(str) {
@@ -3467,6 +3508,11 @@ if (!jornadaNombre) {
 if (ENV?.isDev) console.warn('⚠️ actualizarEstadosDesdeBackend: sin jornada');
 return;
 }
+const sentActual = AppState.getSent();
+if (sentActual.length === 0 && ENV?.isDev) {
+console.warn('%c actualizarEstadosDesdeBackend: sentQuinielas vacío — posible borrado de caché reciente',
+'color:#facc15;font-weight:bold');
+}
 const qs = new URLSearchParams({ vendedor, jornada: jornadaNombre }).toString();
 let resPend, resEsp, resJug;
 try {
@@ -3548,7 +3594,17 @@ local.pythonId = qBackend.pythonId ?? qBackend.id ?? local.pythonId ?? null;
 local.jornada = local.jornada || jornadaNombre;
 if (ENV?.isDev) console.log(`✅ Actualizada: ${local.name} → ${local.estado} (${local.folio ?? 'sin folio'})`);
 } else {
-if (ENV?.isDev) console.warn(`⚠️ No encontrado local para backend id=${qBackend.id} nombre="${qBackend.nombre}"`);
+sent.push({
+pythonId:    qBackend.id ?? null,
+folio:       qBackend.folio ?? null,
+name:        qBackend.nombre ?? qBackend.name ?? 'Sin nombre',
+nombre:      qBackend.nombre ?? qBackend.name ?? 'Sin nombre',
+vendedor:    qBackend.vendedor ?? vendedor,
+predictions: qBackend.predictions ?? {},
+estado:      normalizarEstadoJugada(qBackend.estado),
+jornada:     jornadaNombre,
+});
+if (ENV?.isDev) console.log(`📥 Adoptada desde backend: id=${qBackend.id} nombre="${qBackend.nombre}"`);
 }
 });
 AppState.replaceSent(sent);
@@ -3832,8 +3888,15 @@ folio: q.folio ?? null,
 pythonId: q.pythonId ?? null,
 }));
 AppState.markAsSent(exitosasNormalizadas);
+try {
+if (typeof actualizarEstadosDesdeBackend === 'function') {
+await actualizarEstadosDesdeBackend();
+}
+} catch (e) {
+if (ENV?.isDev) console.warn('WhatsAppSender: sync post-envío falló (no crítico):', e);
+}
 exitosasNormalizadas.forEach(q => {
-  if (q.id != null) AppState.removeSavedById(q.id);
+if (q.id != null) AppState.removeSavedById(q.id);
 });
 if (typeof updateSavedBadge === 'function') updateSavedBadge();
 deduplicarSentQuinielas();
@@ -3968,9 +4031,9 @@ generarKeyQuiniela,
 procesarEnvioWhatsApp,
 });
 })();
+/*------------Esto de abajo se encarga de trabajar en nuestro archivo y se enfoca en trabajar la Estructura para el mensaje de whats app -----------------------*/
 function generarKeyQuiniela(q) { return WhatsAppSender.generarKeyQuiniela(q); }
 async function procesarEnvioWhatsApp(quinielas, totalPrice) { return WhatsAppSender.procesarEnvioWhatsApp(quinielas, totalPrice); }
-/*------------Esto de abajo se encarga de trabajar en nuestro archivo y se enfoca en trabajar la Estructura para el mensaje de whats app -----------------------*/
 function getVendedorFromURL() {
 const params = new URLSearchParams(window.location.search);
 const raw = params.get('vendedor') ?? '';
@@ -7321,7 +7384,7 @@ _initTabNavegacion(
 '#pageResultados .tab-btn',
 '#pageResultados .tab-content',
 {
-'misQuinielasJugadas:': () => {
+'misQuinielasJugadas': () => {
 if (typeof renderMyQuinielas === 'function') renderMyQuinielas();
 else if (ENV?.isDev) console.warn('⚠️ renderMyQuinielas no definida');
 },
@@ -7342,7 +7405,7 @@ quiniela?.initSecondPlacePage?.();
 if (quiniela?.searchParticipant) {
 const searchInput = document.getElementById('searchInput');
 if (searchInput) searchInput.value = '';
-quiniela.searchParticipant();
+quiniela.searchParticipant('');
 }
 },
 'simulador': () => {
@@ -7351,10 +7414,34 @@ simulador?.init?.();
 },
 controllerResultados.signal
 );
+document.addEventListener('partidosCargados', function reRenderActiveTab() {
+const activeAnalisisTab = document.querySelector('#pageAnalisis .tab-btn.active');
+if (activeAnalisisTab) {
+const tab = activeAnalisisTab.dataset.tab;
+if (tab === 'horarios' && typeof renderMatchesHorarios === 'function') renderMatchesHorarios();
+else if (tab === 'porcentajes' && typeof renderMatchesPorcentajes === 'function') renderMatchesPorcentajes();
+}
+const pageResultados = document.getElementById('pageResultados');
+if (pageResultados?.classList.contains('active')) {
+const activeResultadosTab = document.querySelector('#pageResultados .tab-btn.active');
+if (activeResultadosTab) {
+const tab = activeResultadosTab.dataset.tab;
+if (tab === 'misQuinielasJugadas' && typeof renderMyQuinielas === 'function') renderMyQuinielas();
+else if (tab === 'listaGeneral' && typeof cargarListaOficialTabla === 'function') cargarListaOficialTabla();
+}
+}
+const pageQuiniela = document.getElementById('pageQuiniela');
+if (pageQuiniela?.classList.contains('active')) {
+if (typeof renderQuinielaMatches === 'function') renderQuinielaMatches();
+if (typeof updateQuinielaCount === 'function') updateQuinielaCount();
+if (typeof updatePrice === 'function') updatePrice();
+}
+if (ENV?.isDev) console.log('F-004 fix: re-render post-carga ejecutado ✅');
+}, { once: true });
 return { controllerAnalisis, controllerResultados };
 }
 document.addEventListener('DOMContentLoaded', initNavegacionTabs, { once: true });
-/*----Esto de abajo se encarga de trabajar en nuestro archivo y se usa para la Aplicacion=----------*/
+/*----Esto de abajo se encarga de trabajar en nuestro archivo y se usa para la Aplicacion=-----------------------------------------------------------------*/
 const PWA = (() => {
 let _prompt = null;
 let _bannerTimer = null;
@@ -7415,15 +7502,18 @@ _retryTimer = setTimeout(retry, 500);
 }
 return;
 }
-if (ls.get('pwaDismissed_' + vendedor)) return;
+const KEY = 'pwaDismissed_' + vendedor;
+const yaDescarto = ls.get(KEY);
+if (yaDescarto) return;
 if (_bannerTimer) { clearTimeout(_bannerTimer); _bannerTimer = null; }
 _bannerTimer = setTimeout(() => {
 _bannerTimer = null;
 try {
+if (_yaEstaInstalada()) return;
 const banner = document.getElementById('pwaBanner');
 if (banner) banner.style.display = 'flex';
 } catch (e) {}
-}, 4000);
+}, 2000);
 } catch (err) {
 if (ENV?.isDev) console.error('❌ PWA._mostrarBanner:', err);
 }
@@ -7448,12 +7538,17 @@ _ocultarBanner();
 if (typeof showToast === 'function') showToast('¡App instalada! 🎉', 'success');
 } catch (e) {}
 });
-
 if ('serviceWorker' in navigator) {
 window.addEventListener('load', () => {
 navigator.serviceWorker.register('/service-worker.js')
 .then(() => { if (ENV?.isDev) console.log('✅ SW registrado'); })
 .catch(err => { if (ENV?.isDev) console.error('❌ SW error:', err); });
+});
+navigator.serviceWorker.addEventListener('message', event => {
+if (event.data?.type === 'SW_UPDATED') {
+if (ENV?.isDev) console.log('[App] SW actualizado, recargando...');
+window.location.reload();
+}
 });
 }
 async function instalarPWA() {

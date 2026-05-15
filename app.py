@@ -52,20 +52,20 @@ logger = logging.getLogger(__name__)
 _pool: ThreadedConnectionPool | None = None
 
 def init_pool() -> None:
-    global _pool
-    if _pool is not None:
-        logger.warning("init_pool() llamado pero el pool ya existe — ignorando")
+    global pool
+    if pool is not None:
+        logger.warning("init_pool llamado pero el pool ya existe, ignorando")
         return
     if not DATABASE_URL:
         raise RuntimeError("DATABASE_URL no está configurada")
-    _pool = ThreadedConnectionPool(
-        minconn=2,
-        maxconn=15,
+    pool = ThreadedConnectionPool(
+        minconn=5,     
+        maxconn=30,     
         dsn=DATABASE_URL,
         cursor_factory=RealDictCursor,
         connect_timeout=10,
     )
-    logger.info("Pool de conexiones iniciado (max=15)")
+    logger.info("Pool de conexiones iniciado max=30") 
 
 def close_pool() -> None:
     global _pool
@@ -76,9 +76,29 @@ def close_pool() -> None:
 
 @contextmanager
 def get_db():
-    if _pool is None:
-        raise RuntimeError("Pool no inicializado — llama a init_pool() primero")
-    conn = _pool.getconn()
+    if pool is None:
+        raise RuntimeError("Pool no inicializado, llama a init_pool() primero")
+    
+    conn = None
+    last_error = None
+    for attempt in range(3):
+        try:
+            conn = pool.getconn()
+            break  
+        except Exception as e:
+            last_error = e
+            if attempt < 2:
+                time.sleep(0.1 * (attempt + 1))
+                logger.warning(
+                    "get_db: pool agotado, reintento %d/3 — %s", attempt + 1, e
+                )
+            else:
+                logger.error(
+                    "get_db: pool agotado tras 3 intentos — %s", last_error
+                )
+                raise RuntimeError(
+                    f"No hay conexiones disponibles en el pool: {last_error}"
+                ) from last_error
     try:
         yield conn
         conn.commit()
@@ -86,7 +106,8 @@ def get_db():
         conn.rollback()
         raise
     finally:
-        _pool.putconn(conn)
+        if conn:
+            pool.putconn(conn)
 
 def init_db() -> None:
     with get_db() as conn:
@@ -331,14 +352,12 @@ async def auto_sync_loop() -> None:
                 "auto_sync: '%s' no está en NOMBRE_A_ESPN — usando nombre directo",
                 p["local"],
             )
-
     ligas_usadas = list(liga_a_ids.keys())
 
     logger.info(
         "auto_sync: %d partido(s) | ligas=%s",
         len(PARTIDOS), ligas_usadas,
     )
-
     while True:
         try:
             now = datetime.now(timezone.utc)
@@ -365,7 +384,7 @@ async def auto_sync_loop() -> None:
                 await asyncio.sleep(espera)
                 continue
 
-            resultados_db, _ = get_resultados_db(JORNADA_ACTUAL)
+            resultados_db, _ = await asyncio.to_thread(get_resultados_db, JORNADA_ACTUAL)
             ids_sin_resultado: set[int] = {
                 pid for pid in ids_listos
                 if resultados_db[pid] is None
@@ -396,7 +415,9 @@ async def auto_sync_loop() -> None:
                 for liga_key in ligas_usadas:
                     slug = LIGAS_ESPN.get(liga_key)
                     if not slug:
-                        logger.warning("auto_sync: liga_key '%s' sin slug ESPN — omitiendo", liga_key)
+                        logger.warning(
+                            "auto_sync: liga_key '%s' sin slug ESPN — omitiendo", liga_key
+                        )
                         continue
 
                     url = (
@@ -425,38 +446,42 @@ async def auto_sync_loop() -> None:
                         logger.warning("auto_sync: JSON inválido liga=%s", liga_key)
                         continue
 
-                    for pid, gh, ga, res in _parsear_eventos_espn(
+                    resultados_batch = _parsear_eventos_espn(
                         data, local_lookup, ids_sin_resultado
-                    ):
+                    )
+                    if resultados_batch:
                         try:
                             with get_db() as conn:
                                 with conn.cursor() as cur:
-                                    cur.execute(
-                                        """
-                                        INSERT INTO resultados
-                                            (partido_id, jornada, resultado,
-                                             marcador_local, marcador_visita)
-                                        VALUES (%s, %s, %s, %s, %s)
-                                        ON CONFLICT (partido_id, jornada) DO UPDATE SET
-                                            resultado           = EXCLUDED.resultado,
-                                            marcador_local      = EXCLUDED.marcador_local,
-                                            marcador_visita     = EXCLUDED.marcador_visita,
-                                            fecha_actualizacion = NOW()
-                                        """,
-                                        (pid, JORNADA_ACTUAL, res, gh, ga),
-                                    )
-                            actualizados += 1
-                            logger.info(
-                                "auto_sync ✔ partido_id=%s  %s-%s  res=%s  (liga=%s)",
-                                pid, gh, ga, res, liga_key,
-                            )
+                                    for pid, gh, ga, res in resultados_batch:
+                                        try:
+                                            cur.execute(
+                                                """
+                                                INSERT INTO resultados
+                                                    (partido_id, jornada, resultado,
+                                                     marcador_local, marcador_visita)
+                                                VALUES (%s, %s, %s, %s, %s)
+                                                ON CONFLICT (partido_id, jornada) DO UPDATE SET
+                                                    resultado           = EXCLUDED.resultado,
+                                                    marcador_local      = EXCLUDED.marcador_local,
+                                                    marcador_visita     = EXCLUDED.marcador_visita,
+                                                    fecha_actualizacion = NOW()
+                                                """,
+                                                (pid, JORNADA_ACTUAL, res, gh, ga),
+                                            )
+                                            actualizados += 1
+                                            logger.info(
+                                                "auto_sync ✔ partido_id=%s  %s-%s  res=%s  (liga=%s)",
+                                                pid, gh, ga, res, liga_key,
+                                            )
+                                        except Exception as exc:
+                                            logger.error(
+                                                "auto_sync: DB error partido_id=%s — %s", pid, exc
+                                            )
                         except Exception as exc:
                             logger.error(
-                                "auto_sync: DB error partido_id=%s — %s", pid, exc
+                                "auto_sync: error guardando batch liga=%s — %s", liga_key, exc
                             )
-
-                    await asyncio.sleep(0.5)
-
             if actualizados:
                 logger.info(
                     "auto_sync: %d partido(s) actualizados en esta pasada ✅", actualizados
@@ -579,7 +604,7 @@ PARTIDOS = [
         "local": "Cruz Azul",        "localLogo": "/logos/cruz-azul.png",
         "visitante": "Chivas",       "visitanteLogo": "/logos/chivas.png",
         "horario": "Miércoles 13 mayo 8 pm",
-        "televisora": "TUDN",        "televisionLogo": "/logos/tudn.png",  # también Canal 5 y ViX+
+        "televisora": "TUDN",        "televisionLogo": "/logos/tudn.png",  
         "kickoff": "2026-05-13T20:00:00-06:00",
     },
     {
@@ -647,7 +672,6 @@ if _total_especiales > len(PARTIDOS):
     )
 # ║     ⚽ Archivos con los que trabaja mi Python ⚽       ║ # ║     ⚽ Archivos con los que trabaja mi Python ⚽       ║
 BASE_DIR = Path(__file__).resolve().parent
-
 def _file_response(
     relative_path: str,
     media_type: str,
@@ -663,7 +687,9 @@ def _file_response(
     if cache_seconds > 0:
         headers["Cache-Control"] = f"public, max-age={cache_seconds}"
     else:
-        headers["Cache-Control"] = "no-cache"
+        headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        headers["Pragma"] = "no-cache"
+        headers["Expires"] = "0"
     return FileResponse(str(abs_path), media_type=media_type, headers=headers)
 
 _logos_dir = BASE_DIR / "logos"
@@ -701,7 +727,7 @@ async def get_espera():
     return response
 
 @app.get("/panel", include_in_schema=False, response_class=FileResponse)
-async def getpanel():
+async def get_panel():
     response = _file_response("panel-vendedor.html", "text/html", cache_seconds=0)
     response.headers["X-Content-Type-Options"] = "nosniff"
     return response
