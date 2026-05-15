@@ -600,19 +600,19 @@ return match ? decodeURIComponent(match[1]) : null;
 return null;
 }
 }
-const fromStorage = ls.get(KEY);
+const fromStorage = _ls.get(KEY);
 if (fromStorage && VALID_FORMAT.test(fromStorage)) {
 setCookie(fromStorage); 
 return fromStorage;
 }
 const fromCookie = getCookie();
 if (fromCookie && VALID_FORMAT.test(fromCookie)) {
-ls.set(KEY, fromCookie); 
+_ls.set(KEY, fromCookie);
 if (ENV?.isDev) console.log('%c userId recuperado desde cookie:', 'color:#4ade80;font-weight:bold', fromCookie);
 return fromCookie;
 }
 const newId = generateId();
-ls.set(KEY, newId);
+_ls.set(KEY, newId);
 setCookie(newId);
 return newId;
 })();
@@ -2025,36 +2025,7 @@ function invalidateCache() { _currentTab = null; }
 return Object.freeze({ show, invalidateCache });
 })();
 function mostrarAdminTab(tab) { AdminTabManager.show(tab); }
-function navigateTo(page) {
-if (typeof NavigationManager !== 'undefined' && typeof NavigationManager.navigateTo === 'function') {
-NavigationManager.navigateTo(page);
-return;
-}
-if (ENV?.isDev) console.warn('⚠️ navigateTo: NavigationManager no disponible, usando fallback');
-const PAGES_VALIDAS = new Set(['inicio', 'quiniela', 'resultados', 'analisis', 'ayuda', 'admin']);
-if (!page || !PAGES_VALIDAS.has(page)) {
-console.error(`❌ navigateTo: página inválida → "${page}"`);
-return;
-}
-document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-const pageId = `page${page.charAt(0).toUpperCase() + page.slice(1)}`;
-const pageEl = document.getElementById(pageId);
-if (!pageEl) { console.error(`❌ navigateTo: #${pageId} no encontrado`); return; }
-pageEl.classList.add('active');
-document.querySelectorAll('.nav-item[data-page]').forEach(item => {
-const isActive = item.getAttribute('data-page') === page;
-item.classList.toggle('active', isActive);
-item.setAttribute('aria-current', isActive ? 'page' : 'false');
-});
-if (typeof updateHero === 'function') updateHero(page);
-window.scrollTo({ top: 0, behavior: 'smooth' });
-const hook = PAGE_HOOKS[page];
-if (typeof hook === 'function') {
-try { hook(); }
-catch (e) { console.error(`❌ navigateTo: error en hook de "${page}":`, e); }
-}
-if (ENV?.isDev) console.log(`🧭 navigateTo (fallback): → "${page}"`);
-}
+function navigateTo(page) { NavigationManager.navigateTo(page); }
 (function initFilterBtnListener() {
 if (window._filterBtnCleanup) window._filterBtnCleanup();
 function handler(e) {
@@ -6351,8 +6322,8 @@ const jornadaRange  = document.querySelector('.week-card__range');
 const jornadaStatus = document.querySelector('.week-card__status');
 const progressBar   = document.querySelector('.progress-bar__fill');
 const progressLabel = document.querySelector('.progress-labels span:nth-child(2)');
-if (jornadaNum && jornada.numero !== null && jornada.numero !== undefined) {
-jornadaNum.textContent = String(jornada.numero);
+if (jornadaNum) {
+jornadaNum.textContent = jornada.nombre ?? String(jornada.numero);
 }
 if (jornadaRange) {
 jornadaRange.textContent = jornada.nombre ?? '';
@@ -7467,8 +7438,8 @@ if (banner) banner.style.display = 'none';
 function _persistirVendedorActual() {
 try {
 const vendedor = VendedorManager?.current;
-if (vendedor && typeof ls !== 'undefined') {
-ls.set('vendedor', vendedor);
+if (vendedor && typeof _ls !== 'undefined') {
+_ls.set('vendedor', vendedor);
 if (ENV?.isDev) console.log('✅ PWA: vendedor persistido:', vendedor);
 }
 } catch (e) {}
@@ -7503,7 +7474,7 @@ _retryTimer = setTimeout(retry, 500);
 return;
 }
 const KEY = 'pwaDismissed_' + vendedor;
-const yaDescarto = ls.get(KEY);
+const yaDescarto = _ls.get(KEY);
 if (yaDescarto) return;
 if (_bannerTimer) { clearTimeout(_bannerTimer); _bannerTimer = null; }
 _bannerTimer = setTimeout(() => {
@@ -7576,8 +7547,8 @@ function cerrarBanner() {
 try {
 const vendedor = VendedorManager?.current;
 _ocultarBanner();
-if (typeof ls !== 'undefined') {
-ls.set('pwaDismissed_' + (vendedor || 'sin_vendedor'), '1');
+if (typeof _ls !== 'undefined') {
+_ls.set('pwaDismissed_' + (vendedor || 'sin_vendedor'), '1');
 }
 } catch (e) {}
 }
