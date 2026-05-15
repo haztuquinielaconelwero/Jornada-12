@@ -1728,6 +1728,10 @@ async function fetchAPI(endpoint, {
 timeout = 8000,
 retries = 1,
 } = {}) {
+if (typeof endpoint === 'string' && (endpoint.startsWith('http://') || endpoint.startsWith('https://'))) {
+console.error('❌ fetchAPI: recibió una URL completa en vez de un path. Usa _fetchConTimeout para URLs completas:', endpoint);
+return { data: null, error: 'fetchAPI recibió URL completa', status: null };
+}
 const url = apiUrl(endpoint);
 if (!url) {
 console.error('❌ fetchAPI: URL inválida para endpoint:', endpoint);
@@ -6720,8 +6724,11 @@ if (ENV?.isDev) console.warn('⚠️ cargarPendientesTabla: cargarPartidos fall�
 }
 _actualizarHeadersPendientes();
 const jornada = jornadaActual?.nombre ?? window.jornadaActual?.nombre ?? '';
-const { data, error } = await fetchAPI(apiUrl('api/pendientes', { vendedor, jornada }), { timeout: 10000, retries: 1 });
-if (error || !data) throw new Error(error ?? 'Respuesta vacía');
+const url = apiUrl('api/pendientes', { vendedor, jornada });
+if (!url) throw new Error('URL inválida para api/pendientes');
+const response = await _fetchConTimeout(url, { headers: { 'Accept': 'application/json' } }, 10000);
+if (!response.ok) throw new Error(`HTTP ${response.status}`);
+const data = await response.json();
 const lista = data.pendientes ?? [];
 if (!lista.length) {
 _renderEstadoPendientes(tbody, 'vacio', 'No hay quinielas por confirmar ✅');
@@ -6865,8 +6872,11 @@ if (ENV?.isDev) console.warn('⚠️ cargarEsperaTabla: cargarPartidos falló:',
 }
 _actualizarHeadersEspera();
 const jornada = jornadaActual?.nombre ?? window.jornadaActual?.nombre ?? '';
-const { data, error } = await fetchAPI(apiUrl('api/espera', { vendedor, jornada }), { timeout: 10000, retries: 1 });
-if (error || !data) throw new Error(error ?? 'Respuesta vacía');
+const url = apiUrl('api/espera', { vendedor, jornada });
+if (!url) throw new Error('URL inválida para api/espera');
+const response = await fetchConTimeout(url, { headers: { 'Accept': 'application/json' } }, 10000);
+if (!response.ok) throw new Error(`HTTP ${response.status}`);
+const data = await response.json();
 const lista = data.espera ?? [];
 if (!lista.length) {
 _renderEstadoTabla(tbody, 'vacio', 'No hay quinielas en espera ✅');
