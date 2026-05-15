@@ -3495,11 +3495,17 @@ jornada: jornadaNombre,
 };
 let resPend, resEsp, resJug;
 try {
-[resPend, resEsp, resJug] = await Promise.all([
-fetchAPI(apiUrl('/api/pendientes', apiParams)),
-fetchAPI(apiUrl('/api/espera', apiParams)),
-fetchAPI(apiUrl('/api/jugando', apiParams)),
+const _urlPend = apiUrl('/api/pendientes', apiParams);
+const _urlEsp  = apiUrl('/api/espera',     apiParams);
+const _urlJug  = apiUrl('/api/jugando',    apiParams);
+const [_rP, _rE, _rJ] = await Promise.all([
+fetch(_urlPend, { headers: { 'Accept': 'application/json' } }),
+fetch(_urlEsp,  { headers: { 'Accept': 'application/json' } }),
+fetch(_urlJug,  { headers: { 'Accept': 'application/json' } }),
 ]);
+resPend = { data: _rP.ok ? await _rP.json() : null, error: _rP.ok ? null : `HTTP ${_rP.status}` };
+resEsp  = { data: _rE.ok ? await _rE.json() : null, error: _rE.ok ? null : `HTTP ${_rE.status}` };
+resJug  = { data: _rJ.ok ? await _rJ.json() : null, error: _rJ.ok ? null : `HTTP ${_rJ.status}` };
 }
 catch (err) {
 if (ENV?.isDev) console.warn('⚠️ actualizarEstadosDesdeBackend: error en Promise.all', err);
@@ -6874,7 +6880,7 @@ _actualizarHeadersEspera();
 const jornada = jornadaActual?.nombre ?? window.jornadaActual?.nombre ?? '';
 const url = apiUrl('api/espera', { vendedor, jornada });
 if (!url) throw new Error('URL inválida para api/espera');
-const response = await fetchConTimeout(url, { headers: { 'Accept': 'application/json' } }, 10000);
+const response = await _fetchConTimeout(url, { headers: { 'Accept': 'application/json' } }, 10000);
 if (!response.ok) throw new Error(`HTTP ${response.status}`);
 const data = await response.json();
 const lista = data.espera ?? [];
@@ -7021,19 +7027,22 @@ if (ENV?.isDev) console.warn('⚠️ cargarJugandoTabla: cargarPartidos falló:'
 }
 _actualizarHeadersJugando();
 const jornada = jornadaActual?.nombre ?? window.jornadaActual?.nombre ?? '';
-const qs = new URLSearchParams({ vendedor, jornada });
+const urlJugando = apiUrl('api/jugando', { vendedor, jornada });
+if (!urlJugando) throw new Error('URL inválida para api/jugando');
+const urlResultados = apiUrl('api/resultados-oficiales');
 const [resJugando, resResultados] = await Promise.allSettled([
-fetchAPI(apiUrl('api/jugando', { vendedor, jornada }), { timeout: 10000, retries: 1 }),
-fetchAPI('api/resultados-oficiales'),
+_fetchConTimeout(urlJugando, { headers: { 'Accept': 'application/json' } }, 10000),
+_fetchConTimeout(urlResultados, { headers: { 'Accept': 'application/json' } }, 10000),
 ]);
-const jugandoResult = resJugando.status === 'fulfilled' ? resJugando.value : null;
-if (!jugandoResult?.data || jugandoResult.error) throw new Error(jugandoResult?.error ?? 'Error al cargar quinielas jugando');
-const lista = jugandoResult.data.jugando ?? [];
+const jugandoOk = resJugando.status === 'fulfilled' && resJugando.value?.ok;
+if (!jugandoOk) throw new Error('Error al cargar quinielas jugando');
+const dataJugando = await resJugando.value.json();
+const lista = dataJugando.jugando ?? [];
 let resultadosObj = {};
-if (resResultados.status === 'fulfilled' && resResultados.value?.data) {
-resultadosObj = resResultados.value.data.resultados ?? {};
-}
-else {
+if (resResultados.status === 'fulfilled' && resResultados.value?.ok) {
+const dataResultados = await resResultados.value.json();
+resultadosObj = dataResultados.resultados ?? {};
+} else {
 if (ENV?.isDev) console.warn('⚠️ cargarJugandoTabla: resultados-oficiales no disponibles — scoring desactivado');
 }
 if (!lista.length) {
