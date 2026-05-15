@@ -1849,13 +1849,12 @@ async def _obtener_quinielas_por_estado(
     estado:   str,
     jornada:  str,
     orden:    str = "ASC",
-    user_id: str = None, 
+    user_id: str = None,
 ) -> list[dict]:
     orden_seguro = orden.upper() if orden.upper() in _ORDENES_VALIDAS else "ASC"
     def _query() -> list[dict]:
         with get_db() as conn:
             with conn.cursor() as cur:
-             if user_id: 
                 cur.execute(f"""
                     SELECT {_COLS_LISTA}
                     FROM quinielas
@@ -1876,7 +1875,6 @@ async def _obtener_quinielas_por_estado(
             for row in rows
         ]
     return await asyncio.to_thread(_query)
-
 @app.get("/api/vendedores")
 async def listar_vendedores():
     vendedores = []
