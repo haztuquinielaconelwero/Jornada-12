@@ -3484,19 +3484,20 @@ if (sentActual.length === 0 && ENV?.isDev) {
 console.warn('%c actualizarEstadosDesdeBackend: sentQuinielas vacío — posible borrado de caché reciente',
 'color:#facc15;font-weight:bold');
 }
-const qs = new URLSearchParams({
+const apiParams = {
 vendedor,
 jornada: jornadaNombre,
 ...(userId ? { userId } : {})
-}).toString();
+};
 let resPend, resEsp, resJug;
 try {
 [resPend, resEsp, resJug] = await Promise.all([
-fetchAPI(`/api/pendientes?${qs}`),
-fetchAPI(`/api/espera?${qs}`),
-fetchAPI(`/api/jugando?${qs}`),
+fetchAPI(apiUrl('/api/pendientes', apiParams)),
+fetchAPI(apiUrl('/api/espera', apiParams)),
+fetchAPI(apiUrl('/api/jugando', apiParams)),
 ]);
-} catch (err) {
+}
+catch (err) {
 if (ENV?.isDev) console.warn('⚠️ actualizarEstadosDesdeBackend: error en Promise.all', err);
 return;
 }
@@ -5919,8 +5920,9 @@ showToast('Error cargando el panel admin', 'error');
 }
 }
 }
+/*----Esto de abajo se encarga de trabajar en nuestro archivo y se usa para cargar pendientes, espera y jugando en paralelo para construir lista completa -----------*/
 async function _cargarDatosAdmin() {
-const vendedor = localStorage.getItem('vendedor');
+const vendedor = VendedorManager?.current ?? _ls.get('vendedor') ?? null;
 if (!vendedor) {
 if (ENV?.isDev) console.warn('⚠️ cargarDatosAdmin: vendedor no configurado');
 _renderQuinielas([]);
@@ -5931,16 +5933,13 @@ if (ENV?.isDev) console.warn('⚠️ cargarDatosAdmin: jornadaActual no disponib
 _renderQuinielas([]);
 return;
 }
-const params = new URLSearchParams({
-vendedor: vendedor,
-jornada: jornadaActual.nombre,
+const params = new URLSearchParams({vendedor: vendedor,jornada: jornadaActual.nombre,
 });
 try {
-/*----Esto de abajo se encarga de trabajar en nuestro archivo y se usa para cargar pendientes, espera y jugando en paralelo para construir lista completa -----------*/
 const [resPend, resEsp, resJug] = await Promise.allSettled([
-_safeFetch(`${API_BASE}/api/pendientes?${params.toString()}`),
-_safeFetch(`${API_BASE}/api/espera?${params.toString()}`),
-_safeFetch(`${API_BASE}/api/jugando?${params.toString()}`),
+_safeFetch(apiUrl('/api/pendientes', { vendedor, jornada: jornadaActual.nombre })),
+_safeFetch(apiUrl('/api/espera',     { vendedor, jornada: jornadaActual.nombre })),
+_safeFetch(apiUrl('/api/jugando',    { vendedor, jornada: jornadaActual.nombre })),
 ]);
 let allQuinielas = [];
 if (resPend.status === 'fulfilled' && resPend.value?.ok) {
@@ -6721,8 +6720,7 @@ if (ENV?.isDev) console.warn('⚠️ cargarPendientesTabla: cargarPartidos fall�
 }
 _actualizarHeadersPendientes();
 const jornada = jornadaActual?.nombre ?? window.jornadaActual?.nombre ?? '';
-const qs = new URLSearchParams({ vendedor, jornada });
-const { data, error } = await fetchAPI(`api/pendientes?${qs}`);
+const { data, error } = await fetchAPI(apiUrl('api/pendientes', { vendedor, jornada }), { timeout: 10000, retries: 1 });
 if (error || !data) throw new Error(error ?? 'Respuesta vacía');
 const lista = data.pendientes ?? [];
 if (!lista.length) {
@@ -6867,8 +6865,7 @@ if (ENV?.isDev) console.warn('⚠️ cargarEsperaTabla: cargarPartidos falló:',
 }
 _actualizarHeadersEspera();
 const jornada = jornadaActual?.nombre ?? window.jornadaActual?.nombre ?? '';
-const qs = new URLSearchParams({ vendedor, jornada });
-const { data, error } = await fetchAPI(`api/espera?${qs}`);
+const { data, error } = await fetchAPI(apiUrl('api/espera', { vendedor, jornada }), { timeout: 10000, retries: 1 });
 if (error || !data) throw new Error(error ?? 'Respuesta vacía');
 const lista = data.espera ?? [];
 if (!lista.length) {
@@ -7016,7 +7013,7 @@ _actualizarHeadersJugando();
 const jornada = jornadaActual?.nombre ?? window.jornadaActual?.nombre ?? '';
 const qs = new URLSearchParams({ vendedor, jornada });
 const [resJugando, resResultados] = await Promise.allSettled([
-fetchAPI(`api/jugando?${qs}`),
+fetchAPI(apiUrl('api/jugando', { vendedor, jornada }), { timeout: 10000, retries: 1 }),
 fetchAPI('api/resultados-oficiales'),
 ]);
 const jugandoResult = resJugando.status === 'fulfilled' ? resJugando.value : null;
