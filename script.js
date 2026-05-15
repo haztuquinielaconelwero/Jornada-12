@@ -3484,7 +3484,11 @@ if (sentActual.length === 0 && ENV?.isDev) {
 console.warn('%c actualizarEstadosDesdeBackend: sentQuinielas vacío — posible borrado de caché reciente',
 'color:#facc15;font-weight:bold');
 }
-const qs = new URLSearchParams({ vendedor, jornada: jornadaNombre }).toString();
+const qs = new URLSearchParams({
+vendedor,
+jornada: jornadaNombre,
+...(userId ? { userId } : {})
+}).toString();
 let resPend, resEsp, resJug;
 try {
 [resPend, resEsp, resJug] = await Promise.all([
@@ -3565,17 +3569,7 @@ local.pythonId = qBackend.pythonId ?? qBackend.id ?? local.pythonId ?? null;
 local.jornada = local.jornada || jornadaNombre;
 if (ENV?.isDev) console.log(`✅ Actualizada: ${local.name} → ${local.estado} (${local.folio ?? 'sin folio'})`);
 } else {
-sent.push({
-pythonId:    qBackend.id ?? null,
-folio:       qBackend.folio ?? null,
-name:        qBackend.nombre ?? qBackend.name ?? 'Sin nombre',
-nombre:      qBackend.nombre ?? qBackend.name ?? 'Sin nombre',
-vendedor:    qBackend.vendedor ?? vendedor,
-predictions: qBackend.predictions ?? {},
-estado:      normalizarEstadoJugada(qBackend.estado),
-jornada:     jornadaNombre,
-});
-if (ENV?.isDev) console.log(`📥 Adoptada desde backend: id=${qBackend.id} nombre="${qBackend.nombre}"`);
+if (ENV?.isDev) console.log(`⏭️ No adoptada (no es local): "${qBackend.nombre}"`);
 }
 });
 AppState.replaceSent(sent);

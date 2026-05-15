@@ -1849,11 +1849,13 @@ async def _obtener_quinielas_por_estado(
     estado:   str,
     jornada:  str,
     orden:    str = "ASC",
+    user_id: str = None, 
 ) -> list[dict]:
     orden_seguro = orden.upper() if orden.upper() in _ORDENES_VALIDAS else "ASC"
     def _query() -> list[dict]:
         with get_db() as conn:
             with conn.cursor() as cur:
+             if user_id: 
                 cur.execute(f"""
                     SELECT {_COLS_LISTA}
                     FROM quinielas
@@ -1901,11 +1903,12 @@ async def listar_vendedores():
 @app.get("/api/pendientes")
 async def obtener_pendientes(
     vendedor: str = Query(...),
-    jornada:  str = Query(default=JORNADA_ACTUAL),
+    jornada: str = Query(default=JORNADA_ACTUAL),
+    userId: Optional[str] = None  
 ):
     if not vendedor_es_valido(vendedor):
         raise HTTPException(400, detail=f"Vendedor '{vendedor}' no reconocido")
-    pendientes = await _obtener_quinielas_por_estado(vendedor, ESTADO_PENDIENTE, jornada, "ASC")
+    pendientes = await _obtener_quinielas_por_estado(vendedor, ESTADO_PENDIENTE, jornada, "ASC", userId)
     logger.info("Pendientes %s (%s): %s", vendedor, jornada, len(pendientes))
     return {
         "success":    True,
@@ -1918,6 +1921,7 @@ async def obtener_pendientes(
 async def obtener_espera(
     vendedor: str = Query(...),
     jornada:  str = Query(default=JORNADA_ACTUAL),
+    userId: Optional[str] = None,
 ):
     if vendedor == "ALL":
         def _query_all() -> list[dict]:
@@ -1944,7 +1948,7 @@ async def obtener_espera(
     else:
         if not vendedor_es_valido(vendedor):
             raise HTTPException(400, detail=f"Vendedor '{vendedor}' no reconocido")
-        espera = await _obtener_quinielas_por_estado(vendedor, ESTADO_ESPERA, jornada, "ASC")
+        espera = await _obtener_quinielas_por_estado(vendedor, ESTADO_ESPERA, jornada, "ASC", userId)
     logger.info("En espera %s (%s): %s", vendedor, jornada, len(espera))
     return {
         "success":  True,
@@ -1957,10 +1961,11 @@ async def obtener_espera(
 async def obtener_jugando(
     vendedor: str = Query(...),
     jornada:  str = Query(default=JORNADA_ACTUAL),
+    userId: Optional[str] = None,
 ):
     if not vendedor_es_valido(vendedor):
         raise HTTPException(400, detail=f"Vendedor '{vendedor}' no reconocido")
-    jugando = await _obtener_quinielas_por_estado(vendedor, ESTADO_JUGANDO, jornada, "DESC")
+    jugando = await _obtener_quinielas_por_estado(vendedor, ESTADO_JUGANDO, jornada, "DESC", userId)
     logger.info("Jugando %s (%s): %s", vendedor, jornada, len(jugando))
     return {
         "success":  True,
