@@ -1548,9 +1548,11 @@ async def confirmar_quiniela(quiniela_id: int):
                 row = cur.fetchone()
                 if not row:
                     raise HTTPException(404, detail=f"Quiniela {quiniela_id} no encontrada")
+
                 vendedor      = row["vendedor"]
                 jornada       = row["jornada"]
                 estado_actual = row["estado"]
+
                 if estado_actual not in _ESTADOS_CONFIRMABLES:
                     raise HTTPException(
                         400,
@@ -1560,6 +1562,7 @@ async def confirmar_quiniela(quiniela_id: int):
                             f"Estados válidos: {sorted(_ESTADOS_CONFIRMABLES)}"
                         ),
                     )
+
                 if _modo_espera_activo:
                     cur.execute("""
                         UPDATE quinielas
@@ -1568,52 +1571,29 @@ async def confirmar_quiniela(quiniela_id: int):
                     """, (ESTADO_ESPERA, quiniela_id))
                     nuevo_estado = ESTADO_ESPERA
                     nuevo_folio  = None
-                    mensaje      = f"Quiniela en espera — modo espera activo por administrador"
+                    mensaje      = "Quiniela en espera — modo espera activo por administrador"
                     logger.info("Quiniela %s → espera por modo espera activo", quiniela_id)
-                    _fc = row["fecha_creacion"]
-                    fecha_str = (
-                        _fc.isoformat() if hasattr(_fc, 'isoformat')
-                        else str(_fc) if _fc else None
-                    )
-                    return {
-                        "success": True,
-                        "message": mensaje,
-                        "estado":  nuevo_estado,
-                        "quiniela": {
-                            "id":             quiniela_id,
-                            "nombre":         row["nombre"],
-                            "vendedor":       row["vendedor"],
-                            "predictions":    row["predictions"],
-                            "estado":         nuevo_estado,
-                            "folio":          None,
-                            "jornada":        row["jornada"],
-                            "fecha_creacion": fecha_str,
-                        },
-                    }
-                limite_vendedor = obtener_limite_vendedor(vendedor)
-                if limite_vendedor == 0:
-                    raise HTTPException(400, detail=f"Vendedor '{vendedor}' no existe en el sistema")
-                rango_raw = obtener_rango_vendedor(vendedor)
-                rangos: list[tuple[int, int]] = (
-                    rango_raw if isinstance(rango_raw, list) else [rango_raw]
-                )
-                cur.execute("""
-                    SELECT COUNT(*) AS total
-                    FROM quinielas
-                    WHERE vendedor = %s AND estado = %s AND jornada = %s
-                """, (vendedor, ESTADO_JUGANDO, jornada))
-                count_jugando = cur.fetchone()["total"]
-                if count_jugando >= limite_vendedor:
-                    nuevo_estado = ESTADO_ESPERA
-                    nuevo_folio  = None
-                    mensaje = (
-                        f"Quiniela en espera — {vendedor} alcanzó su límite "
-                        f"({count_jugando}/{limite_vendedor})"
-                    )
-                    logger.warning(mensaje)
+
                 else:
+                    limite_vendedor = obtener_limite_vendedor(vendedor)
+                    if limite_vendedor == 0:
+                        raise HTTPException(400, detail=f"Vendedor '{vendedor}' no existe en el sistema")
+
+                    rango_raw = obtener_rango_vendedor(vendedor)
+                    rangos: list[tuple[int, int]] = (
+                        rango_raw if isinstance(rango_raw, list) else [rango_raw]
+                    )
+
                     lock_key = hash(f"{vendedor}{jornada}") & 0x7FFFFFFF
                     cur.execute("SELECT pg_advisory_xact_lock(%s)", (lock_key,))
+
+                    cur.execute("""
+                        SELECT COUNT(*) AS total
+                        FROM quinielas
+                        WHERE vendedor = %s AND estado = %s AND jornada = %s
+                    """, (vendedor, ESTADO_JUGANDO, jornada))
+                    count_jugando = cur.fetchone()["total"]
+
                     cur.execute("""
                         SELECT MAX(CAST(folio AS INTEGER)) AS ultimo
                         FROM quinielas
@@ -1624,6 +1604,7 @@ async def confirmar_quiniela(quiniela_id: int):
                     """, (vendedor, jornada))
                     ultimo    = cur.fetchone()["ultimo"]
                     siguiente = (int(ultimo) + 1) if ultimo else rangos[0][0]
+
                     nuevo_folio = None
                     for ini, fin in rangos:
                         if ini <= siguiente <= fin:
@@ -1632,10 +1613,19 @@ async def confirmar_quiniela(quiniela_id: int):
                         elif siguiente < ini:
                             nuevo_folio = ini
                             break
+
+                    if nuevo_folio is not None:
+                        cur.execute("""
+                            SELECT id FROM quinielas
+                            WHERE folio = %s AND jornada = %s
+                        """, (str(nuevo_folio), jornada))
+                        if cur.fetchone():
+                            nuevo_folio = None
+
                     if nuevo_folio is None:
                         nuevo_estado = ESTADO_ESPERA
                         mensaje = (
-                            f"Quiniela en espera — {vendedor} excedió su rango "
+                            f"Quiniela en espera — {vendedor} sin folio disponible "
                             f"({count_jugando}/{limite_vendedor})"
                         )
                         logger.warning(mensaje)
@@ -1647,22 +1637,25 @@ async def confirmar_quiniela(quiniela_id: int):
                             quiniela_id, vendedor,
                             count_jugando + 1, limite_vendedor, nuevo_folio,
                         )
-                cur.execute("""
-                    UPDATE quinielas
-                    SET estado = %s,
-                        folio  = %s
-                    WHERE id = %s
-                """, (nuevo_estado, str(nuevo_folio) if nuevo_folio else None, quiniela_id))
+
+                    cur.execute("""
+                        UPDATE quinielas
+                        SET estado = %s,
+                            folio  = %s
+                        WHERE id = %s
+                    """, (nuevo_estado, str(nuevo_folio) if nuevo_folio else None, quiniela_id))
                 _fc = row["fecha_creacion"]
                 fecha_str = (
-                    _fc.isoformat() if hasattr(_fc, 'isoformat')
+                    _fc.isoformat() if hasattr(_fc, "isoformat")
                     else str(_fc) if _fc else None
                 )
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error("Error confirmando quiniela %s: %s", quiniela_id, e)
         raise HTTPException(500, detail="Error interno al confirmar la quiniela")
+
     return {
         "success": True,
         "message": mensaje,
@@ -1678,7 +1671,6 @@ async def confirmar_quiniela(quiniela_id: int):
             "fecha_creacion": fecha_str,
         },
     }
-
 @app.patch("/api/quinielas/{quiniela_id}/rechazar")
 async def rechazar_quiniela(quiniela_id: int):
     try:
