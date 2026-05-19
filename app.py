@@ -636,7 +636,7 @@ PARTIDOS = [
     },
     {
         "id": 4,
-        "local": "Crystal",          "localLogo": "/logos/crystal-palace.png",
+        "local": "Crystal",          "localLogo": "/logos/crystal.png",
         "visitante": "Arsenal",      "visitanteLogo": "/logos/arsenal.png",
         "horario": "Domingo 24 mayo 9 am",
         "televisora": "TNT Sports",
